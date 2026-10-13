@@ -195,6 +195,19 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/shared:
+    dependencies:
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/typescript-config: {}
 
 packages:
@@ -555,6 +568,9 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
 snapshots:
 
   '@esbuild/aix-ppc64@0.28.2':
@@ -843,3 +859,5 @@ snapshots:
       '@turbo/windows-arm64': 2.11.7
 
   typescript@5.9.3: {}
+
+  zod@3.25.76: {}
