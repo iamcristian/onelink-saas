@@ -1,0 +1,155 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum LinkType {
+  LINK
+  HEADER
+  DIVIDER
+}
+
+enum BgType {
+  SOLID
+  GRADIENT
+  IMAGE
+}
+
+enum BtnStyle {
+  FILLED
+  OUTLINE
+  SHADOW
+  ROUNDED
+}
+
+enum SocialPlatform {
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  TWITTER
+  FACEBOOK
+  LINKEDIN
+  GITHUB
+  TWITCH
+  DISCORD
+  SPOTIFY
+  APPLEMUSIC
+  WEBSITE
+  EMAIL
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String?   @map("password_hash")
+  name         String?
+  googleId     String?   @unique @map("google_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  profile      Profile?
+
+  @@map("users")
+}
+
+model Profile {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @unique @map("user_id") @db.Uuid
+  username     String    @unique @db.VarChar(30)
+  title        String?   @db.VarChar(100)
+  bio          String?   @db.VarChar(500)
+  avatarUrl    String?   @map("avatar_url")
+  themeId      String?   @map("theme_id") @db.Uuid
+  isPublished  Boolean   @default(false) @map("is_published")
+  seoTitle     String?   @map("seo_title") @db.VarChar(60)
+  seoDesc      String?   @map("seo_description") @db.VarChar(160)
+  ogImageUrl   String?   @map("og_image_url")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme        Theme?       @relation(fields: [themeId], references: [id])
+  links        Link[]
+  socialLinks  SocialLink[]
+  customTheme  CustomTheme?
+
+  @@index([username])
+  @@map("profiles")
+}
+
+model Link {
+  id            String    @id @default(uuid()) @db.Uuid
+  profileId     String    @map("profile_id") @db.Uuid
+  title         String    @db.VarChar(200)
+  url           String?
+  type          LinkType  @default(LINK)
+  position      Int       @default(0)
+  thumbnailUrl  String?   @map("thumbnail_url")
+  isActive      Boolean   @default(true) @map("is_active")
+  clickCount    BigInt    @default(0) @map("click_count")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  profile       Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, position])
+  @@map("links")
+}
+
+model Theme {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(50)
+  bgType        BgType   @default(SOLID) @map("bg_type")
+  bgValue       String   @map("bg_value")
+  btnStyle      BtnStyle @default(FILLED) @map("btn_style")
+  btnColor      String   @map("btn_color")
+  btnTextColor  String   @map("btn_text_color")
+  fontFamily    String   @default("Inter") @map("font_family")
+  textColor     String   @default("#000000") @map("text_color")
+  isDefault     Boolean  @default(false) @map("is_default")
+  previewUrl    String?  @map("preview_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  profiles      Profile[]
+
+  @@map("themes")
+}
+
+model CustomTheme {
+  id            String   @id @default(uuid()) @db.Uuid
+  profileId     String   @unique @map("profile_id") @db.Uuid
+  bgType        BgType   @default(SOLID) @map("bg_type")
+  bgValue       String   @map("bg_value")
+  btnStyle      BtnStyle @default(FILLED) @map("btn_style")
+  btnColor      String   @map("btn_color")
+  btnTextColor  String   @map("btn_text_color")
+  fontFamily    String   @default("Inter") @map("font_family")
+  textColor     String   @default("#000000") @map("text_color")
+  btnRadius     Int      @default(8) @map("btn_radius")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("custom_themes")
+}
+
+model SocialLink {
+  id          String         @id @default(uuid()) @db.Uuid
+  profileId   String         @map("profile_id") @db.Uuid
+  platform    SocialPlatform
+  url         String
+  position    Int            @default(0)
+  isActive    Boolean        @default(true) @map("is_active")
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  profile     Profile        @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, position])
+  @@map("social_links")
+}
