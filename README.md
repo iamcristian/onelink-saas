@@ -1,103 +1,155 @@
-# 🔗 Link-in-Bio Platform
+# 🔗 Scalable Link-in-Bio Platform
 
-> High-performance, scalable Link-in-Bio platform (Linktree-style) engineered with modern distributed system design, clean architecture, and enterprise SDLC workflows.
-
----
-
-## ⚡ Tech Stack (2026 Standards)
-
-- **Monorepo**: [Turborepo 2](https://turbo.build/) + [pnpm 10 Workspaces](https://pnpm.io/)
-- **Frontend (`apps/web`)**: [Next.js 15.2+](https://nextjs.org/) (App Router, Server Components, ISR) + [React 19](https://react.dev/)
-- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
-- **Backend API (`apps/api`)**: [NestJS 11](https://nestjs.com/) (SWC compiler, modular architecture, DI)
-- **Database Layer**: [PostgreSQL 16](https://www.postgresql.org/) + [TimescaleDB](https://www.timescale.com/) (hypertable analytics)
-- **Cache & Queues**: [Redis 7 Stack](https://redis.io/) + [BullMQ](https://docs.bullmq.io/)
-- **ORM & Data Contracts**: [Prisma 6](https://www.prisma.io/) + [Zod 3.24+](https://zod.dev/)
-- **Quality & Testing**: Vitest, Jest, Supertest, Playwright (E2E), k6 (load testing)
+> High-performance, mobile-first **Link-in-Bio platform** (Linktree alternative) engineered with modern distributed system design, clean hexagonal architecture, TimescaleDB time-series analytics, and enterprise SDLC rigor.
 
 ---
 
-## 🏛️ System Architecture Overview
+## ⚡ Tech Stack
 
-```
-                      ┌───────────────────────────┐
-                      │    Edge CDN (Cloudflare)  │
-                      └─────────────┬─────────────┘
-                                    │
-                      ┌─────────────▼─────────────┐
-                      │       Nginx Gateway       │
-                      └─────────────┬─────────────┘
-                                    │
-             ┌──────────────────────┴──────────────────────┐
-             │                                             │
-   ┌─────────▼─────────┐                         ┌─────────▼─────────┐
-   │ Next.js 15 (Web)  │                         │  NestJS 11 (API)  │
-   │ • ISR Profiles    │─────── Internal ───────►│ • Modular Domain  │
-   │ • Live Dashboard  │          HTTP           │ • Rate Limiting   │
-   └───────────────────┘                         └─────────┬─────────┘
-                                                           │
-                                ┌──────────────────────────┼──────────────────────────┐
-                                │                          │                          │
-                      ┌─────────▼─────────┐      ┌─────────▼─────────┐      ┌─────────▼─────────┐
-                      │   Redis 7 Stack   │      │   BullMQ Queue    │      │  PostgreSQL 16    │
-                      │ • Profile Blobs   │      │ • Async Clicks    │      │  + TimescaleDB    │
-                      │ • Rate Limiting   │      │ • PageView Worker │      │ • Hypertables     │
-                      └───────────────────┘      └───────────────────┘      └───────────────────┘
-```
+| Domain | Technology | Description |
+|---|---|---|
+| **Monorepo Engine** | [Turborepo 2.4+](https://turbo.build/) + [pnpm 12](https://pnpm.io/) | Workspaces, isolated dependencies, cached pipelines |
+| **Backend API** | [NestJS 12](https://nestjs.com/) + [SWC Compiler](https://swc.rs/) | Clean Architecture, Swagger OpenAPI 3.0, compiles in ~70ms |
+| **Frontend Web** | [Next.js 16.4](https://nextjs.org/) + [React 19](https://react.dev/) | App Router, Server Components, ISR for vanity profiles |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) (`@tailwindcss/turbopack`) | Modern CSS theme engine, dynamic color variables |
+| **Database** | [PostgreSQL 16](https://www.postgresql.org/) + [TimescaleDB](https://www.timescale.com/) | Relational core + partitioned Hypertables for analytics |
+| **Cache & Message Broker** | [Redis 7 Stack](https://redis.io/) + [BullMQ](https://docs.bullmq.io/) | Profile JSON cache-aside, asynchronous click tracking |
+| **Data Modeling & Validation** | [Prisma 6](https://www.prisma.io/) + [Zod 3.24+](https://zod.dev/) | End-to-end type safety and validation |
+| **Local Infrastructure** | [Docker Compose](https://www.docker.com/) | Containerized PostgreSQL, Redis, and Mailhog |
 
 ---
 
-## 📚 SDLC & Project Documentation
+## 🌐 Services, URLs & Ports
 
-All formal engineering specifications live inside the [`docs/`](./docs) folder:
+When the local environment is running, services are available at:
 
-- 📖 **[Master Plan (Full Specification)](./docs/master-plan.md)**: Product vision, ERDs, C4 diagrams, and 16-week roadmap.
-- 📐 **Architecture & ADRs**: *(`docs/adr/` - in progress)*
-- 📋 **Product Requirements (PRD)**: *(`docs/prd.md` - Phase 0)*
-- 🧪 **Test Strategy & Matrix**: *(`docs/test-plan.md` - Phase 0)*
-
----
-
-## 🗺️ Roadmap & Phase Tracker
-
-- [ ] **Phase 0: Foundation & Infrastructure** *(Current)*
-  - Monorepo scaffold (`pnpm` + `turbo`)
-  - Shared TypeScript & ESLint packages
-  - Prisma 6 schema & TimescaleDB setup
-  - Local Docker Compose (Postgres + Redis)
-- [ ] **Phase 1: Core API & Data Modeling**
-- [ ] **Phase 2: Authentication (Google OAuth) & Media Pipeline (Sharp)**
-- [ ] **Phase 3: High-Throughput Analytics Engine (BullMQ + Timescale)**
-- [ ] **Phase 4: Next.js 15.2 Web Frontend & Live Preview**
-- [ ] **Phase 5: Hardening, E2E Testing & Monetization (Stripe)**
-- [ ] **Phase 6: Production Deployment & Observability**
+| Service | Environment / URL | Description | Default Port |
+|---|---|---|---|
+| **Web Application** | [http://localhost:3000](http://localhost:3000) | Public profiles (`/@username`) & Creator Studio Dashboard | `3000` |
+| **Backend REST API** | [http://localhost:3001/api](http://localhost:3001/api) | NestJS REST API endpoints | `3001` |
+| **Swagger OpenAPI Docs** | [http://localhost:3001/api/docs](http://localhost:3001/api/docs) | Interactive API documentation & test console | `3001` |
+| **Prisma Studio (GUI)** | [http://localhost:5555](http://localhost:5555) | Web GUI to view/edit database records (`pnpm db:studio`) | `5555` |
+| **Mailhog (Email UI)** | [http://localhost:8025](http://localhost:8025) | Local SMTP mailbox testing interface | `8025` |
+| **TimescaleDB / Postgres**| `localhost:5432` | Relational & time-series database (`linktree` / `postgres`) | `5432` |
+| **Redis Stack** | `localhost:6379` | In-memory key-value cache and message broker | `6379` |
 
 ---
 
-## 🚀 Quick Start (Local Development)
+## 🚀 Quick Start Guide (From Zero to Running)
 
-### Prerequisites
+Follow these steps to run the complete platform on your local machine:
 
-- **Node.js**: `v22 LTS` or `v24+` (Installed: `v24.11.1`)
-- **pnpm**: `v10+` (Installed: `v10.22.0`)
-- **Docker Desktop**: For running PostgreSQL + TimescaleDB and Redis locally.
+### 1. Prerequisites
+- **Node.js**: `v22+` or `v24+` (Recommended: `v24.11.1`)
+- **pnpm**: `v10+` or `v12+` (Recommended: `v12.11.2`)
+- **Docker Desktop**: Must be installed and running.
 
-### Installation
-
+### 2. Clone & Install Dependencies
 ```bash
-# 1. Clone repository
+# Clone the repository
 git clone https://github.com/your-username/url-shortener.git
 cd url-shortener
 
-# 2. Install dependencies across the monorepo
+# Install all workspace dependencies
 pnpm install
+```
 
-# 3. Start local databases (PostgreSQL + Redis)
-docker compose -f infrastructure/docker/docker-compose.yml up -d
+### 3. Start Local Infrastructure (Docker)
+Start the TimescaleDB, Redis, and Mailhog containers:
+```bash
+pnpm docker:up
+```
+> *To check status: `docker ps` or `pnpm docker:logs`*
 
-# 4. Generate Prisma client & run database migrations
-pnpm db:migrate
+### 4. Initialize & Seed the Database
+Push the schema to PostgreSQL and seed initial preset themes:
+```bash
+# Push schema tables (User, Profile, Link, Theme, etc.)
+pnpm db:push
 
-# 5. Start all apps in development mode
+# Seed default preset themes (Obsidian, Minimal, Cyberpunk, Sakura, Emerald)
+pnpm db:seed
+```
+
+### 5. Launch Development Servers
+Start both the NestJS API and Next.js Web applications concurrently:
+```bash
 pnpm dev
 ```
+- Open [http://localhost:3000](http://localhost:3000) to view the Web application.
+- Open [http://localhost:3001/api/docs](http://localhost:3001/api/docs) to view the Swagger API documentation.
+
+---
+
+## 🛠️ Master Command Reference
+
+All primary commands can be executed from the **monorepo root**:
+
+### 🐳 Infrastructure (Docker)
+| Command | Action |
+|---|---|
+| `pnpm docker:up` | Starts Postgres (TimescaleDB), Redis, and Mailhog in background |
+| `pnpm docker:down` | Stops and removes local Docker containers |
+| `pnpm docker:logs` | Streams live logs from all infrastructure containers |
+
+### 🗄️ Database (Prisma & PostgreSQL)
+| Command | Action |
+|---|---|
+| `pnpm db:push` | Synchronizes Prisma schema directly with PostgreSQL database |
+| `pnpm db:seed` | Populates database with preset themes and initial records |
+| `pnpm db:studio` | Opens Prisma Studio web UI at `http://localhost:5555` |
+| `pnpm db:generate` | Re-generates `@prisma/client` types after schema edits |
+
+### 💻 Development Servers
+| Command | Action |
+|---|---|
+| `pnpm dev` | Starts all applications concurrently (`apps/api` + `apps/web`) |
+| `pnpm dev:api` | Starts only the NestJS backend API (`http://localhost:3001`) |
+| `pnpm dev:web` | Starts only the Next.js frontend web app (`http://localhost:3000`) |
+
+### 🧪 Quality Assurance, Testing & Build
+| Command | Action |
+|---|---|
+| `pnpm typecheck` | Runs TypeScript typechecks across all 5 workspace packages |
+| `pnpm test` | Runs unit test suites with Jest |
+| `pnpm build` | Compiles production builds (NestJS SWC + Next.js Turbopack) |
+| `pnpm lint` | Runs ESLint 9 across all packages |
+| `pnpm format` | Formats all code, docs, and JSON with Prettier |
+
+---
+
+## 🗂️ Monorepo Structure
+
+```
+.
+├── apps/
+│   ├── api/                    # NestJS 12 REST API (Port 3001, SWC, Swagger)
+│   │   ├── src/                # Core modules (auth, profile, link, analytics)
+│   │   └── test/               # Integration and E2E test suites
+│   └── web/                    # Next.js 16 Web App (Port 3000, App Router, React 19)
+│       └── src/app/            # Vanity profiles (/@username) & Creator Studio
+├── packages/
+│   ├── prisma/                 # Prisma 6 schema, migrations, seed script
+│   ├── shared/                 # Zod validation schemas, universal types & constants
+│   └── typescript-config/      # Shared tsconfig profiles (base, nestjs, nextjs)
+├── infrastructure/
+│   └── docker/                 # docker-compose.yml (TimescaleDB, Redis, Mailhog)
+└── docs/                       # Complete SDLC documentation & specifications
+```
+
+---
+
+## 📚 SDLC Documentation Hub
+
+Every technical decision, schema, user journey, and wireframe is formally documented in [`docs/`](./docs):
+
+- 📋 **[Progress Tracker & Setup Log](./docs/progress-tracker.md)**: Full inventory of setup and SDLC checklist.
+- 🗺️ **[Master Documentation Hub](./docs/README.md)**: Master map of all specifications.
+- 📄 **[Product Requirements Document (PRD)](./docs/prd.md)**: Personas, Gherkin user stories, MoSCoW.
+- 📑 **[Software Requirements Specification (SRS)](./docs/srs.md)**: IEEE 830 functional & non-functional requirements.
+- 🗄️ **[Database Design & ERD](./docs/architecture/database-design.md)**: Mermaid ERD, TimescaleDB Hypertables, indexes.
+- 🏛️ **[System Architecture (C4)](./docs/architecture/system-architecture.md)**: C4 Context, Container, and Component diagrams.
+- 🔄 **[Sequence Flows](./docs/architecture/sequence-flows.md)**: Hot path profile rendering, click beacons, and caching.
+- 🎨 **[UI/UX Wireframes & Google Stitch](./docs/ui-ux/wireframes-and-mockups.md)**: Split-screen dashboard wireframes & design tokens.
+- 🧪 **[Quality & Test Plan](./docs/test-plan.md)**: TDD Red-Green-Refactor testing matrix.
+- 📐 **[Architecture Decision Records (ADR)](./docs/adr/)**: ADRs 001 through 004.
