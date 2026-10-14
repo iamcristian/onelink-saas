@@ -1,56 +1,56 @@
-# 🗄️ Database Design & Data Architecture: De la Teoría a la Producción
+# 🗄️ Database Design & Data Architecture: From Theory to Production
 
-> **Metodología de Modelado**: Arquitectura ANSI/SPARC de 3 Niveles (Conceptual Chen ➔ Lógico Relacional 3FN ➔ Físico Hypertables)  
-> **Motores de Datos**: PostgreSQL 16 + Extensión TimescaleDB 2.17+ + Redis 7 Stack  
-> **ORM & Query Engine**: Prisma 6.4 (Tipado en `@repo/prisma`)  
-> **Estado**: Aprobado, Sincronizado & Sembrado en Docker (`linktree_dev`)  
+> **Modeling Methodology**: ANSI/SPARC 3-Schema Architecture (Conceptual Chen ➔ Logical Relational 3NF ➔ Physical Hypertables)  
+> **Database Engines**: PostgreSQL 16 + TimescaleDB 2.17+ Extension + Redis 7 Stack  
+> **ORM & Query Engine**: Prisma 6.4 (Typed in `@repo/prisma`)  
+> **Status**: Approved, Synchronized & Seeded in Docker (`linktree_dev`)  
 
 ---
 
-## 🏛️ Introducción Metodológica: Los 3 Niveles del Diseño de Datos
+## 🏛️ Methodological Introduction: The 3 Levels of Data Modeling
 
-En la ingeniería de software y arquitectura de datos de clase mundial (siguiendo el estándar ANSI/SPARC), saltar directamente a escribir sentencias SQL o esquemas de ORM sin modelado previo es un antipatrón que genera incoherencias conceptuales y deuda técnica. 
+In enterprise software engineering and world-class data architecture (following the ANSI/SPARC standard), jumping straight to writing SQL statements or ORM schemas without prior modeling is an anti-pattern that creates conceptual inconsistencies, maintenance bottlenecks, and technical debt.
 
-Por eso, el diseño de datos de **OneLink** sigue rigurosamente los 3 niveles formales de abstracción con sus respectivos diagramas y especificaciones:
+For this reason, the **OneLink** data architecture strictly adheres to the 3 formal levels of abstraction with complete diagrams and technical specifications:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│ 1. MODELO CONCEPTUAL (Notación Peter Chen, 1976)                                       │
-│    • 100% Agnóstico a la tecnología (SQL, NoSQL, ORM).                                │
-│    • Define ENTIDADES semánticas del negocio, RELACIONES, ATRIBUTOS y CARDINALIDADES.  │
+│ 1. CONCEPTUAL DATA MODEL (Peter Chen Notation, 1976)                                   │
+│    • 100% Technology-Agnostic (Independent of SQL, NoSQL, ORMs).                      │
+│    • Defines Business Entities, Semantic Relationships, Attributes, and Cardinalities. │
 └────────────────────────────────────────┬───────────────────────────────────────────────┘
-                                         │  (Traducción y Normalización 3FN)
+                                         │  (Translation & 3NF Normalization)
                                          ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│ 2. MODELO LÓGICO RELACIONAL (Edgar F. Codd, 1970)                                      │
-│    • Aplica 1FN, 2FN, 3FN (Tercera Forma Normal) para evitar anomalías.                │
-│    • Resuelve relaciones N:M, define Claves Primarias (PK) y Foráneas (FK).           │
-│    • Diagrama de Clases / Estructura Lógica de Tablas e Integridad Referencial.        │
-│    • Documenta desnormalizaciones tácticas de alto rendimiento (click_count).         │
+│ 2. LOGICAL RELATIONAL MODEL (Edgar F. Codd, 1970)                                      │
+│    • Applies 1NF, 2NF, 3NF (Third Normal Form) to eliminate data anomalies.           │
+│    • Resolves M:N relationships, defines Primary Keys (PK) and Foreign Keys (FK).      │
+│    • Class Structure Diagram of Relational Tables and Referential Integrity.           │
+│    • Documents high-throughput tactical denormalizations (e.g., click_count).         │
 └────────────────────────────────────────┬───────────────────────────────────────────────┘
-                                         │  (Optimización de Motor, Índices y Partición)
+                                         │  (Engine Optimization, Indexes & Hypertables)
                                          ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│ 3. MODELO FÍSICO & RELACIONAL (PostgreSQL 16 + TimescaleDB + Prisma DDL)               │
-│    • Diagrama Crow's Foot con tipos nativos (UUID, VARCHAR, TIMESTAMPTZ, INET, JSONB). │
-│    • Particionamiento por tiempo (Hypertables 1 día) y compresión columnar.            │
-│    • Índices B-Tree, índices parciales condicionales y políticas de integridad.        │
+│ 3. PHYSICAL RELATIONAL MODEL (PostgreSQL 16 + TimescaleDB + Prisma DDL)                │
+│    • Crow's Foot Diagram with native engine types (UUID, VARCHAR, TIMESTAMPTZ, JSONB). │
+│    • Time-series partitioning (1-day chunk Hypertables) & columnar compression.        │
+│    • Strategic B-Tree indexes, partial conditional indexes, and foreign constraints.   │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 1. Nivel 1: Modelo Conceptual (Notación Semántica de Peter Chen)
+## 1. Level 1: Conceptual Data Model (Peter Chen Semantic Notation)
 
-El modelo conceptual captura las entidades del mundo real y sus interacciones de negocio sin preocuparse por tablas, tipos de datos ni motores de almacenamiento.
+The conceptual model captures real-world business entities and their interactions without concern for table implementations, data storage formats, or physical database engines.
 
-### 1.1 Diagrama Entidad-Relación Conceptual Completo (Estilo Chen)
+### 1.1 Complete Conceptual Entity-Relationship Diagram (Chen Style)
 
-En la notación clásica de Peter Chen:
-* **Rectángulos**: Entidades del Dominio (Sustantivos del Negocio).
-* **Rombos**: Relaciones Semánticas (Verbos y Acciones).
-* **Óvalos / Elipses**: Atributos Principales (con Claves Primarias Candidatas subrayadas `<u>id</u>`).
-* **Líneas con Etiquetas**: Cardinalidades Mínimas y Máximas `(min, max)` como `(1,1)`, `(0,1)`, `(1,N)`, `(0,N)`.
+In classic Peter Chen notation:
+* **Rectangles**: Domain Entities (Business Nouns).
+* **Diamonds**: Semantic Relationships (Actions and Verbs).
+* **Ovals / Ellipses**: Key Attributes (with Primary Key Candidates underlined `<u>id</u>`).
+* **Labeled Edges**: Minimum and Maximum Cardinalities `(min, max)` such as `(1,1)`, `(0,1)`, `(1,N)`, `(0,N)`.
 
 ```mermaid
 flowchart TD
@@ -58,36 +58,36 @@ flowchart TD
     classDef relation fill:#27272a,stroke:#c8c5ca,stroke-width:1.5px,color:#fafafa;
     classDef attribute fill:#18181b,stroke:#52525b,stroke-width:1px,color:#a1a1aa;
 
-    %% ================= ENTIDADES PRINCIPALES =================
-    E_USER["USUARIO"]:::entity
-    E_PROFILE["PERFIL"]:::entity
-    E_LINK["ENLACE"]:::entity
-    E_THEME["TEMA"]:::entity
-    E_PLAN["PLAN_SUSCRIPCIÓN"]:::entity
-    E_SUB["SUSCRIPCIÓN"]:::entity
-    E_FLAG["ALERTA_SEGURIDAD<br/>(OneLink Sentinel)"]:::entity
-    E_BLOCK["BLOQUEO_DOMINIO"]:::entity
-    E_AUDIT["LOG_AUDITORÍA"]:::entity
-    E_CLICK["EVENTO_CLIC"]:::entity
-    E_VIEW["EVENTO_VISTA"]:::entity
+    %% ================= MAIN DOMAIN ENTITIES =================
+    E_USER["USER"]:::entity
+    E_PROFILE["PROFILE"]:::entity
+    E_LINK["LINK"]:::entity
+    E_THEME["THEME"]:::entity
+    E_PLAN["SUBSCRIPTION_PLAN"]:::entity
+    E_SUB["SUBSCRIPTION"]:::entity
+    E_FLAG["SECURITY_FLAG<br/>(OneLink Sentinel)"]:::entity
+    E_BLOCK["DOMAIN_BLOCKLIST"]:::entity
+    E_AUDIT["AUDIT_LOG"]:::entity
+    E_CLICK["CLICK_EVENT"]:::entity
+    E_VIEW["VIEW_EVENT"]:::entity
 
-    %% ================= RELACIONES (ROMBOS) =================
-    R_HAS{"posee"}:::relation
-    R_CONTAINS{"contiene"}:::relation
-    R_APPLIES{"aplica"}:::relation
-    R_SUBSCRIBES{"contrata"}:::relation
-    R_DEFINES{"define"}:::relation
-    R_TRIGGERS{"gatilla"}:::relation
-    R_REVIEWS{"revisa"}:::relation
-    R_EXECUTES{"ejecuta"}:::relation
-    R_BLOCKS{"registra"}:::relation
-    R_GEN_C{"genera"}:::relation
-    R_GEN_V{"recibe"}:::relation
+    %% ================= SEMANTIC RELATIONSHIPS (DIAMONDS) =================
+    R_HAS{"owns"}:::relation
+    R_CONTAINS{"contains"}:::relation
+    R_APPLIES{"applies"}:::relation
+    R_SUBSCRIBES{"subscribes_to"}:::relation
+    R_DEFINES{"defines"}:::relation
+    R_TRIGGERS{"triggers"}:::relation
+    R_REVIEWS{"reviews"}:::relation
+    R_EXECUTES{"executes"}:::relation
+    R_BLOCKS{"registers"}:::relation
+    R_GEN_C{"generates"}:::relation
+    R_GEN_V{"receives"}:::relation
 
-    %% ================= ATRIBUTOS CLAVE (ÓVALOS) =================
+    %% ================= KEY ATTRIBUTES (OVALS) =================
     A_U1(["<u>id</u>"]):::attribute --- E_USER
     A_U2(["email"]):::attribute --- E_USER
-    A_U3(["rol"]):::attribute --- E_USER
+    A_U3(["role"]):::attribute --- E_USER
 
     A_P1(["<u>id</u>"]):::attribute --- E_PROFILE
     A_P2(["username"]):::attribute --- E_PROFILE
@@ -95,7 +95,7 @@ flowchart TD
 
     A_L1(["<u>id</u>"]):::attribute --- E_LINK
     A_L2(["url"]):::attribute --- E_LINK
-    A_L3(["posición"]):::attribute --- E_LINK
+    A_L3(["position"]):::attribute --- E_LINK
 
     A_PL1(["<u>code</u>"]):::attribute --- E_PLAN
     A_PL2(["price_cents"]):::attribute --- E_PLAN
@@ -109,7 +109,7 @@ flowchart TD
     A_C1(["<u>clicked_at</u>"]):::attribute --- E_CLICK
     A_C2(["ip_address"]):::attribute --- E_CLICK
 
-    %% ================= CONEXIONES CON CARDINALIDADES (CHEN) =================
+    %% ================= CHEN CARDINALITY CONNECTIONS =================
     E_USER ---|1,1| R_HAS ---|0,1| E_PROFILE
     E_PROFILE ---|1,1| R_CONTAINS ---|0,N| E_LINK
     E_PROFILE ---|0,N| R_APPLIES ---|1,1| E_THEME
@@ -123,27 +123,27 @@ flowchart TD
     E_PROFILE ---|1,1| R_GEN_V ---|0,N| E_VIEW
 ```
 
-### 1.2 Diccionario Semántico y Reglas de Negocio
-1. **Regla de Identidad y Perfil (1:1)**: Un `USUARIO` creador posee exactamente cero o un `PERFIL` público (`/@username`). No se permite la tenencia de múltiples perfiles con la misma cuenta en el tier gratuito para evitar squatting de vanity URLs.
-2. **Regla de Monopolio de Tema (N:1)**: Un `PERFIL` aplica exactamente un `TEMA` predeterminado del sistema o un tema personalizado. Múltiples perfiles pueden compartir el mismo preset (`Obsidian Kinetic`, `Carbon Architecture`, etc.).
-3. **Regla de Contratación y Facturación (1:N)**: Un `USUARIO` puede generar múltiples `SUSCRIPCIÓN` a lo largo de su ciclo de vida (Free ➔ Pro ➔ Cancelado ➔ Pro), pero solo una está activa en un instante dado. Un `PLAN_SUSCRIPCIÓN` define los límites y precio de miles de suscripciones.
-4. **Regla de Seguridad Activa OneLink Sentinel (1:N)**: Cuando un `USUARIO` intenta guardar un enlace cuya heurística o tensor ONNX detecta peligro (`risk_score >= 0.75`), se gatilla una `ALERTA_SEGURIDAD` inmutable.
-5. **Regla de Moderación y Auditoría (1:N)**: Un `USUARIO` con rol `SUPER_ADMIN` revisa las alertas de seguridad y ejecuta acciones registradas en `LOG_AUDITORÍA`.
-6. **Regla de Telemetría Masiva (1:N)**: Un `ENLACE` genera potencialmente millones de `EVENTO_CLIC`. Los clics se registran de forma asíncrona sin bloquear la redirección del visitante.
+### 1.2 Semantic Business Rules & Invariants
+1. **Profile Identity Invariant (1:1)**: A creator `USER` owns exactly zero or one public `PROFILE` (`/@username`). Free-tier accounts cannot create multiple profiles, preventing vanity URL squatting.
+2. **Theme Consistency Invariant (N:1)**: A `PROFILE` applies exactly one curated preset `THEME` or custom theme. Many profiles can share the same preset (`Obsidian Kinetic`, `Carbon Architecture`, etc.).
+3. **Subscription Lifecycle Rule (1:N)**: A `USER` may hold multiple `SUBSCRIPTION` records across time (Free ➔ Pro ➔ Canceled ➔ Pro), but only one subscription remains active at any given point. A `SUBSCRIPTION_PLAN` governs feature gates and pricing for thousands of subscriptions.
+4. **OneLink Sentinel AI Defense Rule (1:N)**: When a `USER` submits a destination link whose lexical heuristics or ONNX tensor scores indicate danger (`risk_score >= 0.75`), an immutable `SECURITY_FLAG` is created.
+5. **Super Admin Governance Rule (1:N)**: A `USER` with the `SUPER_ADMIN` role reviews security flags and logs disciplinary actions to `AUDIT_LOG`.
+6. **High-Throughput Telemetry Invariant (1:N)**: A `LINK` generates potentially millions of `CLICK_EVENT` records. Telemetry writes are decoupled from redirect latency.
 
 ---
 
-## 2. Nivel 2: Modelo Lógico Relacional (Diagrama de Estructuras & 3FN)
+## 2. Level 2: Logical Relational Model (Class Diagram & 3NF Normalization)
 
-El modelo lógico traduce las entidades conceptuales a **relaciones formales (esquema de tablas)**, definiendo las Claves Primarias (`PK`), Claves Foráneas (`FK`), y demostrando el cumplimiento riguroso de la **Tercera Forma Normal (3FN)** de Edgar Codd.
+The logical model maps conceptual entities into **formal relational structures (tables)**, specifying Primary Keys (`PK`), Foreign Keys (`FK`), and proving compliance with Edgar F. Codd's **Third Normal Form (3NF)**.
 
-### 2.1 Diagrama Lógico Relacional de Estructura de Tablas
+### 2.1 Logical Relational Structure Diagram
 
 ```mermaid
 classDiagram
     direction LR
 
-    class USUARIOS {
+    class USERS {
         UUID id [PK]
         VARCHAR(255) email [UK]
         VARCHAR(255) password_hash
@@ -155,7 +155,7 @@ classDiagram
         TIMESTAMPTZ updated_at
     }
 
-    class PERFILES {
+    class PROFILES {
         UUID id [PK]
         UUID user_id [FK, UK]
         VARCHAR(30) username [UK]
@@ -168,7 +168,7 @@ classDiagram
         VARCHAR(160) seo_description
     }
 
-    class ENLACES {
+    class LINKS {
         UUID id [PK]
         UUID profile_id [FK]
         VARCHAR(200) title
@@ -177,10 +177,10 @@ classDiagram
         INTEGER position
         TEXT thumbnail_url
         BOOLEAN is_active
-        BIGINT click_count [Desnorm. Táctica]
+        BIGINT click_count [Tactical Denorm.]
     }
 
-    class ENLACES_SOCIALES {
+    class SOCIAL_LINKS {
         UUID id [PK]
         UUID profile_id [FK]
         ENUM platform
@@ -189,7 +189,7 @@ classDiagram
         BOOLEAN is_active
     }
 
-    class TEMAS {
+    class THEMES {
         UUID id [PK]
         VARCHAR(50) name
         ENUM bg_type
@@ -202,7 +202,7 @@ classDiagram
         BOOLEAN is_default
     }
 
-    class TEMAS_PERSONALIZADOS {
+    class CUSTOM_THEMES {
         UUID id [PK]
         UUID profile_id [FK, UK]
         ENUM bg_type
@@ -215,7 +215,7 @@ classDiagram
         INTEGER btn_radius
     }
 
-    class PLANES {
+    class PLANS {
         UUID id [PK]
         VARCHAR(50) code [UK]
         VARCHAR(100) name
@@ -226,7 +226,7 @@ classDiagram
         BOOLEAN is_active
     }
 
-    class SUSCRIPCIONES {
+    class SUBSCRIPTIONS {
         UUID id [PK]
         UUID user_id [FK]
         UUID plan_id [FK]
@@ -236,7 +236,7 @@ classDiagram
         TIMESTAMPTZ current_period_end
     }
 
-    class ALERTAS_SEGURIDAD {
+    class SECURITY_FLAGS {
         UUID id [PK]
         UUID user_id [FK]
         TEXT submitted_url
@@ -249,7 +249,7 @@ classDiagram
         TEXT resolution_notes
     }
 
-    class BLOQUEO_DOMINIOS {
+    class DOMAIN_BLOCKLIST {
         UUID id [PK]
         VARCHAR(255) domain_pattern [UK]
         VARCHAR(500) reason
@@ -257,7 +257,7 @@ classDiagram
         TIMESTAMPTZ created_at
     }
 
-    class AUDITORIA_ADMIN {
+    class ADMIN_AUDIT_LOGS {
         UUID id [PK]
         UUID admin_user_id [FK]
         VARCHAR(100) action
@@ -268,7 +268,7 @@ classDiagram
         TIMESTAMPTZ created_at
     }
 
-    class EVENTOS_CLIC {
+    class CLICK_EVENTS {
         BIGINT id [PK]
         UUID link_id [FK]
         UUID profile_id [FK]
@@ -280,7 +280,7 @@ classDiagram
         BOOLEAN is_bot
     }
 
-    class EVENTOS_VISTA {
+    class PAGE_VIEWS {
         BIGINT id [PK]
         UUID profile_id [FK]
         TIMESTAMPTZ viewed_at [PK]
@@ -292,62 +292,62 @@ classDiagram
         BOOLEAN is_bot
     }
 
-    %% Relaciones Lógicas con Integridad Referencial
-    USUARIOS "1" --> "0..1" PERFILES : FK user_id
-    PERFILES "1" --> "0..*" ENLACES : FK profile_id
-    PERFILES "1" --> "0..*" ENLACES_SOCIALES : FK profile_id
-    TEMAS "1" <-- "0..*" PERFILES : FK theme_id
-    PERFILES "1" --> "0..1" TEMAS_PERSONALIZADOS : FK profile_id
-    USUARIOS "1" --> "0..*" SUSCRIPCIONES : FK user_id
-    PLANES "1" --> "0..*" SUSCRIPCIONES : FK plan_id
-    USUARIOS "1" --> "0..*" ALERTAS_SEGURIDAD : FK user_id
-    USUARIOS "0..1" <-- "0..*" ALERTAS_SEGURIDAD : FK reviewed_by
-    USUARIOS "0..1" <-- "0..*" BLOQUEO_DOMINIOS : FK added_by
-    USUARIOS "1" --> "0..*" AUDITORIA_ADMIN : FK admin_user_id
-    ENLACES "1" --> "0..*" EVENTOS_CLIC : FK link_id
-    PERFILES "1" --> "0..*" EVENTOS_VISTA : FK profile_id
+    %% Logical Relationships with Referential Integrity
+    USERS "1" --> "0..1" PROFILES : FK user_id
+    PROFILES "1" --> "0..*" LINKS : FK profile_id
+    PROFILES "1" --> "0..*" SOCIAL_LINKS : FK profile_id
+    THEMES "1" <-- "0..*" PROFILES : FK theme_id
+    PROFILES "1" --> "0..1" CUSTOM_THEMES : FK profile_id
+    USERS "1" --> "0..*" SUBSCRIPTIONS : FK user_id
+    PLANS "1" --> "0..*" SUBSCRIPTIONS : FK plan_id
+    USERS "1" --> "0..*" SECURITY_FLAGS : FK user_id
+    USERS "0..1" <-- "0..*" SECURITY_FLAGS : FK reviewed_by
+    USERS "0..1" <-- "0..*" DOMAIN_BLOCKLIST : FK added_by
+    USERS "1" --> "0..*" ADMIN_AUDIT_LOGS : FK admin_user_id
+    LINKS "1" --> "0..*" CLICK_EVENTS : FK link_id
+    PROFILES "1" --> "0..*" PAGE_VIEWS : FK profile_id
 ```
 
-### 2.2 Proceso Formal de Normalización (1FN, 2FN, 3FN)
+### 2.2 Formal Normalization Analysis (1NF, 2NF, 3NF)
 
-A continuación se demuestra matemáticamente cómo el esquema lógico de OneLink alcanza la **Tercera Forma Normal (3FN)** sin anomalías:
+Below is the formal proof of how the OneLink relational schema satisfies **Third Normal Form (3NF)** without redundancy or anomalies:
 
-#### 1. Primera Forma Normal (1FN) — Atomicidad de Dominios
-* **Definición**: Todos los atributos contienen únicamente valores atómicos indivisibles; no existen grupos repetitivos ni arrays no escalables.
-* **Violación Típica**: Guardar una lista de redes sociales o múltiples URLs dentro de una sola celda como `social_links: "ig:alex,tk:alex,yt:alex"`.
-* **Solución OneLink**: Se desacopló la entidad `social_links`, donde cada fila almacena una única tupla atómica: `(id, profile_id, platform, url, position, is_active)`. De igual forma, los enlaces son entidades independientes asociadas por Clave Foránea (`profile_id`).
+#### 1. First Normal Form (1NF) — Domain Atomicity
+* **Requirement**: All attributes must hold atomic, indivisible values. No repeating groups or unindexed arrays.
+* **Classical Pitfall**: Storing social media handles or multiple links inside a single cell (e.g., `social_links: "ig:alex,tk:alex,yt:alex"`).
+* **OneLink Solution**: Decoupled into `social_links`, where each row stores an atomic tuple: `(id, profile_id, platform, url, position, is_active)`. Similarly, creator links are distinct rows linked via Foreign Key (`profile_id`).
 
-#### 2. Segunda Forma Normal (2FN) — Dependencia Funcional Completa
-* **Definición**: La relación está en 1FN y cada atributo no clave depende funcionalmente de la **totalidad** de la Clave Primaria, no de una parte de una clave compuesta.
-* **Demostración de Dependencias Funcionales (DF)**:
-  * En `USUARIOS`: `id ➔ {email, password_hash, name, google_id, role, is_banned}`
-  * En `PERFILES`: `id ➔ {user_id, username, title, bio, theme_id, is_published}`
-  * En `ENLACES`: `id ➔ {profile_id, title, url, type, position, is_active}`
-* Como todas las tablas transaccionales utilizan Claves Primarias Simples (`UUID id`), **no existen claves compuestas parciales en las tablas del núcleo transaccional**, cumpliendo la 2FN por definición estructural.
-* En las tablas de eventos (`click_events`), la clave compuesta es `(id, clicked_at)` por requerimiento del particionamiento por rangos temporales de TimescaleDB.
+#### 2. Second Normal Form (2NF) — Full Functional Dependency
+* **Requirement**: The relation is in 1NF and every non-key attribute is fully functionally dependent on the **entire** Primary Key, rather than on a subset of a composite key.
+* **Functional Dependencies (FD)**:
+  * In `USERS`: `id ➔ {email, password_hash, name, google_id, role, is_banned}`
+  * In `PROFILES`: `id ➔ {user_id, username, title, bio, theme_id, is_published}`
+  * In `LINKS`: `id ➔ {profile_id, title, url, type, position, is_active}`
+* Because every core transactional table utilizes a single-column cryptographic `UUID` Primary Key (`id PK`), **partial key dependencies are mathematically impossible**, satisfying 2NF by design.
+* In event telemetry tables (`click_events`, `page_views`), the composite key `(id, clicked_at)` is strictly necessary for TimescaleDB partition chunking.
 
-#### 3. Tercera Forma Normal (3FN) — No Dependencia Transitiva
-* **Definición**: La relación está en 2FN y no existen atributos no clave que dependan funcionalmente de otros atributos no clave (es decir, si `A ➔ B` y `B ➔ C`, entonces `C` debe residir en su propia relación).
-* **Violación Típica**: Almacenar en la tabla `subscriptions` el nombre del plan y su precio: `(id, user_id, plan_name, price_cents)`. Si el precio del plan cambia, se tendrían que actualizar miles de registros de suscripción (anomalía de modificación).
-* **Solución OneLink**: Se crea la relación `PLANES` (`code ➔ {name, price_cents, interval}`). La relación `SUSCRIPCIONES` contiene únicamente la clave foránea `plan_id`. Si el precio de un plan cambia en Stripe, solo se actualiza una única tupla en `PLANES`.
+#### 3. Third Normal Form (3NF) — Non-Transitive Dependency
+* **Requirement**: The relation is in 2NF and no non-key attribute is transitively dependent on another non-key attribute (i.e., if `A ➔ B` and `B ➔ C`, then `C` must live in its own relation).
+* **Classical Pitfall**: Storing plan tier names and monthly prices inside the `subscriptions` table: `(id, user_id, plan_name, price_cents)`. If a plan price updates in Stripe, thousands of subscription rows would require updates (update anomaly).
+* **OneLink Solution**: The `PLANS` relation encapsulates pricing (`code ➔ {name, price_cents, interval}`). The `SUBSCRIPTIONS` relation stores only the foreign key `plan_id`. Price adjustments update a single canonical tuple.
 
-### 2.3 Desnormalizaciones Tácticas de Alto Rendimiento Justificadas
+### 2.3 Deliberate High-Throughput Denormalizations
 
-En sistemas distribuidos de alto tráfico, la adhesión dogmática a la 3FN puede degradar severamente la latencia en operaciones de lectura intensa (*Read-Heavy Workloads*). OneLink aplica dos desnormalizaciones conscientes:
+In high-traffic distributed architectures, dogmatic adherence to 3NF can compromise read latencies. OneLink incorporates two documented, tactical denormalizations:
 
-| Campo Desnormalizado | Tabla | Forma Normal Estricta | Justificación de Ingeniería (High-Throughput) | Mecanismo de Consistencia |
+| Denormalized Field | Target Table | Strict Normal Form Status | Engineering Rationale (High-Throughput Read SLA) | Consistency Mechanism |
 |---|---|---|---|---|
-| **`click_count`** (`BIGINT`) | `links` | Violación 3FN (es un valor derivado de `click_events`) | Si un perfil recibe 50,000 clics diarios, calcular `COUNT(*)` en el dashboard del creador generaría lecturas secuenciales masivas en disco. | BullMQ acumula contadores en memoria en Redis y ejecuta un `UPDATE links SET click_count = click_count + batch` cada 10s. |
-| **`features`** (`JSONB`) | `plans` | Violación 1FN (objeto estructurado no relacional) | Permite añadir nuevas banderas de suscripción (`custom_domains`, `sentinel_ai_pro`, `max_links`) sin requerir migraciones DDL de esquema bloqueantes en PostgreSQL en caliente. | Validación rígida en tiempo de ejecución garantizada por Zod en `@repo/shared`. |
-| **`metadata`** (`JSONB`) | `admin_audit_logs` | Violación 1FN | Almacena el snapshot diferencial (diff before/after) de cualquier entidad modificada por el Super Admin sin requerir una tabla por cada tipo de entidad del sistema. | Ledger de auditoría inmutable (solo `INSERT`, nunca `UPDATE` ni `DELETE`). |
+| **`click_count`** (`BIGINT`) | `links` | Violates 3NF (derived attribute of `click_events`) | If a creator receives 50,000 daily clicks, computing `COUNT(*)` on every dashboard visit triggers heavy I/O disk scans. | BullMQ batches memory increments in Redis and executes an atomic `UPDATE links SET click_count = click_count + batch` every 10s. |
+| **`features`** (`JSONB`) | `plans` | Violates 1NF (structured non-scalar document) | Enables adding new subscription feature flags (`custom_domains`, `sentinel_ai_pro`, `max_links`) without blocking DDL schema migrations in production PostgreSQL. | Strict runtime typing validated via Zod schemas in `@repo/shared`. |
+| **`metadata`** (`JSONB`) | `admin_audit_logs` | Violates 1NF | Stores state diff snapshots (before/after) of modified entities without creating dedicated audit tables for each domain model. | Immutable append-only ledger (`INSERT` only; never `UPDATE` or `DELETE`). |
 
 ---
 
-## 3. Nivel 3: Modelo Físico & Relacional (Crow's Foot ERD + PostgreSQL + TimescaleDB)
+## 3. Level 3: Physical Relational Model (Crow's Foot ERD + PostgreSQL + TimescaleDB)
 
-El modelo físico implementa las estructuras relacionales optimizadas para los motores de almacenamiento **PostgreSQL 16** (transaccional ACID) y **TimescaleDB** (series temporales distribuidas):
+The physical model specifies concrete storage representations optimized for **PostgreSQL 16** (ACID transactional integrity) and **TimescaleDB** (scalable time-series telemetry):
 
-### 3.1 Diagrama Crow's Foot Físico de Base de Datos
+### 3.1 Physical Crow's Foot Database Diagram
 
 ```mermaid
 erDiagram
@@ -530,16 +530,16 @@ erDiagram
 
 ---
 
-## 4. Particionamiento TimescaleDB (Hypertables) & Compresión Columnar
+## 4. TimescaleDB Partitioning (Hypertables) & Columnar Compression
 
-Para garantizar que millones de eventos de telemetría no saturen el almacenamiento ni degraden los tiempos de consulta del creador:
+To guarantee that millions of click events do not degrade creator dashboard queries or overwhelm I/O bandwidth:
 
 ```sql
--- 1. Conversión a Hypertables particionadas por día
+-- 1. Conversion to 1-day chunk time-series Hypertables
 SELECT create_hypertable('click_events', 'clicked_at', chunk_time_interval => INTERVAL '1 day');
 SELECT create_hypertable('page_views', 'viewed_at', chunk_time_interval => INTERVAL '1 day');
 
--- 2. Compresión Columnar automática para fragmentos mayores a 7 días
+-- 2. Automatic Columnar Compression policy for chunks older than 7 days
 ALTER TABLE click_events SET (
   timescaledb.compress,
   timescaledb.compress_segmentby = 'profile_id, link_id',
@@ -547,7 +547,7 @@ ALTER TABLE click_events SET (
 );
 SELECT add_compression_policy('click_events', INTERVAL '7 days');
 
--- 3. Vista Materializada Continua para métricas por hora
+-- 3. Continuous Materialized View for hourly rollups
 CREATE MATERIALIZED VIEW hourly_link_clicks
 WITH (timescaledb.continuous) AS
 SELECT
@@ -563,12 +563,12 @@ GROUP BY link_id, profile_id, time_bucket('1 hour', clicked_at);
 
 ---
 
-## 5. Plan Estratégico de Indexación
+## 5. Strategic Indexing Plan
 
-| Tabla | Definición del Índice | Patrón de Acceso Justificado |
+| Table | Index Definition | Access Pattern Justification |
 |---|---|---|
-| `profiles` | `CREATE UNIQUE INDEX idx_profiles_username ON profiles(LOWER(username))` | **Hot Path**: Resolución instantánea (<1ms) de slugs de creador en `/@username` |
-| `links` | `CREATE INDEX idx_links_profile_position ON links(profile_id, position) WHERE is_active = true` | Índice parcial: Carga ultra-rápida de enlaces activos ordenados por posición |
-| `security_flags` | `CREATE INDEX idx_security_flags_risk ON security_flags(risk_score DESC, created_at DESC)` | Alimenta la cola de moderación del Super Admin priorizando amenazas críticas |
-| `domain_blocklist` | `CREATE UNIQUE INDEX idx_blocklist_pattern ON domain_blocklist(domain_pattern)` | Búsqueda y sincronización instantánea con los sets de Redis |
-| `click_events` | `CREATE INDEX idx_clicks_link_time ON click_events(link_id, clicked_at DESC)` | Rango de fechas para las gráficas analíticas del estudio |
+| `profiles` | `CREATE UNIQUE INDEX idx_profiles_username ON profiles(LOWER(username))` | **Hot Path**: Instantaneous (<1ms) case-insensitive vanity slug resolution on `/@username` |
+| `links` | `CREATE INDEX idx_links_profile_position ON links(profile_id, position) WHERE is_active = true` | Partial index: Rapid fetching of active links pre-sorted by position |
+| `security_flags` | `CREATE INDEX idx_security_flags_risk ON security_flags(risk_score DESC, created_at DESC)` | Feeds the Super Admin moderation stream prioritizing critical threats |
+| `domain_blocklist` | `CREATE UNIQUE INDEX idx_blocklist_pattern ON domain_blocklist(domain_pattern)` | Fast lookups and O(1) synchronization with Redis blacklist sets |
+| `click_events` | `CREATE INDEX idx_clicks_link_time ON click_events(link_id, clicked_at DESC)` | Powers custom date range graphs on creator analytics dashboards |

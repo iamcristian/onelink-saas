@@ -23,19 +23,21 @@ docs/
 ├── architecture/                       # System & Data Architecture
 │   ├── database-design.md              # Entity-Relationship Diagram (ERD), Tables, Indexes, TimescaleDB
 │   ├── system-architecture.md          # C4 Model Diagrams (Context, Container, Component, Code)
-│   ├── sequence-flows.md               # Mermaid Sequence Diagrams (Profile View, Click Tracking, Cache)
-│   └── user-flows-and-sitemap.md       # Full User Flow, Sitemap, and 5-State Screen Matrix
+│   └── sequence-flows.md               # Mermaid Sequence Diagrams (Profile View, Click Tracking, Cache)
 │
 ├── ui-ux/                              # Interface & Experience Design
 │   ├── DESIGN.md                       # OneLink Carbon Architecture Semantic Design System
 │   ├── wireframes-and-mockups.md       # Screen Specifications, Split-Screen Dashboard, Stitch Alignment
+│   ├── user-flows-and-sitemap.md       # Full User Flow, Sitemap, and 5-State Screen Matrix
 │   ├── prompts/
-│   │   └── screen-prompts.md           # Stitch-Optimized Generation & Edit Prompts for all 4 Screens
+│   │   └── screen-prompts.md           # Stitch-Optimized Generation & Edit Prompts for Platform Screens
 │   └── mockups/                        # High-Fidelity Google Stitch Visual Mockups & Source HTML
 │       ├── screen-1-profile.png & .html          # Public Mobile Profile (/@alexrivera)
 │       ├── screen-2-studio-dashboard.png & .html # OneLink Studio Links Manager (60/40 Split)
 │       ├── screen-3-appearance.png & .html       # OneLink Studio Appearance & Themes (60/40 Split)
-│       └── screen-4-analytics.png & .html        # OneLink Studio Performance Analytics & Telemetry
+│       ├── screen-4-analytics.png & .html        # OneLink Studio Performance Analytics & Telemetry
+│       ├── screen-5-sentinel-admin.png & .html   # OneLink Sentinel AI & Super Admin Moderation
+│       └── screen-6-owner-billing.png & .html    # SaaS Owner Billing Studio & Plan Management
 │
 └── adr/                                # Architecture Decision Records
     ├── 001-monorepo-pnpm-turbo.md      # Selection of pnpm workspaces & Turborepo 2
@@ -56,10 +58,10 @@ docs/
 | **Data Design** | [architecture/database-design.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/architecture/database-design.md) | Mermaid ERD, Data Dictionary, TimescaleDB Hypertables, Indexes | ✅ Approved |
 | **System Design** | [architecture/system-architecture.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/architecture/system-architecture.md) | C4 Context, Container, Component diagrams, Cache topologies | ✅ Approved |
 | **Sequence Flows** | [architecture/sequence-flows.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/architecture/sequence-flows.md) | Hot path profile read, Beacon click tracking, Cache eviction | ✅ Approved |
-| **User Flows & Sitemap** | [architecture/user-flows-and-sitemap.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/architecture/user-flows-and-sitemap.md) | Visitor vs Creator flows, complete sitemap, 5-state UI matrix | ✅ Approved |
+| **User Flows & Sitemap** | [ui-ux/user-flows-and-sitemap.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/user-flows-and-sitemap.md) | Visitor vs Creator flows, complete sitemap, 5-state UI matrix | ✅ Approved |
 | **Design System** | [ui-ux/DESIGN.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/DESIGN.md) | Carbon Architecture tokens (Zinc 950 `#09090b`, Geist + JetBrains Mono) | ✅ Approved |
 | **UI/UX & Wireframes**| [ui-ux/wireframes-and-mockups.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/wireframes-and-mockups.md) | Screen layouts, 60/40 Split Dashboard, Google Stitch specs | ✅ Approved |
-| **Visual Mockups** | [ui-ux/mockups/](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/) | 4 High-fidelity Stitch screens (PNGs + self-contained HTML) | ✅ 100% Generated |
+| **Visual Mockups** | [ui-ux/mockups/](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/) | 6 High-fidelity Stitch screens (PNGs + self-contained HTML) | ✅ 100% Generated |
 | **Architecture Decisions**| [adr/](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/adr/) | Formal ADRs 001 through 004 documenting key tech trade-offs | ✅ Approved |
 | **Test Strategy** | [test-plan.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/test-plan.md) | TDD Red-Green-Refactor, Supertest integration, Playwright E2E | ✅ Approved |
 | **Master Roadmap** | [master-plan.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/master-plan.md) | 16-week execution timeline from foundation to production | ✅ Approved |
