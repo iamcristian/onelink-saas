@@ -175,6 +175,61 @@ The Creator Dashboard uses a **2-Column Split-View** on desktop and a drawer/bot
 
 ---
 
+### 2.5 Screen 5: OneLink Sentinel & Super Admin Moderation Console (`/admin/moderation`)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ONELINK // TRUST & SAFETY           [🛡️ SENTINEL ENGINE: ONLINE (18ms)]            [Admin: cris@onelink] │
+├───────────────────┬─────────────────────────────────────────────────────────────────────────────────────┤
+│ 🛡️ Moderation     │  SECURITY TELEMETRY OVERVIEW                                                        │
+│ 🚨 Threat Stream  │  ┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐             │
+│ 🛑 Domain Blocks  │  │ Intercepted   │ │ Zero-Token AI │ │ Phishing/Drain│ │ Auto-Blocked  │             │
+│ 👥 Accounts       │  │ 1,482 Links   │ │ 18.4ms In-Proc│ │ 42 Critical   │ │ 99.2% Rate    │             │
+│ ⚙️ ML Model Weights│ └───────────────┘ └───────────────┘ └───────────────┘ └───────────────┘             │
+│                   │                                                                                     │
+│                   │  REAL-TIME THREAT INSPECTION QUEUE                                                  │
+│                   │  ┌────────────────────────────────────────────────────────────────────────────────┐ │
+│                   │  │ [CRITICAL 0.94] http://metamask-security-auth.xyz/drain                        │ │
+│                   │  │ User: @cryptopromos (IP: 185.220.101.4 - NL) • Detected: Punycode Spoofing    │ │
+│                   │  │ [Tensor Confidence: 98.4%] [Engine: ONNX DistilBERT Local Quantized]           │ │
+│                   │  │ Action: [ Suspend Account ]  [ Blocklist Domain *.xyz ]  [ Dismiss False Pos ] │ │
+│                   │  ├────────────────────────────────────────────────────────────────────────────────┤ │
+│                   │  │ [HIGH 0.82] https://paypal-account-verify-login.top/account                    │ │
+│                   │  │ User: @deals_daily (IP: 194.26.29.112 - RU) • Detected: Brand Keyword Hijack   │ │
+│                   │  │ [Tensor Confidence: 91.2%] [Status: Auto-Blocked at Ingestion]                 │ │
+│                   │  │ Action: [ Suspend Account ]  [ Blocklist Domain *.top ]  [ View Profile ]      │ │
+│                   │  └────────────────────────────────────────────────────────────────────────────────┘ │
+└───────────────────┴─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 2.6 Screen 6: SaaS Owner Billing, Pricing & Team Studio (`/studio/billing`)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ONELINK // FOUNDER STUDIO          [MRR: $18,450.00 / ARR: $221,400]               [Owner: cris@onelink]│
+├───────────────────┬─────────────────────────────────────────────────────────────────────────────────────┤
+│ 💳 Pricing Tiers  │  SUBSCRIPTION TIERS & PRODUCT CATALOG (Stripe Sync: Active)                         │
+│ 📈 MRR Telemetry  │  ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐               │
+│ 👥 Team Invites   │  │ 🆓 FREE PLAN       │ │ ⚡ CREATOR PRO     │ │ 👑 ENTERPRISE      │               │
+│ 🧾 Invoices       │  │ $0 / forever       │ │ $9 / month         │ │ $29 / month        │               │
+│ ⚙️ Stripe Config  │  │ • 5 Links Limit    │ │ • Unlimited Links  │ │ • Dedicated CNAME  │               │
+│                   │  │ • Standard Theme   │ │ • Custom Themes/CSS│ │ • Sentinel AI Pro │               │
+│                   │  │ • OneLink Badge    │ │ • Remove Badge     │ │ • 5 Team Seats     │               │
+│                   │  │ • 3,420 Active     │ │ • 1,280 Active     │ │ • 240 Active       │               │
+│                   │  │ [ Edit Tier Limit] │ │ [ Adjust Price ]   │ │ [ Adjust Price ]   │               │
+│                   │  └────────────────────┘ └────────────────────┘ └────────────────────┘               │
+│                   │                                                                                     │
+│                   │  TEAM COLLABORATION & SEAT INVITATIONS                                              │
+│                   │  [+ Invite Collaborator]                                                            │
+│                   │  • sarah@creatoragency.com  — Role: Editor (Pro Workspace)       [ Revoke ]        │
+│                   │  • alex@moderation.team     — Role: Safety Admin                 [ Manage ]        │
+└───────────────────┴─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 3. Component Hierarchy Tree (Mermaid)
 
 ```mermaid
@@ -187,33 +242,33 @@ graph TD
             PROFILE_CARD["ProfileHeader<br/>(Avatar, Title, Bio, Socials)"]
             LINK_LIST["LinkList<br/>(Renders polymorphic item list)"]
             LINK_ITEM["LinkCard<br/>(Click Beacon tracker)"]
-            HEADER_ITEM["HeaderCard<br/>(Section text)"]
-            DIVIDER_ITEM["DividerCard<br/>(Visual divider)"]
             FOOTER["BrandFooter"]
 
             PROFILE_PAGE --> PROFILE_CARD
             PROFILE_PAGE --> LINK_LIST
             LINK_LIST --> LINK_ITEM
-            LINK_LIST --> HEADER_ITEM
-            LINK_LIST --> DIVIDER_ITEM
             PROFILE_PAGE --> FOOTER
         end
 
-        subgraph DashboardRoutes["Creator Studio Routes (Protected)"]
-            DASH_LAYOUT["src/app/dashboard/layout.tsx<br/>(Sidebar, TopNav, LivePreviewFrame)"]
-            TAB_LINKS["src/app/dashboard/links/page.tsx<br/>(DndContext, LinkListEditor)"]
-            TAB_THEMES["src/app/dashboard/appearance/page.tsx<br/>(ThemePicker, CustomThemeEditor)"]
-            TAB_ANALYTICS["src/app/dashboard/analytics/page.tsx<br/>(MetricsCards, TimeSeriesChart, TopLinksTable)"]
-            TAB_SETTINGS["src/app/dashboard/settings/page.tsx<br/>(SEO settings, Domain, Account)"]
+        subgraph CreatorRoutes["Creator Studio Routes (Protected)"]
+            DASH_LAYOUT["src/app/studio/layout.tsx<br/>(Sidebar, TopNav, LivePreviewFrame)"]
+            TAB_LINKS["src/app/studio/links/page.tsx<br/>(DndContext, LinkListEditor)"]
+            TAB_THEMES["src/app/studio/appearance/page.tsx<br/>(ThemePicker, CustomThemeEditor)"]
+            TAB_ANALYTICS["src/app/studio/analytics/page.tsx<br/>(MetricsCards, TimeSeriesChart)"]
 
             DASH_LAYOUT --> TAB_LINKS
             DASH_LAYOUT --> TAB_THEMES
             DASH_LAYOUT --> TAB_ANALYTICS
-            DASH_LAYOUT --> TAB_SETTINGS
+        end
+
+        subgraph AdminRoutes["Trust & Safety + Owner Routes (RBAC Protected)"]
+            ADMIN_MODERATION["src/app/admin/moderation/page.tsx<br/>(ThreatStream, BanManager, ModelStatus)"]
+            OWNER_BILLING["src/app/studio/billing/page.tsx<br/>(TierEditor, MRRTracker, TeamInvites)"]
         end
 
         ROOT --> PublicRoutes
-        ROOT --> DashboardRoutes
+        ROOT --> CreatorRoutes
+        ROOT --> AdminRoutes
     end
 ```
 
@@ -221,17 +276,19 @@ graph TD
 
 ## 4. Google Stitch / Prototyping Alignment
 
-All 4 target views have been formally generated, tested, and stored within the unified Google Stitch project (`14141085438200447026`) and mirrored in `docs/ui-ux/mockups/`:
+All 6 target views form a complete, production-grade ecosystem inside the unified Google Stitch project (`14141085438200447026`) and mirrored in `docs/ui-ux/mockups/`:
 
 | Screen | Viewport | PNG Mockup | Source HTML | Stitch Screen ID |
 |---|---|---|---|---|
 | **1. Public Profile** (`/@alexrivera`) | Mobile 390x844 | [screen-1-profile.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.png) | [screen-1-profile.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.html) | `c30c125858234fca8b5fe40e4cacaf18` |
-| **2. OneLink Studio (Links & Content)** | Desktop 1440p (60/40) | [screen-2-studio-dashboard.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.png) | [screen-2-studio-dashboard.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.html) | `28acc78d161d4c0e9043c33a253a6509` |
+| **2. OneLink Studio (Links & Content)** | Desktop 1440p (60/40) | [screen-2-studio-dashboard.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.png) | [screen-2-studio-dashboard.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.html) | `3b207412755a4c7cb36b6db10b8ca731` |
 | **3. Appearance & Themes Customizer** | Desktop 1440p (60/40) | [screen-3-appearance.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.png) | [screen-3-appearance.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.html) | `b7727bd8e4194a6cb808d171e3c3d79a` |
 | **4. Performance Analytics Dashboard** | Desktop 1440p (Full) | [screen-4-analytics.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.png) | [screen-4-analytics.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.html) | `abefbcf5251c48c0b9b8cbd9d4bead72` |
+| **5. Sentinel AI & Super Admin Console** | Desktop 1440p (Full) | [screen-5-sentinel-admin.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-5-sentinel-admin.png) | [screen-5-sentinel-admin.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-5-sentinel-admin.html) | `56f795e49afc48eab739aaff864c6e4d` |
+| **6. SaaS Owner Billing & Subscriptions** | Desktop 1440p (Full) | [screen-6-owner-billing.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-6-owner-billing.png) | [screen-6-owner-billing.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-6-owner-billing.html) | `7166b9dd037147f480ff75607c67a554` |
 
-1. **Design Tokens Export**: All token values in Section 1 map directly to Tailwind CSS variables in `apps/web/src/app/globals.css`.
-2. **Component Boundaries**: Each component (`LinkCard`, `ProfileHeader`, `LivePhonePreview`, `ThemeCard`) has strict atomic props validated with `@repo/shared` schemas.
+1. **Design Tokens Export**: All token values map directly to Tailwind CSS variables in `apps/web/src/app/globals.css`.
+2. **Component Boundaries**: Each component (`LinkCard`, `ProfileHeader`, `LivePhonePreview`, `ThemeCard`, `ThreatCard`, `PlanTierCard`) has strict atomic props validated with `@repo/shared` schemas.
 3. **Responsive Breakpoints**:
    - `sm`: 640px (Mobile portrait to tablet)
    - `md`: 768px (Split dashboard unlocks drawer preview)

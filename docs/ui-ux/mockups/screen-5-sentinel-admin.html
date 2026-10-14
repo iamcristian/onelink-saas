@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OneLink // Trust &amp; Safety - Sentinel Console</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Script -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary-fixed": "#e2e2e2",
+            "primary-container": "#e2e2e2",
+            "inverse-surface": "#e5e1e4",
+            "error-container": "#93000a",
+            "surface-container": "#201f22",
+            "surface": "#131315",
+            "surface-tint": "#c6c6c7",
+            "surface-container-low": "#1c1b1d",
+            "surface-bright": "#39393b",
+            "secondary": "#c8c5ca",
+            "primary": "#ffffff",
+            "on-tertiary-container": "#636565",
+            "inverse-on-surface": "#313032",
+            "error": "#ffb4ab",
+            "secondary-fixed": "#e4e1e6",
+            "on-tertiary-fixed": "#1a1c1c",
+            "on-surface-variant": "#c4c7c8",
+            "on-primary-fixed-variant": "#454747",
+            "background": "#131315",
+            "surface-container-lowest": "#0e0e10",
+            "secondary-container": "#47464a",
+            "on-primary": "#2f3131",
+            "tertiary-container": "#e2e2e2",
+            "on-secondary-fixed": "#1b1b1e",
+            "surface-dim": "#131315",
+            "secondary-fixed-dim": "#c8c5ca",
+            "on-primary-container": "#636565",
+            "on-tertiary-fixed-variant": "#454747",
+            "on-secondary-fixed-variant": "#47464a",
+            "tertiary": "#ffffff",
+            "surface-variant": "#353437",
+            "on-error-container": "#ffdad6",
+            "tertiary-fixed": "#e2e2e2",
+            "on-error": "#690005",
+            "surface-container-highest": "#353437",
+            "surface-container-high": "#2a2a2c",
+            "inverse-primary": "#5d5f5f",
+            "on-secondary-container": "#b6b4b8",
+            "on-tertiary": "#2f3131",
+            "on-background": "#e5e1e4",
+            "outline": "#8e9192",
+            "on-primary-fixed": "#1a1c1c",
+            "on-secondary": "#303033",
+            "on-surface": "#e5e1e4",
+            "tertiary-fixed-dim": "#c6c6c7",
+            "primary-fixed-dim": "#c6c6c7",
+            "outline-variant": "#444748"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "margin-desktop": "2rem",
+            "space-xl": "2.5rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "space-xs": "0.25rem",
+            "gutter-desktop": "1.5rem",
+            "margin": "1rem"
+          },
+          "fontFamily": {
+            "headline-xl": ["Geist"],
+            "label-md": ["JetBrains Mono"],
+            "body-md": ["Geist"],
+            "body-lg": ["Geist"],
+            "headline-lg": ["Geist"],
+            "display-lg-mobile": ["Geist"],
+            "headline-md": ["Geist"],
+            "display-lg": ["Geist"],
+            "headline-xl-mobile": ["Geist"],
+            "headline-sm": ["Geist"],
+            "caption": ["Geist"],
+            "body-sm": ["Geist"],
+            "label-sm": ["JetBrains Mono"]
+          },
+          "fontSize": {
+            "headline-xl": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "500" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "-0.005em", "fontWeight": "400" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400" }],
+            "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+            "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "500" }],
+            "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.03em", "fontWeight": "600" }],
+            "headline-xl-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "500" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "caption": ["11px", { "lineHeight": "14px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 18px;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Monochromatic instrument styling */
+    .hairline-border {
+      border: 1px solid #27272a;
+    }
+    .specular-border {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-surface {
+      background-color: #121215;
+      backdrop-filter: blur(12px);
+    }
+    /* Custom Scrollbar for dense data panels */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0e0e10;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #444748;
+    }
+  </style>
+</head>
+<body class="bg-[#09090b] text-on-surface antialiased selection:bg-surface-container-highest selection:text-primary min-h-screen flex flex-col font-body-md text-body-md">
+<!-- ========================================================================= -->
+<!-- 1. TOP BAR (Conforming strictly to Shared Component: TopNavBar)             -->
+<!-- ========================================================================= -->
+<header class="flex justify-between items-center w-full px-space-lg h-14 border-b border-outline-variant dark:border-outline-variant bg-surface-container-lowest dark:bg-surface-container-lowest fixed top-0 left-0 right-0 z-50">
+<!-- Brand Anchor & Live Beacon -->
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs text-headline-sm font-headline-sm tracking-tight font-semibold text-primary dark:text-primary">
+<span class="material-symbols-outlined text-primary" data-icon="shield">shield</span>
+<span>OneLink // Trust &amp; Safety</span>
+</div>
+<div class="h-4 w-px bg-outline-variant mx-1 hidden sm:block"></div>
+<!-- Engine Live Status Indicator -->
+<div class="hidden lg:flex items-center gap-2 px-space-sm py-0.5 rounded-full bg-surface-container-low border border-outline-variant">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Sentinel AI: In-Process Tensor Online (18.4ms, Zero-Token)</span>
+</div>
+</div>
+<!-- Navigation Links & Global Search -->
+<div class="hidden xl:flex items-center gap-6">
+<div class="relative w-80">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline pointer-events-none" data-icon="search">search</span>
+<input class="w-full bg-[#121215] border border-[#27272a] rounded-full py-1.5 pl-9 pr-12 text-primary font-body-sm text-body-sm placeholder:text-outline focus:outline-none focus:border-primary transition-colors" placeholder="Filter threats, target domains, IP, or user IDs... (⌘K)" type="text"/>
+<kbd class="absolute right-3 top-2 px-1.5 py-0.5 text-[10px] font-label-sm text-outline bg-surface-container rounded border border-outline-variant">⌘K</kbd>
+</div>
+<!-- JSON Navigation Items (Active: Threat Feed) -->
+<nav class="flex items-center gap-5">
+<a class="text-primary dark:text-primary border-b border-primary dark:border-primary pb-1 font-label-md text-label-md transition-colors" href="#threat-feed">Threat Feed</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary font-label-md text-label-md transition-colors" href="#interception-log">Interception Log</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary font-label-md text-label-md transition-colors" href="#domain-policy">Domain Policy</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary font-label-md text-label-md transition-colors" href="#tensor-diagnostics">Tensor Diagnostics</a>
+</nav>
+</div>
+<!-- Trailing Actions & Admin Profile -->
+<div class="flex items-center gap-space-sm">
+<button class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-[#09090b] font-label-sm text-label-sm font-semibold hover:bg-neutral-200 active:scale-[0.99] transition-all">
+<span class="material-symbols-outlined text-[16px]" data-icon="gavel">gavel</span>
+<span>Suspend User</span>
+</button>
+<button class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#18181b] border border-outline-variant text-primary font-label-sm text-label-sm hover:border-outline active:scale-[0.99] transition-all">
+<span class="material-symbols-outlined text-[16px]" data-icon="block">block</span>
+<span>Ban Domain</span>
+</button>
+<!-- Trailing Icon Actions from JSON: terminal, notifications, settings -->
+<div class="flex items-center gap-1 border-l border-outline-variant pl-2 ml-1">
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-colors active:scale-[0.99]" title="Terminal CLI">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-colors active:scale-[0.99]" title="Notifications">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-colors active:scale-[0.99]" title="Engine Settings">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+<!-- Admin Profile Avatar -->
+<div class="flex items-center gap-2 pl-2 border-l border-outline-variant ml-1">
+<div class="relative">
+<img class="w-7 h-7 rounded-full object-cover border border-outline-variant" data-alt="Cris Super Admin Profile Avatar rendered in an intense monochromatic high-contrast studio portrait. Dark obsidian lighting with clean specular rim highlights illuminating sharp facial features. Pristine executive cybersecurity lead aesthetic in deep blacks and titanium whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLO2HpHHdxsRWR9CMVuMWVp8bRYhC8B0vRLcGKOhTekeJQIaKWhnXTVCaFaQ7PnVzr8vTdJ9NtEa74I831l2XBM6Hm5J6oxUXNL4yNFCJus0QOs8IcZoR0cTlYYVPVk0TBytBeir1YvDLRmcAP68E5IFY7p6AGQTk6942Gnc0A8IYiusZ4UyCiqeQsQytuutQB5xuNfXeK8ZvPxFohIHVHU1h35J9B2kCHC14sec2TRbFiMRWv8vF9OKJ3P9TLLRV8gxRmGr2TSPtH"/>
+<span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-primary ring-2 ring-surface-container-lowest"></span>
+</div>
+<div class="hidden 2xl:flex flex-col">
+<span class="font-label-sm text-[11px] text-primary leading-tight">@cris</span>
+<span class="font-caption text-[10px] text-on-surface-variant">Super Admin</span>
+</div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- 2. SIDEBAR DOCKED PANEL (Conforming to Shared Component: SideNavBar)       -->
+<!-- ========================================================================= -->
+<aside class="fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-64 flex flex-col justify-between p-space-md border-r border-outline-variant dark:border-outline-variant bg-surface-container-lowest dark:bg-surface-container-lowest z-40 hidden md:flex">
+<!-- Header Crest / Subtext -->
+<div>
+<div class="flex items-center gap-space-sm px-2 mb-4 pb-3 border-b border-outline-variant">
+<div class="w-8 h-8 rounded-md bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="security">security</span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-md font-label-md uppercase tracking-wider text-primary dark:text-primary">SENTINEL-CORE</span>
+<span class="font-caption text-caption text-on-surface-variant">v4.18.2-rt :: Active</span>
+</div>
+</div>
+<!-- Navigation Tabs (Active: Threat Streams) -->
+<nav class="space-y-1">
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-DEFAULT bg-surface-container-high dark:bg-surface-container-high text-primary dark:text-primary font-label-sm text-label-sm border border-outline-variant dark:border-outline-variant active:translate-x-0.5 transition-transform duration-100" href="#threat-streams">
+<span class="material-symbols-outlined text-primary" data-icon="security">security</span>
+<span>Threat Streams</span>
+</a>
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary font-label-sm text-label-sm hover:bg-surface-container dark:hover:bg-surface-container transition-colors duration-150 active:translate-x-0.5" href="#interception-engine">
+<span class="material-symbols-outlined" data-icon="shield">shield</span>
+<span>Interception Engine</span>
+</a>
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary font-label-sm text-label-sm hover:bg-surface-container dark:hover:bg-surface-container transition-colors duration-150 active:translate-x-0.5" href="#domain-registry">
+<span class="material-symbols-outlined" data-icon="domain">domain</span>
+<span>Domain Registry</span>
+</a>
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary font-label-sm text-label-sm hover:bg-surface-container dark:hover:bg-surface-container transition-colors duration-150 active:translate-x-0.5" href="#audit-ledgers">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span>Audit Ledgers</span>
+</a>
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary font-label-sm text-label-sm hover:bg-surface-container dark:hover:bg-surface-container transition-colors duration-150 active:translate-x-0.5" href="#model-telemetry">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span>Model Telemetry</span>
+</a>
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary font-label-sm text-label-sm hover:bg-surface-container dark:hover:bg-surface-container transition-colors duration-150 active:translate-x-0.5" href="#rule-compiler">
+<span class="material-symbols-outlined" data-icon="code">code</span>
+<span>Rule Compiler</span>
+</a>
+</nav>
+</div>
+<!-- CTA & Footer Tabs -->
+<div class="space-y-3 pt-4 border-t border-outline-variant">
+<!-- Lockdown CTA Button from JSON -->
+<button class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-full bg-[#18181b] border border-outline text-primary font-label-sm text-label-sm hover:bg-surface-container hover:border-primary active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="emergency">emergency</span>
+<span>Execute Lockdown</span>
+</button>
+<!-- Footer Tabs from JSON -->
+<div class="space-y-0.5">
+<a class="flex items-center gap-space-sm px-3 py-1.5 rounded-DEFAULT text-on-surface-variant hover:text-primary font-label-sm text-label-sm hover:bg-surface-container transition-colors" href="#diagnostics">
+<span class="material-symbols-outlined text-[18px]" data-icon="tune">tune</span>
+<span>Diagnostics Hub</span>
+</a>
+<a class="flex items-center gap-space-sm px-3 py-1.5 rounded-DEFAULT text-on-surface-variant hover:text-primary font-label-sm text-label-sm hover:bg-surface-container transition-colors" href="#api-keys">
+<span class="material-symbols-outlined text-[18px]" data-icon="key">key</span>
+<span>API Keys</span>
+</a>
+</div>
+<div class="pt-2 px-2 text-[10px] font-label-sm text-outline flex justify-between">
+<span>MEM 42.8MB</span>
+<span>LAT 18.4ms</span>
+<span class="text-primary font-semibold">TENSOR 0.0$</span>
+</div>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- MAIN VIEWPORT CANVAS (Offset by TopNav and SideNav)                       -->
+<!-- ========================================================================= -->
+<main class="md:pl-64 pt-14 min-h-screen flex-1 flex flex-col bg-[#09090b]">
+<div class="p-space-lg flex flex-col gap-6 max-w-[1780px] w-full mx-auto">
+<!-- Breadcrumbs & Tactical Command Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-outline mb-1">
+<span>sentinel-core</span>
+<span>/</span>
+<span>in-memory-tensor</span>
+<span>/</span>
+<span class="text-primary">threat-feed</span>
+</div>
+<h1 class="text-headline-lg font-headline-lg text-primary tracking-tight font-medium">Real-Time Threat Moderation Studio</h1>
+</div>
+<div class="flex items-center gap-2 self-start sm:self-auto">
+<button class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#121215] border border-[#27272a] text-primary font-label-sm text-label-sm hover:border-outline transition-colors">
+<span class="material-symbols-outlined text-[16px]" data-icon="download">download</span>
+<span>Export Audit Log</span>
+</button>
+<button class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary text-[#09090b] font-label-sm text-label-sm font-semibold hover:bg-neutral-200 transition-colors">
+<span class="material-symbols-outlined text-[16px]" data-icon="rss_feed">rss_feed</span>
+<span>Threat Intelligence Feed</span>
+</button>
+</div>
+</div>
+<!-- ===================================================================== -->
+<!-- 2. TELEMETRY METRIC CARDS (4-Column Bento Row)                        -->
+<!-- ===================================================================== -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Card 1 -->
+<div class="bg-[#121215] border border-[#27272a] rounded-xl p-space-md flex flex-col justify-between relative overflow-hidden group hover:border-outline-variant transition-colors">
+<div class="flex items-start justify-between mb-3">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Inspection Volume</span>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded-full bg-surface-container text-primary border border-outline-variant">+314 past hr</span>
+</div>
+<div>
+<div class="text-headline-md font-headline-md text-primary font-medium tracking-tight mb-1">1,482 Links Inspected</div>
+<div class="text-caption font-caption text-on-surface-variant flex items-center gap-1.5">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Zero API Costs · 100% In-Process</span>
+</div>
+</div>
+<!-- Sparkline Monochromatic Graphic -->
+<div class="mt-4 pt-3 border-t border-[#27272a] flex items-end justify-between h-7 gap-1">
+<div class="w-full bg-[#27272a] h-2 rounded-t-sm"></div>
+<div class="w-full bg-[#27272a] h-3.5 rounded-t-sm"></div>
+<div class="w-full bg-[#27272a] h-2 rounded-t-sm"></div>
+<div class="w-full bg-[#353437] h-5 rounded-t-sm"></div>
+<div class="w-full bg-[#353437] h-4 rounded-t-sm"></div>
+<div class="w-full bg-primary h-6 rounded-t-sm"></div>
+<div class="w-full bg-primary h-7 rounded-t-sm"></div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-[#121215] border border-[#27272a] rounded-xl p-space-md flex flex-col justify-between relative overflow-hidden group hover:border-outline-variant transition-colors">
+<div class="flex items-start justify-between mb-3">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Tensor Latency</span>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded-full bg-surface-container text-primary border border-outline-variant">Zero Network Hops</span>
+</div>
+<div>
+<div class="text-headline-md font-headline-md text-primary font-medium tracking-tight mb-1">18.4ms Inference</div>
+<div class="text-caption font-caption text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[13px] text-outline" data-icon="speed">speed</span>
+<span>P99 Latency: 22.1ms (onnxruntime)</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-[#27272a] flex items-center justify-between text-caption font-label-sm text-outline">
+<span>P50: 12.2ms</span>
+<span>P95: 17.8ms</span>
+<span class="text-primary font-semibold">P99: 22.1ms</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-[#121215] border border-[#27272a] rounded-xl p-space-md flex flex-col justify-between relative overflow-hidden group hover:border-outline-variant transition-colors">
+<div class="flex items-start justify-between mb-3">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Interceptions</span>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded-full bg-surface-container text-primary border border-primary font-semibold">+6 auto-neutralized</span>
+</div>
+<div>
+<div class="text-headline-md font-headline-md text-primary font-medium tracking-tight mb-1">42 Threats Intercepted</div>
+<div class="text-caption font-caption text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[13px] text-outline" data-icon="warning">warning</span>
+<span>Phishing, Drainers, Malicious Redirects</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-[#27272a] flex items-center gap-2">
+<div class="flex-1 bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[78%]"></div>
+</div>
+<span class="font-label-sm text-[10px] text-primary">78% Auto</span>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-[#121215] border border-[#27272a] rounded-xl p-space-md flex flex-col justify-between relative overflow-hidden group hover:border-outline-variant transition-colors">
+<div class="flex items-start justify-between mb-3">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Precision Rate</span>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded-full bg-surface-container text-primary border border-outline-variant">FPR &lt;0.08%</span>
+</div>
+<div>
+<div class="text-headline-md font-headline-md text-primary font-medium tracking-tight mb-1">99.2% Auto-Block Precision</div>
+<div class="text-caption font-caption text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[13px] text-primary" data-icon="verified_user">verified_user</span>
+<span>Verified against VirusTotal &amp; PhishTank</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-[#27272a] flex items-center justify-between text-caption font-label-sm text-outline">
+<span>Shannon Entropy &gt; 4.2</span>
+<span class="text-primary font-semibold">Strict Heuristics</span>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 3. MAIN WORKSPACE: TWO-COLUMN HIGH-DENSITY SPLIT                          -->
+<!-- ========================================================================= -->
+<section class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+<!-- ======================================================================= -->
+<!-- LEFT/CENTER EXPANDED: LIVE THREAT QUEUE & MODERATION TABLE (8 Columns)   -->
+<!-- ======================================================================= -->
+<div class="xl:col-span-8 bg-[#121215] border border-[#27272a] rounded-xl overflow-hidden flex flex-col">
+<!-- Table Controls Header -->
+<div class="p-space-md border-b border-[#27272a] flex flex-wrap items-center justify-between gap-3 bg-[#0e0e10]">
+<!-- Filter Tabs -->
+<div class="flex items-center gap-1 bg-[#18181b] p-1 rounded-full border border-outline-variant">
+<button class="px-3 py-1 rounded-full bg-primary text-[#09090b] font-label-sm text-label-sm font-semibold transition-colors">All Detections (42)</button>
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-primary font-label-sm text-label-sm transition-colors">Critical (14)</button>
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-primary font-label-sm text-label-sm transition-colors">High Risk (18)</button>
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-primary font-label-sm text-label-sm transition-colors">Review Queue (10)</button>
+</div>
+<!-- Auto-refresh polling switch -->
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+<span class="font-label-sm text-label-sm text-outline">Auto-Poll (1s)</span>
+</div>
+<div class="h-4 w-px bg-outline-variant"></div>
+<button class="p-1.5 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors" title="Force Ingestion Flush">
+<span class="material-symbols-outlined text-[16px]" data-icon="refresh">refresh</span>
+</button>
+</div>
+</div>
+<!-- Dense Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse font-body-sm text-body-sm">
+<thead>
+<tr class="border-b border-[#27272a] bg-[#121215] text-outline font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-2.5 px-4 w-28">Timestamp</th>
+<th class="py-2.5 px-4">Target URL &amp; Domain</th>
+<th class="py-2.5 px-4">Submitting Creator</th>
+<th class="py-2.5 px-4">AI Risk Score</th>
+<th class="py-2.5 px-4">Classification</th>
+<th class="py-2.5 px-4 text-right">Quick Moderation</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#27272a]">
+<!-- Row 1: Critical Permit2 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-3 px-4 font-label-sm text-outline align-top">
+                    14:28:02.194
+                  </td>
+<td class="py-3 px-4 max-w-xs align-top">
+<div class="font-label-md text-label-md text-primary truncate hover:text-clip" title="https://metamask-claim-airdrop.xyz/auth">
+                      https://metamask-claim-airdrop.xyz/auth
+                    </div>
+<div class="font-label-sm text-[10px] text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[12px] text-primary" data-icon="public">public</span>
+<span>metamask-claim-airdrop.xyz</span>
+<span class="px-1 py-0.2 rounded bg-surface-container text-primary font-mono text-[9px] border border-outline-variant">[Punycode/Lookalike]</span>
+</div>
+</td>
+<td class="py-3 px-4 align-top">
+<div class="font-body-sm text-primary font-medium">@crypto_drop_hunter</div>
+<div class="font-label-sm text-[11px] text-outline">UID #88219 · New (1d)</div>
+</td>
+<td class="py-3 px-4 align-top">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary text-[#09090b] font-label-sm text-[11px] font-bold">
+<span class="material-symbols-outlined text-[13px]" data-icon="gpp_bad">gpp_bad</span>
+                      0.94 CRITICAL
+                    </span>
+</td>
+<td class="py-3 px-4 align-top">
+<span class="font-label-sm text-[11px] text-primary block">Crypto Drainer</span>
+<span class="font-caption text-outline text-[11px]">Permit2 Exploit Contract</span>
+</td>
+<td class="py-3 px-4 text-right align-top">
+<div class="flex items-center justify-end gap-1.5 opacity-90 group-hover:opacity-100">
+<button class="px-2.5 py-1 rounded-full bg-primary text-[#09090b] font-label-sm text-[11px] font-semibold hover:bg-neutral-200 transition-colors" title="Immediate User Sanction">
+                        Suspend User
+                      </button>
+<button class="px-2.5 py-1 rounded-full bg-[#18181b] border border-outline-variant text-primary font-label-sm text-[11px] hover:border-primary transition-colors" title="Null-Route Domain">
+                        Ban Domain
+                      </button>
+<button class="p-1 rounded-full text-outline hover:text-primary transition-colors" title="View Sandbox Trace">
+<span class="material-symbols-outlined text-[16px]" data-icon="open_in_new">open_in_new</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: High Risk Solana Recovery -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-3 px-4 font-label-sm text-outline align-top">
+                    14:26:45.012
+                  </td>
+<td class="py-3 px-4 max-w-xs align-top">
+<div class="font-label-md text-label-md text-primary truncate" title="https://phantom-solana-recovery.pw/seed">
+                      https://phantom-solana-recovery.pw/seed
+                    </div>
+<div class="font-label-sm text-[10px] text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[12px] text-primary" data-icon="public">public</span>
+<span>phantom-solana-recovery.pw</span>
+<span class="px-1 py-0.2 rounded bg-surface-container text-primary font-mono text-[9px] border border-outline-variant">[TLD Flag .pw]</span>
+</div>
+</td>
+<td class="py-3 px-4 align-top">
+<div class="font-body-sm text-primary font-medium">@airdrop_daily_eth</div>
+<div class="font-label-sm text-[11px] text-outline">UID #71049 · Tier 1 Bio</div>
+</td>
+<td class="py-3 px-4 align-top">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#27272a] text-primary border border-outline font-label-sm text-[11px] font-bold">
+<span class="material-symbols-outlined text-[13px]" data-icon="warning">warning</span>
+                      0.82 HIGH
+                    </span>
+</td>
+<td class="py-3 px-4 align-top">
+<span class="font-label-sm text-[11px] text-primary block">Punycode &amp; Phishing</span>
+<span class="font-caption text-outline text-[11px]">Seed Extraction Form</span>
+</td>
+<td class="py-3 px-4 text-right align-top">
+<div class="flex items-center justify-end gap-1.5 opacity-90 group-hover:opacity-100">
+<button class="px-2.5 py-1 rounded-full bg-primary text-[#09090b] font-label-sm text-[11px] font-semibold hover:bg-neutral-200 transition-colors">
+                        Suspend User
+                      </button>
+<button class="px-2.5 py-1 rounded-full bg-[#18181b] border border-outline-variant text-primary font-label-sm text-[11px] hover:border-primary transition-colors">
+                        Ban Domain
+                      </button>
+<button class="p-1 rounded-full text-outline hover:text-primary transition-colors" title="View Sandbox Trace">
+<span class="material-symbols-outlined text-[16px]" data-icon="open_in_new">open_in_new</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: High Risk Stripe Credential Harvester -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-3 px-4 font-label-sm text-outline align-top">
+                    14:24:19.882
+                  </td>
+<td class="py-3 px-4 max-w-xs align-top">
+<div class="font-label-md text-label-md text-primary truncate" title="https://update-billing-stripe.info/login">
+                      https://update-billing-stripe.info/login
+                    </div>
+<div class="font-label-sm text-[10px] text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[12px] text-primary" data-icon="public">public</span>
+<span>update-billing-stripe.info</span>
+<span class="px-1 py-0.2 rounded bg-surface-container text-primary font-mono text-[9px] border border-outline-variant">[Brand Squatting]</span>
+</div>
+</td>
+<td class="py-3 px-4 align-top">
+<div class="font-body-sm text-primary font-medium">@web3_deals_hub</div>
+<div class="font-label-sm text-[11px] text-outline">UID #94112 · 14 links</div>
+</td>
+<td class="py-3 px-4 align-top">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#27272a] text-primary border border-outline font-label-sm text-[11px] font-bold">
+<span class="material-symbols-outlined text-[13px]" data-icon="warning">warning</span>
+                      0.78 HIGH
+                    </span>
+</td>
+<td class="py-3 px-4 align-top">
+<span class="font-label-sm text-[11px] text-primary block">Credential Harvester</span>
+<span class="font-caption text-outline text-[11px]">Zero-Width Steganography</span>
+</td>
+<td class="py-3 px-4 text-right align-top">
+<div class="flex items-center justify-end gap-1.5 opacity-90 group-hover:opacity-100">
+<button class="px-2.5 py-1 rounded-full bg-primary text-[#09090b] font-label-sm text-[11px] font-semibold hover:bg-neutral-200 transition-colors">
+                        Suspend User
+                      </button>
+<button class="px-2.5 py-1 rounded-full bg-[#18181b] border border-outline-variant text-primary font-label-sm text-[11px] hover:border-primary transition-colors">
+                        Ban Domain
+                      </button>
+<button class="p-1 rounded-full text-outline hover:text-primary transition-colors" title="View Sandbox Trace">
+<span class="material-symbols-outlined text-[16px]" data-icon="open_in_new">open_in_new</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: High Risk Discord Nitro Cloaked Redirect -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-3 px-4 font-label-sm text-outline align-top">
+                    14:21:05.610
+                  </td>
+<td class="py-3 px-4 max-w-xs align-top">
+<div class="font-label-md text-label-md text-primary truncate" title="https://discord-nitro-gift-claim.ru/app">
+                      https://discord-nitro-gift-claim.ru/app
+                    </div>
+<div class="font-label-sm text-[10px] text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[12px] text-primary" data-icon="public">public</span>
+<span>discord-nitro-gift-claim.ru</span>
+<span class="px-1 py-0.2 rounded bg-surface-container text-primary font-mono text-[9px] border border-outline-variant">[Cloaked Bitly Hop]</span>
+</div>
+</td>
+<td class="py-3 px-4 align-top">
+<div class="font-body-sm text-primary font-medium">@giveaway_king</div>
+<div class="font-label-sm text-[11px] text-outline">UID #55912 · Verified Bio</div>
+</td>
+<td class="py-3 px-4 align-top">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary text-[#09090b] font-label-sm text-[11px] font-bold">
+<span class="material-symbols-outlined text-[13px]" data-icon="gpp_bad">gpp_bad</span>
+                      0.89 CRITICAL
+                    </span>
+</td>
+<td class="py-3 px-4 align-top">
+<span class="font-label-sm text-[11px] text-primary block">Cloaked Redirect</span>
+<span class="font-caption text-outline text-[11px]">OAuth Token Stealer</span>
+</td>
+<td class="py-3 px-4 text-right align-top">
+<div class="flex items-center justify-end gap-1.5 opacity-90 group-hover:opacity-100">
+<button class="px-2.5 py-1 rounded-full bg-primary text-[#09090b] font-label-sm text-[11px] font-semibold hover:bg-neutral-200 transition-colors">
+                        Suspend User
+                      </button>
+<button class="px-2.5 py-1 rounded-full bg-[#18181b] border border-outline-variant text-primary font-label-sm text-[11px] hover:border-primary transition-colors">
+                        Ban Domain
+                      </button>
+<button class="p-1 rounded-full text-outline hover:text-primary transition-colors" title="View Sandbox Trace">
+<span class="material-symbols-outlined text-[16px]" data-icon="open_in_new">open_in_new</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Safe Legitimate Link for Contrast -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="py-3 px-4 font-label-sm text-outline align-top">
+                    14:19:30.401
+                  </td>
+<td class="py-3 px-4 max-w-xs align-top">
+<div class="font-label-md text-label-md text-on-surface-variant truncate" title="https://github.com/torvalds/linux">
+                      https://github.com/torvalds/linux
+                    </div>
+<div class="font-label-sm text-[10px] text-outline flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[12px] text-outline" data-icon="check_circle">check_circle</span>
+<span>github.com</span>
+<span class="px-1 py-0.2 rounded bg-surface-container text-outline font-mono text-[9px] border border-outline-variant">[Trusted Authority]</span>
+</div>
+</td>
+<td class="py-3 px-4 align-top">
+<div class="font-body-sm text-on-surface-variant font-medium">@kernel_builder</div>
+<div class="font-label-sm text-[11px] text-outline">UID #12093 · Enterprise</div>
+</td>
+<td class="py-3 px-4 align-top">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant font-label-sm text-[11px]">
+<span class="material-symbols-outlined text-[13px] text-outline" data-icon="verified">verified</span>
+                      0.02 SAFE
+                    </span>
+</td>
+<td class="py-3 px-4 align-top">
+<span class="font-label-sm text-[11px] text-on-surface-variant block">Open Source Repo</span>
+<span class="font-caption text-outline text-[11px]">Valid TLS / EV Cert</span>
+</td>
+<td class="py-3 px-4 text-right align-top">
+<div class="flex items-center justify-end gap-1.5 opacity-90 group-hover:opacity-100">
+<button class="px-2.5 py-1 rounded-full bg-transparent border border-outline-variant text-outline hover:text-primary hover:border-outline font-label-sm text-[11px] transition-colors">
+                        Dismiss
+                      </button>
+<button class="p-1 rounded-full text-outline hover:text-primary transition-colors" title="View Sandbox Trace">
+<span class="material-symbols-outlined text-[16px]" data-icon="open_in_new">open_in_new</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Pagination & Telemetry Status -->
+<div class="p-3 border-t border-[#27272a] bg-[#0e0e10] flex flex-col sm:flex-row items-center justify-between gap-3 text-caption font-label-sm text-outline">
+<div class="flex items-center gap-3">
+<span>Showing 1-5 of 42 active alerts</span>
+<span>·</span>
+<span class="text-primary">100% In-Memory Buffer</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 rounded bg-[#18181b] border border-outline-variant text-outline hover:text-primary disabled:opacity-40" disabled="">Previous</button>
+<span class="px-2 text-primary font-bold">1</span>
+<button class="px-2 py-1 rounded bg-[#18181b] border border-outline-variant text-outline hover:text-primary">2</button>
+<button class="px-2 py-1 rounded bg-[#18181b] border border-outline-variant text-outline hover:text-primary">3</button>
+<button class="px-2 py-1 rounded bg-[#18181b] border border-outline-variant text-outline hover:text-primary">Next</button>
+</div>
+</div>
+</div>
+<!-- ======================================================================= -->
+<!-- RIGHT COLUMN: EMBEDDED AI DIAGNOSTICS & SENTINEL TELEMETRY PANEL (4 Col) -->
+<!-- ======================================================================= -->
+<div class="xl:col-span-4 flex flex-col gap-6">
+<!-- Diagnostic Specifications Card -->
+<div class="bg-[#121215] border border-[#27272a] rounded-xl p-space-md flex flex-col gap-4">
+<div class="flex items-start justify-between border-b border-[#27272a] pb-3">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-primary font-medium tracking-tight">Sentinel Core Diagnostics</h2>
+<span class="font-label-sm text-[11px] text-outline">v4.18.2 In-Memory Tensor Architecture</span>
+</div>
+<span class="p-1 rounded bg-surface-container text-primary border border-outline-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="memory">memory</span>
+</span>
+</div>
+<!-- Monospace Engine Specs -->
+<div class="space-y-2.5 font-label-sm text-label-sm">
+<div class="p-2.5 rounded-DEFAULT bg-[#0e0e10] border border-[#27272a] flex flex-col gap-1">
+<span class="text-outline text-[10px] uppercase tracking-wider">Engine Runtime</span>
+<span class="text-primary font-medium">onnxruntime-node (Native C++ Addon)</span>
+</div>
+<div class="p-2.5 rounded-DEFAULT bg-[#0e0e10] border border-[#27272a] flex flex-col gap-1">
+<span class="text-outline text-[10px] uppercase tracking-wider">Inference Model</span>
+<span class="text-primary font-medium">Quantized Transformer &amp; Shannon Vectorizer</span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div class="p-2.5 rounded-DEFAULT bg-[#0e0e10] border border-[#27272a] flex flex-col gap-1">
+<span class="text-outline text-[10px] uppercase tracking-wider">LLM API Token Cost</span>
+<span class="text-primary font-bold">$0.00 / 0 Tokens</span>
+</div>
+<div class="p-2.5 rounded-DEFAULT bg-[#0e0e10] border border-[#27272a] flex flex-col gap-1">
+<span class="text-outline text-[10px] uppercase tracking-wider">Memory Overhead</span>
+<span class="text-primary font-bold">42.8 MB RSS</span>
+</div>
+</div>
+<div class="p-2.5 rounded-DEFAULT bg-[#0e0e10] border border-[#27272a] flex flex-col gap-1.5">
+<span class="text-outline text-[10px] uppercase tracking-wider">Active Heuristic Filters</span>
+<ul class="text-[11px] text-on-surface-variant space-y-1">
+<li class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Punycode &amp; Homoglyph Levenshtein Matrix</span>
+</li>
+<li class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Zero-Width Steganographic Payload Scanner</span>
+</li>
+<li class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>TLS Certificate Age &lt; 48h Heuristic Trap</span>
+</li>
+<li class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>DGA Domain Entropy Score &gt; 4.2 Thresh</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Interactive Sandbox URL Tester -->
+<div class="bg-[#121215] border border-[#27272a] rounded-xl p-space-md flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-[#27272a] pb-3">
+<div>
+<h3 class="text-headline-sm font-headline-sm text-primary font-medium tracking-tight">Interactive Sandbox Tester</h3>
+<span class="font-label-sm text-[11px] text-outline">Real-Time In-Memory Dry Run</span>
+</div>
+<span class="font-label-sm text-[10px] px-2 py-0.5 rounded-full bg-surface-container text-primary border border-outline-variant">Sandbox Active</span>
+</div>
+<!-- Input and Action -->
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-[11px] text-outline" for="sandbox-input">Input suspicious URL for instant dry-run inference...</label>
+<div class="flex items-center gap-2">
+<input class="flex-1 bg-[#09090b] border border-[#27272a] rounded-DEFAULT py-2 px-3 text-primary font-label-sm text-label-sm focus:outline-none focus:border-primary" id="sandbox-input" type="text" value="https://airdrop-claim-metamask.eth-vault.pw/claim?v=3"/>
+<button class="px-4 py-2 rounded-DEFAULT bg-primary text-[#09090b] font-label-sm text-label-sm font-semibold hover:bg-neutral-200 active:scale-[0.98] transition-all whitespace-nowrap flex items-center gap-1.5" id="dry-run-btn">
+<span class="material-symbols-outlined text-[15px]" data-icon="bolt">bolt</span>
+<span>Analyze (18ms)</span>
+</button>
+</div>
+</div>
+<!-- Recent Instant Verdict Breakdown Log -->
+<div class="p-3 rounded-DEFAULT bg-[#09090b] border border-[#27272a] font-label-sm text-label-sm space-y-2">
+<div class="flex items-center justify-between text-outline text-[10px] pb-1 border-b border-[#27272a]">
+<span>TENSOR VECTOR BREAKDOWN</span>
+<span class="text-primary font-bold">LATENCY: 17.9ms</span>
+</div>
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-on-surface-variant">Domain Entropy</span>
+<span class="text-primary font-bold">4.88 (Flagged &gt;4.2)</span>
+</div>
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-on-surface-variant">Permit2 Signature</span>
+<span class="text-primary font-bold">Detected [0x42f...a1b]</span>
+</div>
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-on-surface-variant">TLS Certificate Age</span>
+<span class="text-primary font-bold">14 Hours (Flagged)</span>
+</div>
+<div class="flex justify-between items-center text-[12px] pt-1 border-t border-[#27272a]">
+<span class="text-primary font-medium">Final Verdict</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-[#09090b] font-bold text-[11px]">
+<span class="material-symbols-outlined text-[13px]" data-icon="block">block</span>
+                  BLOCKED (0.96)
+                </span>
+</div>
+</div>
+<!-- Audit Trail Checksum -->
+<div class="flex items-center justify-between text-caption font-label-sm text-outline pt-1">
+<span>SHA256: 9b2d8...f31a</span>
+<span>Zero Leakage Confirmed</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Lightweight Inline Vanilla JS for Micro-Interactions -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const analyzeBtn = document.getElementById('dry-run-btn');
+      const input = document.getElementById('sandbox-input');
+
+      if (analyzeBtn && input) {
+        analyzeBtn.addEventListener('click', () => {
+          const originalText = analyzeBtn.innerHTML;
+          analyzeBtn.innerHTML = '<span class="material-symbols-outlined text-[15px] animate-spin" data-icon="sync">sync</span> <span>Scanning...</span>';
+          analyzeBtn.disabled = true;
+
+          setTimeout(() => {
+            analyzeBtn.innerHTML = originalText;
+            analyzeBtn.disabled = false;
+          }, 350);
+        });
+      }
+    });
+  </script>
+</body></html>

@@ -129,25 +129,29 @@ To ensure strict engineering rigor before starting feature development, the foll
 
 ## 🎨 UI/UX Mockups & Google Stitch Unified Canvas
 
-All 4 visual screens for **OneLink** have been generated within the unified Google Stitch project (`14141085438200447026`), downloaded into `docs/ui-ux/mockups/`, and documented in [`docs/ui-ux/wireframes-and-mockups.md`](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/wireframes-and-mockups.md):
+All 6 visual screens for **OneLink** have been generated within the unified Google Stitch project (`14141085438200447026`), downloaded into `docs/ui-ux/mockups/`, and documented in [`docs/ui-ux/wireframes-and-mockups.md`](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/wireframes-and-mockups.md):
 
 | # | Screen Name | Route | Viewport | Assets (PNG & HTML) | Stitch Screen ID |
 |---|---|---|---|---|---|
 | **1** | **Public Profile Page** | `/@alexrivera` | Mobile `390×844` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.html) | `c30c125858234fca8b5fe40e4cacaf18` |
-| **2** | **OneLink Studio: Links** | `/studio/links` | Desktop `1440p` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.html) | `28acc78d161d4c0e9043c33a253a6509` |
+| **2** | **OneLink Studio: Links** | `/studio/links` | Desktop `1440p` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.html) | `3b207412755a4c7cb36b6db10b8ca731` |
 | **3** | **OneLink Studio: Appearance** | `/studio/appearance` | Desktop `1440p` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.html) | `b7727bd8e4194a6cb808d171e3c3d79a` |
 | **4** | **OneLink Studio: Analytics** | `/studio/analytics` | Desktop `1440p` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.html) | `abefbcf5251c48c0b9b8cbd9d4bead72` |
+| **5** | **OneLink Sentinel & Super Admin** | `/admin/moderation` | Desktop `1440p` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-5-sentinel-admin.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-5-sentinel-admin.html) | `56f795e49afc48eab739aaff864c6e4d` |
+| **6** | **SaaS Owner Billing & Plans** | `/studio/billing` | Desktop `1440p` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-6-owner-billing.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-6-owner-billing.html) | `7166b9dd037147f480ff75607c67a554` |
 
 - **Design System**: Carbon Architecture (`assets/fa13b5dff1214ff1972bdfec24eb4cc5`).
 - **Palette**: Strictly Monochromatic Off-Black (Zinc 950 `#09090b` canvas, `#121215` cards, `#27272a` borders, pure white `#ffffff` pills, Geist + JetBrains Mono).
-- **Interactivity & Motion**: Hardware-accelerated CSS animations (`@keyframes shimmer`, `scale(1.02)`, `active:scale(0.98)`), micro-interactions, responsive hover states, and live iPhone 15 Pro synchronization.
+- **Interactivity & Motion**: Hardware-accelerated CSS animations (`@keyframes shimmer`, `scale(1.02)`, `active:scale(0.98)`), micro-interactions, responsive hover states, two-way reactive state sync, and live iPhone 15 Pro preview synchronization.
 
 ---
 
 ## 🏁 Phase Gate: Ready for Phase 1 Domain Implementation
 
-With Phase 0 (Infrastructure & Monorepo) and SDLC Requirements, Database, Architecture, and Wireframes fully designed:
+With Phase 0 (Infrastructure & Monorepo) and SDLC Requirements, Database, Architecture, and 6-Screen Wireframes fully designed:
 1. **Module 1**: `ProfileModule` (Domain entities, Prisma adapter, username reservation with Redis caching, TDD test suite).
 2. **Module 2**: `LinkModule` (Drag-and-drop link CRUD, atomic reordering transaction).
-3. **Module 3**: `AnalyticsModule` (High-throughput Beacon API, BullMQ ingestion, TimescaleDB Hypertables).
-4. **Module 4**: `Web UI` (Next.js 16 components aligned with approved wireframes).
+3. **Module 3**: `SentinelAiModule` (Zero-Token in-process ONNX Runtime URL classification, Shannon entropy extractor, malicious link blocker).
+4. **Module 4**: `AnalyticsModule` (High-throughput Beacon API, BullMQ ingestion, TimescaleDB Hypertables).
+5. **Module 5**: `BillingAndAdminModule` (Stripe subscription tiers, Super Admin threat stream & user suspension).
+6. **Module 6**: `Web UI` (Next.js 16 components aligned with all 6 approved wireframes).

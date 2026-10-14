@@ -11,6 +11,10 @@
 ```mermaid
 erDiagram
     users ||--o| profiles : "has one"
+    users ||--o{ subscriptions : "holds"
+    users ||--o{ security_flags : "triggers"
+    users ||--o{ admin_audit_logs : "administers"
+    plans ||--o{ subscriptions : "defines"
     profiles ||--o{ links : "has many"
     profiles ||--o{ social_links : "has many"
     profiles }o--o| themes : "uses preset"
@@ -24,9 +28,68 @@ erDiagram
         varchar password_hash "Nullable for OAuth users"
         varchar name "User display name"
         varchar google_id UK "Unique Google OpenID"
+        enum role "CREATOR, SUPER_ADMIN, OWNER"
+        boolean is_banned "Suspension flag default false"
         timestamptz created_at "Default now()"
         timestamptz updated_at
         timestamptz deleted_at "Soft delete timestamp"
+    }
+
+    plans {
+        uuid id PK
+        varchar code UK "FREE, PRO, ENTERPRISE"
+        varchar name "Display name"
+        integer price_cents "E.g. 900 for $9.00/mo"
+        varchar interval "MONTHLY, YEARLY"
+        jsonb features "Tier limit flags (custom_domain, etc.)"
+        varchar stripe_price_id UK "Stripe price identifier"
+        boolean is_active "Default true"
+        timestamptz created_at
+    }
+
+    subscriptions {
+        uuid id PK
+        uuid user_id FK
+        uuid plan_id FK
+        varchar stripe_customer_id
+        varchar stripe_subscription_id UK
+        enum status "ACTIVE, PAST_DUE, CANCELED, TRIALING"
+        timestamptz current_period_end
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    security_flags {
+        uuid id PK
+        uuid user_id FK "User who submitted the URL"
+        text submitted_url "Target suspicious URL"
+        decimal risk_score "Sentinel AI score 0.00 to 1.00"
+        enum threat_type "PHISHING, MALWARE, CRYPTO_DRAINER, SPAM"
+        decimal ai_confidence "Model confidence level 0.00-1.00"
+        inet ip_address "Origin client IP"
+        enum status "BLOCKED_AUTO, PENDING_REVIEW, RESOLVED_BENIGN, BANNED"
+        uuid reviewed_by FK "Super Admin user id"
+        text resolution_notes
+        timestamptz created_at
+    }
+
+    domain_blocklist {
+        uuid id PK
+        varchar domain_pattern UK "E.g. *.drainer.xyz or bit.ly/*"
+        varchar reason "Phishing campaign, Ransomware, etc."
+        uuid added_by FK "Super Admin who added the ban"
+        timestamptz created_at
+    }
+
+    admin_audit_logs {
+        uuid id PK
+        uuid admin_user_id FK "Super Admin or Owner performing action"
+        varchar action "BAN_USER, BLOCK_DOMAIN, UPDATE_PLAN, UNPUBLISH_PROFILE"
+        varchar target_type "USER, LINK, PROFILE, PLAN"
+        uuid target_id "Identifier of target entity"
+        text reason "Mandatory audit justification"
+        jsonb metadata "Snapshot of state diff before/after"
+        timestamptz created_at
     }
 
     profiles {
@@ -129,20 +192,33 @@ erDiagram
 ## 2. Data Dictionary & Table Specifications
 
 ### 2.1 `users` Table
-Stores authentication credentials and account lifecycle states.
+Stores authentication credentials, RBAC role designations, and account lifecycle states.
 - **`id`** (`UUID`, PK): Immutable unique identifier generated via `gen_random_uuid()`.
 - **`email`** (`VARCHAR(255)`, UNIQUE, NOT NULL): User email address normalized to lowercase.
 - **`password_hash`** (`VARCHAR(255)`, NULLABLE): Bcrypt hashed password (null for Google-only OAuth signups).
 - **`google_id`** (`VARCHAR(255)`, UNIQUE, NULLABLE): Subject identifier from Google OAuth 2.0 token.
+- **`role`** (`ENUM`, DEFAULT `'CREATOR'`): Role-Based Access Control: `'CREATOR'`, `'SUPER_ADMIN'`, or `'OWNER'`.
+- **`is_banned`** (`BOOLEAN`, DEFAULT `false`): Suspension flag enforced by middleware to block login and unpublish vanity URL.
 
-### 2.2 `profiles` Table
+### 2.2 `plans` & `subscriptions` Tables (SaaS Monetization)
+- **`plans`**: Canonical pricing catalog synchronized with Stripe Product Catalog. Supports customizable feature flags (e.g. `{"custom_domains": true, "max_links": 100, "priority_support": true}`).
+- **`subscriptions`**: Tracks active Stripe customer subscriptions, lifecycle status (`ACTIVE`, `PAST_DUE`), and billing periods.
+
+### 2.3 `security_flags` & `domain_blocklist` (OneLink Sentinel AI)
+- **`security_flags`**: Real-time event log populated when the embedded ONNX engine intercepts a suspicious URL (`risk_score >= 0.75`). Stores threat classification (`PHISHING`, `CRYPTO_DRAINER`) and IP metadata for Super Admin audits.
+- **`domain_blocklist`**: High-speed blacklist synchronized into Redis sets (`blocklist:domains`) for O(1) instantaneous rejection before tensor computation.
+
+### 2.4 `admin_audit_logs` Table
+- Tamper-evident ledger capturing all privileged Super Admin actions (account suspensions, domain blocks, plan price edits) with mandatory human justification strings.
+
+### 2.5 `profiles` Table
 Core vanity landing page entity.
 - **`username`** (`VARCHAR(30)`, UNIQUE, NOT NULL): Indexed URL slug. Sanitized against `RESERVED_USERNAMES`.
 - **`is_published`** (`BOOLEAN`, DEFAULT `false`): Controls public accessibility (`/@username`).
 - **`theme_id`** (`UUID`, FK, NULLABLE): Foreign key pointing to curated `themes` table.
 - **`seo_title` & `seo_description`**: Custom Open Graph metadata for rich social sharing cards.
 
-### 2.3 `links` Table
+### 2.6 `links` Table
 Individual items displayed on the creator profile.
 - **`profile_id`** (`UUID`, FK, NOT NULL): Cascades on profile deletion.
 - **`type`** (`ENUM`): Discriminates between clickable `LINK`, text `HEADER`, and visual `DIVIDER`.
