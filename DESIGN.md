@@ -1,74 +1,67 @@
-# 🎨 Design System: Link-in-Bio Platform
-**Standard**: Google Stitch & Modern Web UI/UX Architecture
+# 🎨 Design System: OneLink Platform
+**Brand**: OneLink (`onelink.bio`)  
+**Aesthetic Standard**: Monochromatic Modern Off-Black (Zinc / Carbon Minimalism)  
+**Standard**: Google Stitch & Clean Architecture Tokens  
 
 ---
 
-## Configuration — Dial Settings
+## 1. Visual Theme & Brand Philosophy
 
-| Dial | Level | Description |
-|---|---|---|
-| **Creativity** | `7` | Balanced between aesthetic personal branding and ultra-clean utility. |
-| **Density** | `6` | Compact mobile cards for public links; clean 60/40 split-screen for Creator Studio. |
-| **Variance** | `5` | Consistent recognizable link structures with high polish. |
-| **Motion Intent** | `6` | Tactile spring physics on tap, subtle hover lift, skeleton shimmer loaders. |
+OneLink is engineered with a **minimalist, hyper-refined, monochromatic aesthetic**. 
+- **Zero Blue/Navy Tint**: Avoids dated saturated blues and navies (`#0b1326`, `#1e293b`).
+- **Modern Off-Black Canvas**: Built on `#09090b` (Zinc 950) — a warm, architectural carbon off-black that feels luxurious on OLED displays without the harshness of pure `#000000`.
+- **Architectural Framing**: Depth is expressed through hair-thin borders (`rgba(255, 255, 255, 0.08)` or `#27272a`), subtle micro-gradients, and tactile scale responses on click.
 
 ---
 
-## 1. Visual Theme & Atmosphere
-The platform combines a **modern architectural minimalism** with high-converting creator aesthetics. It feels premium, responsive, and tactile. Surfaces are crisp, elevation is handled with delicate whisper borders and diffused shadows, and interactions give immediate haptic/visual feedback.
+## 2. Core Palette: OneLink Monochromatic Carbon
+
+| Role | Hex Token | CSS Variable / Tailwind | Usage |
+|---|---|---|---|
+| **Canvas Background** | `#09090b` | `bg-zinc-950` | Primary app canvas, deep off-black |
+| **Card / Container** | `#121215` | `bg-zinc-900/80` | Elevated link cards, editing panels, modals |
+| **Hover Surface** | `#27272a` | `bg-zinc-800` | Mouse hover, active drag target, select states |
+| **Borders & Dividers** | `rgba(255,255,255,0.08)` | `border-white/10` / `border-zinc-800` | 1px delicate structural lines |
+| **Primary Text** | `#fafafa` | `text-zinc-50` | High-contrast headings, link labels, titles |
+| **Secondary Text** | `#a1a1aa` | `text-zinc-400` | Subtitles, click counters, URLs |
+| **Muted Metadata** | `#71717a` | `text-zinc-500` | Timestamps, inactive states, footers |
+| **Monochrome Accent** | `#ffffff` | `bg-white text-zinc-950` | High-converting primary CTA (pill button) |
+| **Success Indicator** | `#10b981` | `text-emerald-500` | Toggle active, link live status dot |
 
 ---
 
-## 2. Color Palette & Semantic Roles
+## 3. Platform Studio vs. Creator Profile Themes
 
-### 2.1 Default Theme: "Obsidian Slate" (Dark Mode)
-- **Canvas Background**: `#0f172a` (Slate 900)
-- **Surface / Card Fill**: `#1e293b` (Slate 800)
-- **Primary Text**: `#f8fafc` (Slate 50)
-- **Secondary / Meta Text**: `#94a3b8` (Slate 400)
-- **Accent Brand Color**: `#6366f1` (Indigo 500)
-- **Border / Outline**: `rgba(51, 65, 85, 0.6)` (Slate 700 / 60%)
-- **Card Hover State**: `#334155` (Slate 700)
-- **Success / Positive**: `#10b981` (Emerald 500)
+It is crucial to distinguish between the **Platform Chrome** and the **Creator's Custom Page**:
 
-### 2.2 Alternate Theme: "Minimalist Paper" (Light Mode)
-- **Canvas Background**: `#f8fafc` (Slate 50)
-- **Surface / Card Fill**: `#ffffff` (Pure White)
-- **Primary Text**: `#0f172a` (Slate 900)
-- **Secondary / Meta Text**: `#64748b` (Slate 500)
-- **Accent Brand Color**: `#4f46e5` (Indigo 600)
-- **Border / Outline**: `rgba(226, 232, 240, 0.8)` (Slate 200)
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                              ONELINK PLATFORM ARCHITECTURE                             │
+├────────────────────────────────────────────┬───────────────────────────────────────────┤
+│ 🛠️ ONELINK STUDIO DASHBOARD                │ 📱 CREATOR PUBLIC PROFILES (`/@username`) │
+├────────────────────────────────────────────┼───────────────────────────────────────────┤
+│ • Fixed Brand Aesthetic                    │ • Fully Customizable by the Creator       │
+│ • Monochromatic Carbon (`#09090b`)         │ • Presets:                                │
+│ • Hair-thin Zinc borders (`#27272a`)       │   1. Obsidian Kinetic (Monochrome Dark)   │
+│ • White high-contrast CTAs                 │   2. Minimalist Paper (Pure Light)        │
+│ • Consistent productivity UX               │   3. Cyberpunk Neon (Glow Cyan / Violet)  │
+│                                            │   4. Sakura (Rose Pastel)                 │
+│                                            │   5. Emerald Forest (Deep Green)          │
+│ • The right-hand phone preview dynamically reflects the theme chosen by the creator!   │
+└────────────────────────────────────────────┴───────────────────────────────────────────┘
+```
 
 ---
 
-## 3. Typography Rules
-- **Display & Headlines**: `Outfit, Space Grotesk, sans-serif` — Tracking `-0.025em`, font-weight `600` to `700`.
+## 4. Typography Hierarchy
+- **Brand & Headings**: `Space Grotesk` or `Outfit` — Tracked `-0.025em`, font-weight `600` / `700`.
 - **Interface & Link Labels**: `Inter, system-ui, sans-serif` — Tracking normal, font-weight `500` (Medium).
-- **Numbers & Metrics (Analytics)**: `JetBrains Mono, monospace` — For click counters, CTR percentages, timestamps.
+- **Data & Analytics**: `JetBrains Mono, monospace` — For click counters, percentages, and timestamps.
 
 ---
 
-## 4. Component Geometry & Tokens
+## 5. Component Geometry Tokens
 
-### 4.1 Link Cards (Public Profile)
-- **Geometry**: `border-radius: 9999px` (Default Pill) or `12px` (Soft Rect).
-- **Height**: Minimum 54px touch target for mobile thumbs.
-- **Padding**: `14px 20px`.
-- **States**:
-  - *Default*: Background fill with whisper border.
-  - *Hover/Focus*: Subtle scale `scale(1.015)` and background brightness increase.
-  - *Active / Pressed*: `scale(0.985)` with active click beacon dispatch.
-
-### 4.2 Creator Studio Layout (Desktop)
-- **Two-Column Split**:
-  - Left Column (60%): Link management list with drag handles, edit drawers, toggle switches.
-  - Right Column (40%): Fixed position realistic smartphone frame (390x844px) with dynamic live preview.
-
----
-
-## 5. Screen Specifications
-
-1. **Screen 1**: Public Creator Profile (`/@alexrivera`) — Viewport `390px` width, centered layout, avatar, bio, active links.
-2. **Screen 2**: Creator Studio Dashboard (`/dashboard`) — Viewport `1440px` width, 60/40 split screen.
-3. **Screen 3**: Theme & Appearance Studio (`/dashboard/appearance`) — Palette selection grid, typography picker.
-4. **Screen 4**: Analytics Studio (`/dashboard/analytics`) — Time-series line chart (Views vs Clicks), CTR metrics, geo map.
+- **Buttons & Link Cards**: `border-radius: 9999px` (Pill `rounded-full`) with minimum 54px touch target.
+- **Surface Elevation**: Level 1: `bg-zinc-900 border border-white/5 shadow-lg shadow-black/20`.
+- **Active Tactile Press**: `transform: scale(0.985); transition: transform 0.1s ease;`.
