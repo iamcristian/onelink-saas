@@ -4,6 +4,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { CacheModule } from './infrastructure/cache/cache.module';
+import { SentinelAiModule } from './modules/sentinel-ai/sentinel-ai.module';
+import { LinkModule } from './modules/link/link.module';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { CacheModule } from './infrastructure/cache/cache.module';
     }),
     DatabaseModule,
     CacheModule,
+    SentinelAiModule,
+    LinkModule,
   ],
   controllers: [AppController],
   providers: [AppService],

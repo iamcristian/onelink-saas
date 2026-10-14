@@ -78,14 +78,28 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async getOrSet<T>(key: string, factory: () => Promise<T>, ttlSeconds = 3600): Promise<T> {
-    const cached = await this.get<T>(key);
-    if (cached !== null) return cached;
-
-    const fresh = await factory();
-    if (fresh !== null && fresh !== undefined) {
-      await this.set(key, fresh, ttlSeconds);
+  async sismember(key: string, member: string): Promise<boolean> {
+    if (!this.client || !this.isConnected) return false;
+    try {
+      const result = await this.client.sismember(key, member);
+      return result === 1;
+    } catch (error) {
+      this.logger.warn(`Set member check error for key ${key}: ${error}`);
+      return false;
     }
-    return fresh;
+  }
+
+  async sadd(key: string, ...members: string[]): Promise<number> {
+    if (!this.client || !this.isConnected || members.length === 0) return 0;
+    try {
+      return await this.client.sadd(key, ...members);
+    } catch (error) {
+      this.logger.warn(`Set add error for key ${key}: ${error}`);
+      return 0;
+    }
+  }
+
+  getClient(): Redis | null {
+    return this.client;
   }
 }
