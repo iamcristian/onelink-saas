@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BioStudio - Creator Dashboard</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Outfit Google Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Theme Configuration -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container": "#171f33",
+            "tertiary-fixed": "#ffdcc5",
+            "outline": "#908fa0",
+            "on-background": "#dae2fd",
+            "secondary-fixed": "#c4e7ff",
+            "surface-dim": "#0b1326",
+            "on-secondary-container": "#00374d",
+            "surface-container-low": "#131b2e",
+            "secondary": "#7bd0ff",
+            "tertiary-container": "#d97721",
+            "error": "#ffb4ab",
+            "secondary-container": "#00a6e0",
+            "on-tertiary-container": "#452000",
+            "on-primary-container": "#0d0096",
+            "error-container": "#93000a",
+            "primary-fixed": "#e1e0ff",
+            "background": "#0b1326",
+            "on-tertiary-fixed": "#301400",
+            "on-tertiary": "#4f2500",
+            "on-primary": "#1000a9",
+            "surface-container-high": "#222a3d",
+            "on-surface-variant": "#c7c4d7",
+            "on-surface": "#dae2fd",
+            "primary-container": "#8083ff",
+            "primary-fixed-dim": "#c0c1ff",
+            "on-secondary-fixed": "#001e2c",
+            "on-primary-fixed-variant": "#2f2ebe",
+            "secondary-fixed-dim": "#7bd0ff",
+            "on-secondary-fixed-variant": "#004c69",
+            "surface-bright": "#31394d",
+            "on-error": "#690005",
+            "surface-variant": "#2d3449",
+            "on-error-container": "#ffdad6",
+            "inverse-surface": "#dae2fd",
+            "surface-container-highest": "#2d3449",
+            "primary": "#c0c1ff",
+            "tertiary": "#ffb783",
+            "outline-variant": "#464554",
+            "inverse-on-surface": "#283044",
+            "surface-tint": "#c0c1ff",
+            "on-tertiary-fixed-variant": "#703700",
+            "inverse-primary": "#494bd6",
+            "tertiary-fixed-dim": "#ffb783",
+            "on-secondary": "#00354a",
+            "surface": "#0b1326",
+            "surface-container-lowest": "#060e20",
+            "on-primary-fixed": "#07006c"
+          },
+          borderRadius: {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-lg": "1rem",
+            "gutter": "0.75rem",
+            "gutter-desktop": "1rem",
+            "space-xs": "0.25rem",
+            "space-xl": "1.5rem",
+            "margin": "1rem",
+            "space-sm": "0.5rem",
+            "margin-desktop": "2rem",
+            "space-md": "0.75rem"
+          },
+          fontFamily: {
+            "headline-lg": ["Outfit"],
+            "body-lg": ["Outfit"],
+            "headline-sm": ["Outfit"],
+            "headline-lg-mobile": ["Outfit"],
+            "body-sm": ["Outfit"],
+            "label-sm": ["Outfit"],
+            "headline-md": ["Outfit"],
+            "label-md": ["Outfit"],
+            "label-lg": ["Outfit"],
+            "body-md": ["Outfit"]
+          },
+          fontSize: {
+            "headline-lg": ["32px", { lineHeight: "38px", letterSpacing: "-0.03em", fontWeight: "700" }],
+            "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "400" }],
+            "headline-sm": ["18px", { lineHeight: "24px", letterSpacing: "-0.015em", fontWeight: "600" }],
+            "headline-lg-mobile": ["26px", { lineHeight: "32px", letterSpacing: "-0.025em", fontWeight: "700" }],
+            "body-sm": ["12px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "400" }],
+            "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }],
+            "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.02em", fontWeight: "600" }],
+            "label-md": ["13px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }],
+            "label-lg": ["15px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "600" }],
+            "body-md": ["14px", { lineHeight: "20px", letterSpacing: "-0.005em", fontWeight: "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1326;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2d3449;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #464554;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill-icon {
+      font-variation-settings: 'FILL' 1;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-body-md select-none">
+<!-- TOP NAVIGATION BAR (Shared Component: TopNavBar) -->
+<header class="w-full h-16 flex items-center justify-between px-6 bg-surface-container-low border-b border-outline-variant sticky top-0 z-50 shadow-sm">
+<!-- Left brand cluster -->
+<div class="flex items-center space-x-8">
+<div class="flex items-center space-x-3 cursor-pointer">
+<div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="account_tree">account_tree</span>
+</div>
+<span class="text-headline-sm font-headline-sm text-on-surface font-bold tracking-tight">BioStudio</span>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container-high text-primary border border-outline-variant">PRO</span>
+</div>
+<!-- Navigation tabs -->
+<nav class="hidden md:flex items-center space-x-6 text-label-md font-label-md">
+<!-- Active: Links -->
+<a class="text-primary border-b-2 border-primary font-semibold pb-4 pt-4 flex items-center space-x-1.5" href="#links">
+<span class="material-symbols-outlined text-[18px]" data-icon="link">link</span>
+<span>Links</span>
+</a>
+<a class="text-on-surface-variant font-medium pb-4 pt-4 hover:text-on-surface hover:text-primary transition-colors duration-150 flex items-center space-x-1.5" href="#appearance">
+<span class="material-symbols-outlined text-[18px]" data-icon="palette">palette</span>
+<span>Appearance</span>
+</a>
+<a class="text-on-surface-variant font-medium pb-4 pt-4 hover:text-on-surface hover:text-primary transition-colors duration-150 flex items-center space-x-1.5" href="#analytics">
+<span class="material-symbols-outlined text-[18px]" data-icon="analytics">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="text-on-surface-variant font-medium pb-4 pt-4 hover:text-on-surface hover:text-primary transition-colors duration-150 flex items-center space-x-1.5" href="#settings">
+<span class="material-symbols-outlined text-[18px]" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Right utility actions -->
+<div class="flex items-center space-x-3">
+<!-- Help & Notification Icons -->
+<button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors duration-150 active:scale-[0.985]">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+</button>
+<button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors duration-150 active:scale-[0.985]">
+<span class="material-symbols-outlined text-[20px]" data-icon="help">help</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-1"></div>
+<!-- Preview toggle (Secondary) -->
+<button class="flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-surface-container-high border border-outline-variant hover:border-primary text-on-surface text-label-md font-label-md transition-all duration-150 active:scale-[0.985]">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility">visibility</span>
+<span>Preview</span>
+</button>
+<!-- Share Profile Button (Primary) -->
+<button class="flex items-center space-x-2 px-4 py-1.5 rounded-full bg-primary-container hover:bg-primary text-on-primary-container text-label-md font-label-md font-semibold transition-all duration-150 shadow-sm active:scale-[0.985]">
+<span class="material-symbols-outlined text-[18px]" data-icon="share">share</span>
+<span>Share</span>
+</button>
+<!-- Creator Profile Pill -->
+<div class="flex items-center space-x-2 pl-2 pr-3 py-1 bg-surface-container rounded-full border border-outline-variant cursor-pointer hover:border-primary transition-colors">
+<img alt="Creator profile avatar photo" class="w-7 h-7 rounded-full object-cover border border-outline-variant" src="https://lh3.googleusercontent.com/aida/AEtjO1XDDuZ3I2reoOVoN8xwUEKkVS3-IB2dTlbmyArfxJhDyK7938Jhg9CBWaM5EHb1W-1RCw42V8yfPDkqUJ9SL9ZLJlv-rmXegWarm9X93tj8AZNnMDY1zO4lWm2Vk3qtIqpVp35dzavWGaUaPKmcvf0SqMpmXRVAL9PLbw45cINAbYUl3CnfAYmQOdvrx1R3ejAIp3un4vQWyWfK_hqtxDmLMk6auqNlS-3_p7zchkJJQJ_-MXMrETqRh80"/>
+<span class="text-label-md font-label-md text-on-surface font-medium">@alexrivera</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</header>
+<!-- MAIN SPLIT WORKSPACE (1440px optimized desktop viewport) -->
+<main class="flex-1 w-full max-w-[1536px] mx-auto flex overflow-hidden">
+<!-- LEFT 60% EDITING WORKSPACE -->
+<section class="w-full lg:w-[58%] xl:w-[60%] h-[calc(100vh-4rem)] overflow-y-auto px-6 lg:px-10 py-8 border-r border-outline-variant">
+<!-- Panel Header & Quick Insights -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-outline-variant/60 gap-4">
+<div>
+<h1 class="text-headline-md font-headline-md text-on-surface tracking-tight">Links &amp; Content</h1>
+<p class="text-body-md font-body-md text-on-surface-variant mt-0.5">Manage, reorder, and analyze your active public links.</p>
+</div>
+<!-- Live status telemetry capsule -->
+<div class="flex items-center space-x-3 px-3 py-1.5 rounded-full bg-surface-container-low border border-outline-variant self-start sm:self-auto">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Profile Live: <strong class="text-on-surface">bio.link/alexrivera</strong></span>
+<button class="text-primary hover:text-white transition-colors" title="Copy public link">
+<span class="material-symbols-outlined text-[16px]" data-icon="content_copy">content_copy</span>
+</button>
+</div>
+</div>
+<!-- Action Toolbar (Add Link, Add Header, Add Divider) -->
+<div class="mt-6 flex flex-wrap items-center gap-3">
+<!-- + Add Link (Primary CTA) -->
+<button class="flex items-center space-x-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary-container font-label-lg text-label-lg shadow-md hover:bg-primary transition-all duration-150 active:scale-[0.985]">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+<span>Add Link</span>
+</button>
+<!-- + Add Header -->
+<button class="flex items-center space-x-2 px-4 py-2.5 rounded-full bg-surface-container border border-outline-variant hover:border-primary text-on-surface font-label-md text-label-md transition-all duration-150 active:scale-[0.985]">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="title">title</span>
+<span>Add Header</span>
+</button>
+<!-- + Add Divider -->
+<button class="flex items-center space-x-2 px-4 py-2.5 rounded-full bg-surface-container border border-outline-variant hover:border-primary text-on-surface font-label-md text-label-md transition-all duration-150 active:scale-[0.985]">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="horizontal_rule">horizontal_rule</span>
+<span>Add Divider</span>
+</button>
+<div class="ml-auto hidden xl:flex items-center space-x-2 text-on-surface-variant text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[16px]" data-icon="swap_vert">swap_vert</span>
+<span>Drag handles to reorder</span>
+</div>
+</div>
+<!-- Filter / Sort Segmented Chips -->
+<div class="mt-6 flex items-center justify-between pb-3">
+<div class="flex items-center space-x-2 bg-surface-container-lowest p-1 rounded-full border border-outline-variant">
+<button class="px-4 py-1.5 rounded-full bg-surface-container-high text-primary text-label-sm font-label-sm font-semibold shadow-sm">
+            All Links (5)
+          </button>
+<button class="px-3.5 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface text-label-sm font-label-sm transition-colors">
+            Active (4)
+          </button>
+<button class="px-3.5 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface text-label-sm font-label-sm transition-colors">
+            Archived (1)
+          </button>
+</div>
+<div class="flex items-center space-x-2 text-label-sm text-on-surface-variant font-label-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="filter_list">filter_list</span>
+<span>Sort by: Manual order</span>
+</div>
+</div>
+<!-- DRAGGABLE LINK CARDS LIST -->
+<div class="mt-3 space-y-3 pb-20">
+<!-- CARD 1: Latest Video -->
+<div class="group bg-surface-container-low hover:bg-surface-container border border-outline-variant hover:border-primary/60 rounded-DEFAULT p-4 transition-all duration-200 shadow-sm flex items-start gap-3">
+<!-- 6-Dot Drag Handle -->
+<button class="mt-2 text-outline hover:text-on-surface cursor-grab active:cursor-grabbing p-1" title="Drag to reorder">
+<span class="material-symbols-outlined text-[20px]" data-icon="drag_indicator">drag_indicator</span>
+</button>
+<!-- Left Icon Pill -->
+<div class="w-12 h-12 rounded-full bg-red-950/40 border border-red-800/40 text-red-400 flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[22px]" data-icon="play_circle">play_circle</span>
+</div>
+<!-- Content Details -->
+<div class="flex-1 min-w-0">
+<div class="flex items-center space-x-2">
+<span class="text-label-lg font-label-lg text-on-surface font-semibold truncate">Latest Video: 10M req/sec Under the Hood</span>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary-container/20 text-primary border border-primary/30">NEW</span>
+</div>
+<div class="flex items-center space-x-2 mt-1 text-body-sm font-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="link">link</span>
+<span class="truncate hover:underline cursor-pointer">youtube.com/watch?v=sysarch</span>
+</div>
+<!-- Card Bottom Bar: Quick telemetry + metadata -->
+<div class="mt-3 pt-2.5 border-t border-outline-variant/50 flex flex-wrap items-center justify-between gap-2">
+<div class="flex items-center space-x-3 text-label-sm font-label-sm">
+<!-- Clicks badge -->
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface border border-outline-variant">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="bar_chart">bar_chart</span>
+<span><strong>1,420</strong> clicks</span>
+</div>
+<span class="text-emerald-400 flex items-center space-x-0.5 text-label-sm">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span>
+<span>+18.4% this week</span>
+</span>
+</div>
+<!-- Action buttons -->
+<div class="flex items-center space-x-1">
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Copy URL">
+<span class="material-symbols-outlined text-[18px]" data-icon="content_copy">content_copy</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="View Analytics">
+<span class="material-symbols-outlined text-[18px]" data-icon="insights">insights</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Edit Link">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="More options">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Status toggle switch (ON) -->
+<div class="ml-2 flex items-center pt-1">
+<button aria-checked="true" class="w-11 h-6 bg-primary-container rounded-full p-0.5 transition-colors relative cursor-pointer" role="switch">
+<div class="w-5 h-5 bg-on-primary-container rounded-full shadow-md transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+</div>
+<!-- CARD 2: Architecture Guide -->
+<div class="group bg-surface-container-low hover:bg-surface-container border border-outline-variant hover:border-primary/60 rounded-DEFAULT p-4 transition-all duration-200 shadow-sm flex items-start gap-3">
+<button class="mt-2 text-outline hover:text-on-surface cursor-grab active:cursor-grabbing p-1" title="Drag to reorder">
+<span class="material-symbols-outlined text-[20px]" data-icon="drag_indicator">drag_indicator</span>
+</button>
+<div class="w-12 h-12 rounded-full bg-indigo-950/40 border border-primary/40 text-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[22px]" data-icon="menu_book">menu_book</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center space-x-2">
+<span class="text-label-lg font-label-lg text-on-surface font-semibold truncate">Free System Design Architecture Guide</span>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary-container/30 text-tertiary border border-tertiary-container/40">EBOOK</span>
+</div>
+<div class="flex items-center space-x-2 mt-1 text-body-sm font-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="link">link</span>
+<span class="truncate hover:underline cursor-pointer">alexrivera.gumroad.com/l/sysdesign</span>
+</div>
+<div class="mt-3 pt-2.5 border-t border-outline-variant/50 flex flex-wrap items-center justify-between gap-2">
+<div class="flex items-center space-x-3 text-label-sm font-label-sm">
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface border border-outline-variant">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="bar_chart">bar_chart</span>
+<span><strong>3,890</strong> clicks</span>
+</div>
+<span class="text-emerald-400 flex items-center space-x-0.5 text-label-sm">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span>
+<span>Top performer</span>
+</span>
+</div>
+<div class="flex items-center space-x-1">
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Copy URL">
+<span class="material-symbols-outlined text-[18px]" data-icon="content_copy">content_copy</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="View Analytics">
+<span class="material-symbols-outlined text-[18px]" data-icon="insights">insights</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Edit Link">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="More options">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<div class="ml-2 flex items-center pt-1">
+<button aria-checked="true" class="w-11 h-6 bg-primary-container rounded-full p-0.5 transition-colors relative cursor-pointer" role="switch">
+<div class="w-5 h-5 bg-on-primary-container rounded-full shadow-md transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+</div>
+<!-- CARD 3: Desk Setup 2026 -->
+<div class="group bg-surface-container-low hover:bg-surface-container border border-outline-variant hover:border-primary/60 rounded-DEFAULT p-4 transition-all duration-200 shadow-sm flex items-start gap-3">
+<button class="mt-2 text-outline hover:text-on-surface cursor-grab active:cursor-grabbing p-1" title="Drag to reorder">
+<span class="material-symbols-outlined text-[20px]" data-icon="drag_indicator">drag_indicator</span>
+</button>
+<div class="w-12 h-12 rounded-full bg-cyan-950/40 border border-secondary/30 text-secondary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[22px]" data-icon="desktop_windows">desktop_windows</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center space-x-2">
+<span class="text-label-lg font-label-lg text-on-surface font-semibold truncate">My Gear &amp; Desk Setup 2026</span>
+</div>
+<div class="flex items-center space-x-2 mt-1 text-body-sm font-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="link">link</span>
+<span class="truncate hover:underline cursor-pointer">kit.co/alexrivera/desk-2026</span>
+</div>
+<div class="mt-3 pt-2.5 border-t border-outline-variant/50 flex flex-wrap items-center justify-between gap-2">
+<div class="flex items-center space-x-3 text-label-sm font-label-sm">
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface border border-outline-variant">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="bar_chart">bar_chart</span>
+<span><strong>840</strong> clicks</span>
+</div>
+</div>
+<div class="flex items-center space-x-1">
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Copy URL">
+<span class="material-symbols-outlined text-[18px]" data-icon="content_copy">content_copy</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="View Analytics">
+<span class="material-symbols-outlined text-[18px]" data-icon="insights">insights</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Edit Link">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="More options">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<div class="ml-2 flex items-center pt-1">
+<button aria-checked="true" class="w-11 h-6 bg-primary-container rounded-full p-0.5 transition-colors relative cursor-pointer" role="switch">
+<div class="w-5 h-5 bg-on-primary-container rounded-full shadow-md transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+</div>
+<!-- SECTION HEADER CARD: Courses & Newsletter -->
+<div class="flex items-center justify-between px-4 py-3 bg-surface-container/60 border border-dashed border-outline-variant rounded-DEFAULT">
+<div class="flex items-center space-x-3">
+<button class="text-outline hover:text-on-surface cursor-grab active:cursor-grabbing" title="Drag Header">
+<span class="material-symbols-outlined text-[18px]" data-icon="drag_indicator">drag_indicator</span>
+</button>
+<span class="material-symbols-outlined text-[18px] text-tertiary" data-icon="folder_special">folder_special</span>
+<span class="text-label-md font-label-md font-bold tracking-wider text-on-surface uppercase">COURSES &amp; NEWSLETTER</span>
+</div>
+<div class="flex items-center space-x-2">
+<button class="text-on-surface-variant hover:text-on-surface p-1" title="Collapse section">
+<span class="material-symbols-outlined text-[18px]" data-icon="expand_less">expand_less</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface p-1" title="Edit header">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+</div>
+</div>
+<!-- CARD 4: Substack Newsletter -->
+<div class="group bg-surface-container-low hover:bg-surface-container border border-outline-variant hover:border-primary/60 rounded-DEFAULT p-4 transition-all duration-200 shadow-sm flex items-start gap-3">
+<button class="mt-2 text-outline hover:text-on-surface cursor-grab active:cursor-grabbing p-1" title="Drag to reorder">
+<span class="material-symbols-outlined text-[20px]" data-icon="drag_indicator">drag_indicator</span>
+</button>
+<div class="w-12 h-12 rounded-full bg-amber-950/40 border border-tertiary/40 text-tertiary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[22px]" data-icon="mail">mail</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center space-x-2">
+<span class="text-label-lg font-label-lg text-on-surface font-semibold truncate">Join 15k Engineers on Substack</span>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-emerald-950/60 text-emerald-300 border border-emerald-800/50">15.2k clicks</span>
+</div>
+<div class="flex items-center space-x-2 mt-1 text-body-sm font-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="link">link</span>
+<span class="truncate hover:underline cursor-pointer">newsletter.alexrivera.dev</span>
+</div>
+<div class="mt-3 pt-2.5 border-t border-outline-variant/50 flex flex-wrap items-center justify-between gap-2">
+<div class="flex items-center space-x-3 text-label-sm font-label-sm">
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface border border-outline-variant">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="bar_chart">bar_chart</span>
+<span><strong>15.2k</strong> total clicks</span>
+</div>
+<span class="text-on-surface-variant text-label-sm">Conversion rate: <strong>32.8%</strong></span>
+</div>
+<div class="flex items-center space-x-1">
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Copy URL">
+<span class="material-symbols-outlined text-[18px]" data-icon="content_copy">content_copy</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="View Analytics">
+<span class="material-symbols-outlined text-[18px]" data-icon="insights">insights</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Edit Link">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="More options">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<div class="ml-2 flex items-center pt-1">
+<button aria-checked="true" class="w-11 h-6 bg-primary-container rounded-full p-0.5 transition-colors relative cursor-pointer" role="switch">
+<div class="w-5 h-5 bg-on-primary-container rounded-full shadow-md transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+</div>
+<!-- CARD 5: Support my work -->
+<div class="group bg-surface-container-low hover:bg-surface-container border border-outline-variant hover:border-primary/60 rounded-DEFAULT p-4 transition-all duration-200 shadow-sm flex items-start gap-3">
+<button class="mt-2 text-outline hover:text-on-surface cursor-grab active:cursor-grabbing p-1" title="Drag to reorder">
+<span class="material-symbols-outlined text-[20px]" data-icon="drag_indicator">drag_indicator</span>
+</button>
+<div class="w-12 h-12 rounded-full bg-orange-950/40 border border-orange-700/40 text-orange-400 flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[22px]" data-icon="coffee">coffee</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center space-x-2">
+<span class="text-label-lg font-label-lg text-on-surface font-semibold truncate">Support my work (Buy Me a Coffee)</span>
+</div>
+<div class="flex items-center space-x-2 mt-1 text-body-sm font-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="link">link</span>
+<span class="truncate hover:underline cursor-pointer">buymeacoffee.com/alexrivera</span>
+</div>
+<div class="mt-3 pt-2.5 border-t border-outline-variant/50 flex flex-wrap items-center justify-between gap-2">
+<div class="flex items-center space-x-3 text-label-sm font-label-sm">
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface border border-outline-variant">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="bar_chart">bar_chart</span>
+<span><strong>412</strong> clicks</span>
+</div>
+</div>
+<div class="flex items-center space-x-1">
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Copy URL">
+<span class="material-symbols-outlined text-[18px]" data-icon="content_copy">content_copy</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="View Analytics">
+<span class="material-symbols-outlined text-[18px]" data-icon="insights">insights</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Edit Link">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="More options">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<div class="ml-2 flex items-center pt-1">
+<button aria-checked="true" class="w-11 h-6 bg-primary-container rounded-full p-0.5 transition-colors relative cursor-pointer" role="switch">
+<div class="w-5 h-5 bg-on-primary-container rounded-full shadow-md transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT 40% LIVE PHONE PREVIEW PANEL (Sticky Mobile Stage) -->
+<aside class="hidden lg:flex w-full lg:w-[42%] xl:w-[40%] h-[calc(100vh-4rem)] flex-col items-center justify-between p-6 bg-surface-container-lowest/70 relative overflow-hidden">
+<!-- Subtle Ambient Glow -->
+<div class="absolute -top-32 -right-32 w-96 h-96 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-32 -left-32 w-96 h-96 bg-secondary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Top Frame Controls -->
+<div class="w-full max-w-[420px] flex items-center justify-between pb-3 z-10">
+<!-- View switchers -->
+<div class="flex items-center space-x-1 bg-surface-container-low p-1 rounded-full border border-outline-variant shadow-sm">
+<button class="px-3 py-1 rounded-full bg-surface-container-high text-primary flex items-center space-x-1.5 text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[15px]" data-icon="smartphone">smartphone</span>
+<span>Mobile</span>
+</button>
+<button class="px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface flex items-center space-x-1.5 text-label-sm font-label-sm transition-colors">
+<span class="material-symbols-outlined text-[15px]" data-icon="desktop_windows">desktop_windows</span>
+<span>Desktop</span>
+</button>
+</div>
+<!-- Frame Utility Actions -->
+<div class="flex items-center space-x-2">
+<button class="w-8 h-8 rounded-full bg-surface-container-low border border-outline-variant text-on-surface-variant hover:text-primary hover:border-primary flex items-center justify-center transition-colors" title="Generate QR Code">
+<span class="material-symbols-outlined text-[16px]" data-icon="qr_code_2">qr_code_2</span>
+</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant hover:border-primary text-on-surface text-label-sm font-label-sm flex items-center space-x-1.5 transition-colors" title="Copy profile URL">
+<span class="material-symbols-outlined text-[14px]" data-icon="link">link</span>
+<span>bio.link/alexrivera</span>
+</button>
+</div>
+</div>
+<!-- REALISTIC IPHONE MOCKUP FRAME (390x844px) -->
+<div class="relative w-[360px] h-[720px] bg-background border-[8px] border-zinc-800 rounded-[50px] shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/10 z-10 my-auto">
+<!-- Dynamic Island / Notch -->
+<div class="absolute top-2 inset-x-0 mx-auto w-24 h-6 bg-black rounded-full z-30 flex items-center justify-between px-2.5">
+<div class="w-2.5 h-2.5 rounded-full bg-zinc-900 border border-zinc-800"></div>
+<div class="w-2 h-2 rounded-full bg-blue-950/80"></div>
+</div>
+<!-- iOS Status Bar -->
+<div class="w-full h-10 pt-2 px-6 flex items-center justify-between text-on-surface text-[12px] font-semibold shrink-0 select-none z-20">
+<span>9:41</span>
+<div class="flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="wifi">wifi</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="battery_full">battery_full</span>
+</div>
+</div>
+<!-- INSIDE PHONE SCROLLABLE CANVAS (Exact Live Profile of Alex Rivera) -->
+<div class="flex-1 overflow-y-auto px-4 pb-8 pt-3 space-y-4">
+<!-- Creator Profile Header -->
+<div class="flex flex-col items-center text-center pt-2">
+<!-- Creator Avatar with Indigo Ring -->
+<div class="relative">
+<div class="w-[84px] h-[84px] rounded-full p-0.5 bg-gradient-to-tr from-primary to-secondary-container">
+<img alt="Creator profile avatar photo" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1XDDuZ3I2reoOVoN8xwUEKkVS3-IB2dTlbmyArfxJhDyK7938Jhg9CBWaM5EHb1W-1RCw42V8yfPDkqUJ9SL9ZLJlv-rmXegWarm9X93tj8AZNnMDY1zO4lWm2Vk3qtIqpVp35dzavWGaUaPKmcvf0SqMpmXRVAL9PLbw45cINAbYUl3CnfAYmQOdvrx1R3ejAIp3un4vQWyWfK_hqtxDmLMk6auqNlS-3_p7zchkJJQJ_-MXMrETqRh80"/>
+</div>
+<div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-background">
+<span class="material-symbols-outlined text-[14px] fill-icon" data-icon="verified">verified</span>
+</div>
+</div>
+<!-- Name and verified badge -->
+<div class="flex items-center space-x-1.5 mt-3">
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold">Alex Rivera</h2>
+<span class="material-symbols-outlined text-[18px] text-primary fill-icon" data-icon="check_circle">check_circle</span>
+</div>
+<!-- Bio Copy -->
+<p class="text-body-sm font-body-sm text-on-surface-variant max-w-[260px] mt-1">
+              Software Architect &amp; Creator. Scaling distributed systems to 10M+ req/sec.
+            </p>
+<!-- Social Icon Strip -->
+<div class="flex items-center space-x-2 mt-3.5">
+<a class="w-9 h-9 rounded-full bg-surface-container border border-outline-variant hover:border-primary text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="terminal">terminal</span>
+</a>
+<a class="w-9 h-9 rounded-full bg-surface-container border border-outline-variant hover:border-primary text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="smart_display">smart_display</span>
+</a>
+<a class="w-9 h-9 rounded-full bg-surface-container border border-outline-variant hover:border-primary text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="alternate_email">alternate_email</span>
+</a>
+<a class="w-9 h-9 rounded-full bg-surface-container border border-outline-variant hover:border-primary text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="code">code</span>
+</a>
+</div>
+</div>
+<!-- Synchronized Live Profile Links (Mirrored Link Capsules) -->
+<div class="space-y-2.5 pt-1">
+<!-- Link 1: Latest Video (Primary Highlighted Hero Link) -->
+<a class="w-full h-14 px-4 rounded-full bg-surface-container border border-outline-variant hover:border-primary flex items-center justify-between text-on-surface transition-all duration-150 active:scale-[0.985] shadow-sm group" href="#">
+<div class="flex items-center space-x-3 min-w-0">
+<div class="w-8 h-8 rounded-full bg-red-950/50 text-red-400 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]" data-icon="play_arrow">play_arrow</span>
+</div>
+<div class="truncate text-left">
+<div class="text-label-md font-label-md font-semibold text-on-surface truncate">Latest Video: 10M req/sec U...</div>
+<div class="text-[10px] text-primary uppercase font-bold tracking-wider">Just published</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary transition-colors shrink-0" data-icon="chevron_right">chevron_right</span>
+</a>
+<!-- Link 2: Architecture Guide -->
+<a class="w-full h-14 px-4 rounded-full bg-surface-container border border-outline-variant hover:border-primary flex items-center justify-between text-on-surface transition-all duration-150 active:scale-[0.985] shadow-sm group" href="#">
+<div class="flex items-center space-x-3 min-w-0">
+<div class="w-8 h-8 rounded-full bg-indigo-950/50 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]" data-icon="menu_book">menu_book</span>
+</div>
+<div class="truncate text-left">
+<div class="text-label-md font-label-md font-semibold text-on-surface truncate">Free System Design Guide</div>
+<div class="text-[10px] text-tertiary uppercase font-bold tracking-wider">Free PDF Download</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary transition-colors shrink-0" data-icon="chevron_right">chevron_right</span>
+</a>
+<!-- Link 3: Gear & Setup -->
+<a class="w-full h-14 px-4 rounded-full bg-surface-container border border-outline-variant hover:border-primary flex items-center justify-between text-on-surface transition-all duration-150 active:scale-[0.985] shadow-sm group" href="#">
+<div class="flex items-center space-x-3 min-w-0">
+<div class="w-8 h-8 rounded-full bg-cyan-950/50 text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]" data-icon="desktop_windows">desktop_windows</span>
+</div>
+<span class="text-label-md font-label-md font-medium text-on-surface truncate">My Gear &amp; Desk Setup 2026</span>
+</div>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary transition-colors shrink-0" data-icon="chevron_right">chevron_right</span>
+</a>
+<!-- Section Label: Courses & Newsletter -->
+<div class="pt-2 text-center">
+<span class="text-[11px] font-label-sm uppercase tracking-widest text-on-surface-variant/70 font-semibold">COURSES &amp; NEWSLETTER</span>
+</div>
+<!-- Link 4: Substack Newsletter -->
+<a class="w-full h-14 px-4 rounded-full bg-surface-container border border-outline-variant hover:border-primary flex items-center justify-between text-on-surface transition-all duration-150 active:scale-[0.985] shadow-sm group" href="#">
+<div class="flex items-center space-x-3 min-w-0">
+<div class="w-8 h-8 rounded-full bg-amber-950/50 text-tertiary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]" data-icon="mail">mail</span>
+</div>
+<div class="truncate text-left">
+<div class="text-label-md font-label-md font-semibold text-on-surface truncate">Join 15k Engineers on Substa...</div>
+<div class="text-[10px] text-emerald-400 font-medium">Weekly deep dive</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary transition-colors shrink-0" data-icon="chevron_right">chevron_right</span>
+</a>
+<!-- Link 5: Buy Me a Coffee -->
+<a class="w-full h-14 px-4 rounded-full bg-surface-container border border-outline-variant hover:border-primary flex items-center justify-between text-on-surface transition-all duration-150 active:scale-[0.985] shadow-sm group" href="#">
+<div class="flex items-center space-x-3 min-w-0">
+<div class="w-8 h-8 rounded-full bg-orange-950/50 text-orange-400 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]" data-icon="coffee">coffee</span>
+</div>
+<span class="text-label-md font-label-md font-medium text-on-surface truncate">Support my work</span>
+</div>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary transition-colors shrink-0" data-icon="chevron_right">chevron_right</span>
+</a>
+<!-- Quick Newsletter Capture Pill Container -->
+<div class="mt-4 p-3 rounded-2xl bg-surface-container-low border border-outline-variant text-center">
+<div class="text-label-sm font-label-sm font-semibold text-on-surface">Get Architecture Notes Monthly</div>
+<div class="mt-2 flex items-center rounded-full bg-surface-container-lowest border border-outline-variant p-1">
+<input class="w-full bg-transparent border-0 text-on-surface placeholder:text-outline text-label-sm px-3 focus:ring-0" placeholder="Enter your email" type="email"/>
+<button class="px-3 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm font-semibold shrink-0">
+                  Join
+                </button>
+</div>
+</div>
+</div>
+<!-- Phone Footer Badge -->
+<div class="pt-4 pb-2 text-center">
+<span class="text-[10px] text-on-surface-variant/60 tracking-wider">
+              © 2025 Powered by <strong class="text-on-surface">BioStudio</strong>
+</span>
+</div>
+</div>
+<!-- Phone Home Indicator Bar -->
+<div class="w-full h-5 flex items-center justify-center pb-1 shrink-0 z-20">
+<div class="w-32 h-1 bg-zinc-600 rounded-full"></div>
+</div>
+</div>
+<!-- Real-time sync indicator -->
+<div class="flex items-center space-x-2 text-label-sm font-label-sm text-on-surface-variant pt-2">
+<span class="material-symbols-outlined text-[16px] text-emerald-400" data-icon="sync">sync</span>
+<span>Real-time preview synchronizing automatically</span>
+</div>
+</aside>
+</main>
+</body></html>
