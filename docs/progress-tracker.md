@@ -111,7 +111,9 @@ To ensure strict engineering rigor before starting feature development, the foll
 │   ├── system-arch.md    │ C4 Context, Container    │ ✅ Approved       │
 │   └── sequence-flows.md │ Hot Path & Telemetry     │ ✅ Approved       │
 │ `docs/ui-ux/`           │                          │                   │
-│   └── wireframes.md     │ Split Dash, Stitch Specs │ ✅ Ready / Review │
+│   ├── wireframes.md     │ Split Dash, 4 Screens    │ ✅ 100% Mockups   │
+│   ├── DESIGN.md         │ Carbon Architecture DS   │ ✅ Approved       │
+│   └── mockups/          │ 4 PNGs & 4 HTML sources  │ ✅ In Repo        │
 │ `docs/adr/`             │ ADRs 001 - 004           │ ✅ Documented     │
 │ `docs/test-plan.md`     │ QA Strategy & TDD Matrix │ ✅ Approved       │
 └─────────────────────────┴──────────────────────────┴───────────────────┘
@@ -119,13 +121,15 @@ To ensure strict engineering rigor before starting feature development, the foll
 
 ---
 
-## 🎨 UI/UX Mockups & Google Stitch Integration Strategy
+## 🎨 UI/UX Mockups & Google Stitch Unified Canvas
 
-As requested, we paused direct frontend coding to formalize our UI/UX design:
-- Full screen-by-screen layout specifications are detailed in [`docs/ui-ux/wireframes-and-mockups.md`](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/wireframes-and-mockups.md).
-- **Split-Screen Studio**: Desktop features a 60/40 split with an active live phone mockup frame that re-renders dynamically.
-- **Design Tokens**: Standardized color palettes, button border styles (Pill, Sharp Outline, Brutalist, Glassmorphism), and typography options.
-- **Google Stitch / Figma Ready**: Component contracts and screen layouts are mapped directly to `@repo/shared` schemas and Tailwind tokens, ready for mockup generation with Google Stitch before implementation.
+All 4 visual screens for **OneLink** have been generated within the unified Google Stitch project (`14141085438200447026`), downloaded into `docs/ui-ux/mockups/`, and documented in [`docs/ui-ux/wireframes-and-mockups.md`](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/wireframes-and-mockups.md):
+1. **Screen 1**: Mobile Public Profile `/@alexrivera` ([PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.png) / [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.html)).
+2. **Screen 2**: OneLink Studio Links Manager 60/40 Split ([PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.png) / [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.html)).
+3. **Screen 3**: OneLink Studio Appearance & Themes 60/40 Split ([PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.png) / [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.html)).
+4. **Screen 4**: OneLink Studio Performance Analytics & Telemetry ([PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.png) / [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.html)).
+- **Design Tokens**: Monochromatic Carbon (`#09090b` canvas, `#121215` cards, `#27272a` hairline borders, pure white pills, Geist + JetBrains Mono).
+- **Separation of Concerns**: Studio dashboard chrome remains fixed off-black; creator profile preview is theme-dynamic.
 
 ---
 

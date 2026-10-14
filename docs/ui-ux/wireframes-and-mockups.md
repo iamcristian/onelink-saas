@@ -221,8 +221,16 @@ graph TD
 
 ## 4. Google Stitch / Prototyping Alignment
 
-To integrate smoothly with **Google Stitch**, Figma, or AI wireframing tools:
-1. **Design Tokens Export**: All token values in Section 1 map directly to Tailwind CSS v4 variables in `apps/web/src/app/globals.css`.
+All 4 target views have been formally generated, tested, and stored within the unified Google Stitch project (`14141085438200447026`) and mirrored in `docs/ui-ux/mockups/`:
+
+| Screen | Viewport | PNG Mockup | Source HTML | Stitch Screen ID |
+|---|---|---|---|---|
+| **1. Public Profile** (`/@alexrivera`) | Mobile 390x844 | [screen-1-profile.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.png) | [screen-1-profile.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.html) | `c30c125858234fca8b5fe40e4cacaf18` |
+| **2. OneLink Studio (Links & Content)** | Desktop 1440p (60/40) | [screen-2-studio-dashboard.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.png) | [screen-2-studio-dashboard.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.html) | `28acc78d161d4c0e9043c33a253a6509` |
+| **3. Appearance & Themes Customizer** | Desktop 1440p (60/40) | [screen-3-appearance.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.png) | [screen-3-appearance.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.html) | `b7727bd8e4194a6cb808d171e3c3d79a` |
+| **4. Performance Analytics Dashboard** | Desktop 1440p (Full) | [screen-4-analytics.png](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.png) | [screen-4-analytics.html](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.html) | `abefbcf5251c48c0b9b8cbd9d4bead72` |
+
+1. **Design Tokens Export**: All token values in Section 1 map directly to Tailwind CSS variables in `apps/web/src/app/globals.css`.
 2. **Component Boundaries**: Each component (`LinkCard`, `ProfileHeader`, `LivePhonePreview`, `ThemeCard`) has strict atomic props validated with `@repo/shared` schemas.
 3. **Responsive Breakpoints**:
    - `sm`: 640px (Mobile portrait to tablet)
