@@ -1,14 +1,17 @@
-# 📋 Project Progress Tracker & Setup Guide
+# 📋 OneLink Project Progress Tracker & Setup Guide
 
-> **Project**: Scalable Link-in-Bio Platform  
-> **Last Updated**: 2026-10-13  
-> **Current Phase**: Phase 0 Complete / Transitioning to Formal SDLC Design Phase  
+> **Project Name**: **OneLink** (`onelink.bio`) — High-Scalability Creator Link-in-Bio Platform  
+> **Last Updated**: 2026-10-14  
+> **Current Phase**: SDLC Analysis & Visual Design Complete (100%) — Transitioning to Phase 1 (Domain TDD)  
+> **Google Stitch Canvas**: Unified Project `14141085438200447026` (`Carbon Architecture`)
 
 ---
 
 ## 📌 Executive Summary of Work Completed So Far
 
-Before jumping into domain implementation, we completed the **Foundation & Monorepo Infrastructure (Phase 0)**. This establishes our developer tooling, shared packages, containerized databases, and build pipeline.
+Before writing domain business logic, we established two robust pillars:
+1. **Foundation & Monorepo Infrastructure (Phase 0)**: Monorepo tooling, containerized database engines, Redis caching, shared validation schemas, and automated build pipelines.
+2. **Formal SDLC System Design & Prototyping**: Complete product specifications, IEEE 830 software requirements, C4 architecture diagrams, Mermaid ERD and sequence flows, and a unified 4-screen visual mockup suite generated and synced in **Google Stitch**.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -48,7 +51,7 @@ Before jumping into domain implementation, we completed the **Foundation & Monor
   - `dotenv-cli` integration: Reads root `../../.env` automatically.
 - **`packages/shared`**:
   - Centralized Zod validation schemas (`RegisterSchema`, `LoginSchema`, `CreateLinkSchema`, `UpdateProfileSchema`, `TrackClickSchema`).
-  - Shared TypeScript types and reserved username blocklist (`admin`, `api`, `dashboard`, etc.).
+  - Shared TypeScript types and reserved username blocklist (`admin`, `api`, `dashboard`, `onelink`, etc.).
 
 ### 3. Local Infrastructure (`infrastructure/docker/`)
 - **`docker-compose.yml`**:
@@ -109,13 +112,16 @@ To ensure strict engineering rigor before starting feature development, the foll
 │ `docs/architecture/`    │                          │                   │
 │   ├── database-design.md│ Mermaid ERD & Timescale  │ ✅ Approved       │
 │   ├── system-arch.md    │ C4 Context, Container    │ ✅ Approved       │
-│   └── sequence-flows.md │ Hot Path & Telemetry     │ ✅ Approved       │
+│   ├── sequence-flows.md │ Hot Path & Telemetry     │ ✅ Approved       │
+│   └── user-flows.md     │ Visitor & Creator Flows  │ ✅ Approved       │
 │ `docs/ui-ux/`           │                          │                   │
-│   ├── wireframes.md     │ Split Dash, 4 Screens    │ ✅ 100% Mockups   │
 │   ├── DESIGN.md         │ Carbon Architecture DS   │ ✅ Approved       │
-│   └── mockups/          │ 4 PNGs & 4 HTML sources  │ ✅ In Repo        │
+│   ├── wireframes.md     │ Screen Specifications    │ ✅ Approved       │
+│   ├── prompts/          │ Stitch Enhanced Prompts  │ ✅ Ready          │
+│   └── mockups/          │ 4 PNGs & 4 HTML sources  │ ✅ 100% Generated │
 │ `docs/adr/`             │ ADRs 001 - 004           │ ✅ Documented     │
 │ `docs/test-plan.md`     │ QA Strategy & TDD Matrix │ ✅ Approved       │
+│ `docs/master-plan.md`   │ 16-Week Product Roadmap  │ ✅ Approved       │
 └─────────────────────────┴──────────────────────────┴───────────────────┘
 ```
 
@@ -124,12 +130,17 @@ To ensure strict engineering rigor before starting feature development, the foll
 ## 🎨 UI/UX Mockups & Google Stitch Unified Canvas
 
 All 4 visual screens for **OneLink** have been generated within the unified Google Stitch project (`14141085438200447026`), downloaded into `docs/ui-ux/mockups/`, and documented in [`docs/ui-ux/wireframes-and-mockups.md`](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/wireframes-and-mockups.md):
-1. **Screen 1**: Mobile Public Profile `/@alexrivera` ([PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.png) / [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.html)).
-2. **Screen 2**: OneLink Studio Links Manager 60/40 Split ([PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.png) / [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.html)).
-3. **Screen 3**: OneLink Studio Appearance & Themes 60/40 Split ([PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.png) / [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.html)).
-4. **Screen 4**: OneLink Studio Performance Analytics & Telemetry ([PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.png) / [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.html)).
-- **Design Tokens**: Monochromatic Carbon (`#09090b` canvas, `#121215` cards, `#27272a` hairline borders, pure white pills, Geist + JetBrains Mono).
-- **Separation of Concerns**: Studio dashboard chrome remains fixed off-black; creator profile preview is theme-dynamic.
+
+| # | Screen Name | Route | Viewport | Assets (PNG & HTML) | Stitch Screen ID |
+|---|---|---|---|---|---|
+| **1** | **Public Profile Page** | `/@alexrivera` | Mobile `390×844` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-1-profile.html) | `c30c125858234fca8b5fe40e4cacaf18` |
+| **2** | **OneLink Studio: Links** | `/studio/links` | Desktop `1440p` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-2-studio-dashboard.html) | `28acc78d161d4c0e9043c33a253a6509` |
+| **3** | **OneLink Studio: Appearance** | `/studio/appearance` | Desktop `1440p` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-3-appearance.html) | `b7727bd8e4194a6cb808d171e3c3d79a` |
+| **4** | **OneLink Studio: Analytics** | `/studio/analytics` | Desktop `1440p` | [PNG](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.png) · [HTML](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/ui-ux/mockups/screen-4-analytics.html) | `abefbcf5251c48c0b9b8cbd9d4bead72` |
+
+- **Design System**: Carbon Architecture (`assets/fa13b5dff1214ff1972bdfec24eb4cc5`).
+- **Palette**: Strictly Monochromatic Off-Black (Zinc 950 `#09090b` canvas, `#121215` cards, `#27272a` borders, pure white `#ffffff` pills, Geist + JetBrains Mono).
+- **Interactivity & Motion**: Hardware-accelerated CSS animations (`@keyframes shimmer`, `scale(1.02)`, `active:scale(0.98)`), micro-interactions, responsive hover states, and live iPhone 15 Pro synchronization.
 
 ---
 

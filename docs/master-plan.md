@@ -1,8 +1,8 @@
-# 🔗 Link-in-Bio Platform — Master Plan
+# 🔗 OneLink Platform (`onelink.bio`) — Master Plan
 
-> **Project**: Scalable Link-in-Bio Platform (Linktree-style)  
-> **Plan Version**: 2.1 (Updated with Modern 2026 Tech Standards)  
-> **Date**: 2026-10-13  
+> **Project Name**: **OneLink** (`onelink.bio`) — Scalable Creator Link-in-Bio Platform  
+> **Plan Version**: 2.2 (Updated with OneLink Carbon Architecture & Google Stitch Canvas)  
+> **Date**: 2026-10-14  
 > **Author**: crisa  
 > **Purpose**: Professional portfolio + future startup foundation  
 
