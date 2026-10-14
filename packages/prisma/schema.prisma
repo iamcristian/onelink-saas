@@ -7,6 +7,38 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Role {
+  CREATOR
+  SUPER_ADMIN
+  OWNER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+}
+
+enum PlanInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum ThreatType {
+  PHISHING
+  MALWARE
+  CRYPTO_DRAINER
+  SPAM
+}
+
+enum SecurityFlagStatus {
+  BLOCKED_AUTO
+  PENDING_REVIEW
+  RESOLVED_BENIGN
+  BANNED
+}
+
 enum LinkType {
   LINK
   HEADER
@@ -48,11 +80,18 @@ model User {
   passwordHash String?   @map("password_hash")
   name         String?
   googleId     String?   @unique @map("google_id")
+  role         Role      @default(CREATOR)
+  isBanned     Boolean   @default(false) @map("is_banned")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at")
 
-  profile      Profile?
+  profile        Profile?
+  subscriptions  Subscription[]
+  securityFlags  SecurityFlag[]
+  adminAuditLogs AdminAuditLog[]
+  reviewedFlags  SecurityFlag[]    @relation("ReviewedByAdmin")
+  addedBlocks    DomainBlocklist[] @relation("AddedByAdmin")
 
   @@map("users")
 }
@@ -153,3 +192,87 @@ model SocialLink {
   @@index([profileId, position])
   @@map("social_links")
 }
+
+model Plan {
+  id            String       @id @default(uuid()) @db.Uuid
+  code          String       @unique @db.VarChar(50)
+  name          String       @db.VarChar(100)
+  priceCents    Int          @default(0) @map("price_cents")
+  interval      PlanInterval @default(MONTHLY)
+  features      Json         @default("{}")
+  stripePriceId String?      @unique @map("stripe_price_id")
+  isActive      Boolean      @default(true) @map("is_active")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid()) @db.Uuid
+  userId               String             @map("user_id") @db.Uuid
+  planId               String             @map("plan_id") @db.Uuid
+  stripeCustomerId     String?            @map("stripe_customer_id")
+  stripeSubscriptionId String?            @unique @map("stripe_subscription_id")
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodEnd     DateTime?          @map("current_period_end")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                 Plan               @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model SecurityFlag {
+  id              String             @id @default(uuid()) @db.Uuid
+  userId          String             @map("user_id") @db.Uuid
+  submittedUrl    String             @map("submitted_url")
+  riskScore       Decimal            @map("risk_score") @db.Decimal(5, 4)
+  threatType      ThreatType         @map("threat_type")
+  aiConfidence    Decimal            @map("ai_confidence") @db.Decimal(5, 4)
+  ipAddress       String?            @map("ip_address")
+  status          SecurityFlagStatus @default(BLOCKED_AUTO)
+  reviewedById    String?            @map("reviewed_by") @db.Uuid
+  resolutionNotes String?            @map("resolution_notes")
+  createdAt       DateTime           @default(now()) @map("created_at")
+
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy      User?              @relation("ReviewedByAdmin", fields: [reviewedById], references: [id])
+
+  @@index([riskScore])
+  @@index([status])
+  @@map("security_flags")
+}
+
+model DomainBlocklist {
+  id            String   @id @default(uuid()) @db.Uuid
+  domainPattern String   @unique @map("domain_pattern") @db.VarChar(255)
+  reason        String   @db.VarChar(500)
+  addedById     String?  @map("added_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  addedBy       User?    @relation("AddedByAdmin", fields: [addedById], references: [id])
+
+  @@map("domain_blocklist")
+}
+
+model AdminAuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  adminUserId String   @map("admin_user_id") @db.Uuid
+  action      String   @db.VarChar(100)
+  targetType  String   @map("target_type") @db.VarChar(50)
+  targetId    String?  @map("target_id") @db.Uuid
+  reason      String
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  adminUser   User     @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId])
+  @@index([action])
+  @@map("admin_audit_logs")
+}
+

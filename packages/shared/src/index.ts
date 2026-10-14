@@ -129,3 +129,50 @@ export const TrackPageViewSchema = z.object({
 
 export type TrackClickInput = z.infer<typeof TrackClickSchema>;
 export type TrackPageViewInput = z.infer<typeof TrackPageViewSchema>;
+
+// ============================================================================
+// OneLink Sentinel AI & Security Schemas
+// ============================================================================
+
+export const RoleEnum = z.enum(['CREATOR', 'SUPER_ADMIN', 'OWNER']);
+export type Role = z.infer<typeof RoleEnum>;
+
+export const ThreatTypeEnum = z.enum(['PHISHING', 'MALWARE', 'CRYPTO_DRAINER', 'SPAM']);
+export type ThreatType = z.infer<typeof ThreatTypeEnum>;
+
+export const SecurityFlagStatusEnum = z.enum([
+  'BLOCKED_AUTO',
+  'PENDING_REVIEW',
+  'RESOLVED_BENIGN',
+  'BANNED',
+]);
+export type SecurityFlagStatus = z.infer<typeof SecurityFlagStatusEnum>;
+
+export const EvaluateUrlSchema = z.object({
+  url: z.string().url('Must be a valid URL to evaluate'),
+});
+export type EvaluateUrlInput = z.infer<typeof EvaluateUrlSchema>;
+
+export const CreateBlocklistSchema = z.object({
+  domainPattern: z.string().min(3, 'Domain pattern must be at least 3 characters'),
+  reason: z.string().min(3, 'Reason is required').max(500),
+});
+export type CreateBlocklistInput = z.infer<typeof CreateBlocklistSchema>;
+
+// ============================================================================
+// SaaS Owner & Billing Schemas
+// ============================================================================
+
+export const UpdatePlanSchema = z.object({
+  priceCents: z.number().int().min(0).optional(),
+  features: z.record(z.any()).optional(),
+  isActive: z.boolean().optional(),
+});
+export type UpdatePlanInput = z.infer<typeof UpdatePlanSchema>;
+
+export const InviteTeamMemberSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  role: RoleEnum,
+});
+export type InviteTeamMemberInput = z.infer<typeof InviteTeamMemberSchema>;
+

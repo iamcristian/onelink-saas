@@ -60,6 +60,46 @@ const PRESET_THEMES = [
   },
 ];
 
+const DEFAULT_PLANS = [
+  {
+    code: 'FREE',
+    name: 'Free Plan',
+    priceCents: 0,
+    features: {
+      maxLinks: 5,
+      customDomains: false,
+      removeBranding: false,
+      analyticsRetentionDays: 7,
+    },
+  },
+  {
+    code: 'PRO',
+    name: 'Creator Pro',
+    priceCents: 900,
+    features: {
+      maxLinks: 9999,
+      customDomains: false,
+      removeBranding: true,
+      customThemes: true,
+      analyticsRetentionDays: 90,
+    },
+  },
+  {
+    code: 'ENTERPRISE',
+    name: 'Enterprise Studio',
+    priceCents: 2900,
+    features: {
+      maxLinks: 9999,
+      customDomains: true,
+      removeBranding: true,
+      customThemes: true,
+      sentinelAiPro: true,
+      teamSeats: 5,
+      analyticsRetentionDays: 365,
+    },
+  },
+];
+
 async function main() {
   console.log('🌱 Seeding preset themes...');
 
@@ -73,6 +113,21 @@ async function main() {
       console.log(`  ✓ Created theme: ${theme.name}`);
     } else {
       console.log(`  - Theme already exists: ${theme.name}`);
+    }
+  }
+
+  console.log('🌱 Seeding subscription plans...');
+
+  for (const plan of DEFAULT_PLANS) {
+    const existing = await prisma.plan.findUnique({
+      where: { code: plan.code },
+    });
+
+    if (!existing) {
+      await prisma.plan.create({ data: plan });
+      console.log(`  ✓ Created plan: ${plan.name} (${plan.code})`);
+    } else {
+      console.log(`  - Plan already exists: ${plan.name}`);
     }
   }
 

@@ -1,12 +1,135 @@
-# 🗄️ Database Design & Data Architecture
+# 🗄️ Database Design & Data Architecture: De la Teoría a la Producción
 
-> **Database Engines**: PostgreSQL 16 + TimescaleDB 2.17+ Extension + Redis 7 Stack  
-> **ORM & Query Engine**: Prisma 6  
-> **Status**: Approved & Implemented in `@repo/prisma`  
+> **Metodología de Modelado**: Arquitectura ANSI/SPARC de 3 Niveles (Conceptual Chen ➔ Lógico 3FN ➔ Físico Relacional)  
+> **Motores de Datos**: PostgreSQL 16 + Extensión TimescaleDB 2.17+ + Redis 7 Stack  
+> **ORM & Query Engine**: Prisma 6.4 (Tipado en `@repo/prisma`)  
+> **Estado**: Aprobado, Sincronizado & Sembrado en Docker (`linktree_dev`)  
 
 ---
 
-## 1. Entity-Relationship Diagram (ERD)
+## 🏛️ Introducción Metodológica: Los 3 Niveles del Diseño de Datos
+
+En la ingeniería de software y arquitectura de datos de clase mundial (siguiendo el estándar ANSI/SPARC), saltar directamente a escribir sentencias SQL o esquemas de ORM sin modelado previo es un antipatrón que genera incoherencias conceptuales y deuda técnica. 
+
+Por eso, el diseño de datos de **OneLink** sigue rigurosamente los 3 niveles formales de abstracción:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 1. MODELO CONCEPTUAL (Notación Peter Chen, 1976)                                       │
+│    • 100% Agnóstico a la tecnología (SQL, NoSQL, ORM).                                │
+│    • Define ENTIDADES semánticas del negocio, RELACIONES y CARDINALIDADES.             │
+└────────────────────────────────────────┬───────────────────────────────────────────────┘
+                                         │  (Traducción y Normalización)
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 2. MODELO LÓGICO RELACIONAL (Edgar F. Codd, 1970)                                      │
+│    • Aplica 1FN, 2FN, 3FN (Tercera Forma Normal) para evitar anomalías.                │
+│    • Resuelve relaciones N:M, define Claves Primarias (PK) y Foráneas (FK).           │
+│    • Documenta desnormalizaciones tácticas de alto rendimiento (click_count).         │
+└────────────────────────────────────────┬───────────────────────────────────────────────┘
+                                         │  (Optimización para el Motor)
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 3. MODELO FÍSICO & RELACIONAL (PostgreSQL 16 + TimescaleDB + Prisma)                   │
+│    • Tipos nativos (UUID, VARCHAR(30), TIMESTAMPTZ, INET, DECIMAL, JSONB).             │
+│    • Particionamiento por tiempo (Hypertables 1 día) y compresión columnar.            │
+│    • Índices B-Tree, índices parciales condicionales y políticas de integridad.        │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 1. Nivel 1: Modelo Conceptual (Notación Semántica de Chen)
+
+El modelo conceptual captura las entidades del mundo real y sus interacciones de negocio sin preocuparse por tablas, tipos de datos ni motores de almacenamiento:
+
+### 1.1 Diagrama Entidad-Relación Conceptual (Estilo Chen)
+
+```mermaid
+graph TD
+    classDef entity fill:#121215,stroke:#ffffff,stroke-width:2px,color:#fafafa;
+    classDef relation fill:#27272a,stroke:#c8c5ca,stroke-width:1px,color:#fafafa;
+    classDef attribute fill:#18181b,stroke:#52525b,stroke-width:1px,color:#a1a1aa;
+
+    %% Entidades Principales
+    U["USUARIO"]:::entity
+    P["PERFIL"]:::entity
+    L["ENLACE"]:::entity
+    T["TEMA"]:::entity
+    PL["PLAN"]:::entity
+    S["SUSCRIPCION"]:::entity
+    SF["ALERTA_SEGURIDAD<br/>(OneLink Sentinel)"]:::entity
+    DB["BLOQUEO_DOMINIO"]:::entity
+    AL["LOG_AUDITORIA"]:::entity
+    CL["EVENTO_CLIC"]:::entity
+    PV["EVENTO_VISTA"]:::entity
+
+    %% Relaciones Semánticas
+    R_HAS["posee (1:1)"]:::relation
+    R_SUB["contrata (1:N)"]:::relation
+    R_DEF["define (1:N)"]:::relation
+    R_LINKS["contiene (1:N)"]:::relation
+    R_THEME["aplica (N:1)"]:::relation
+    R_TRIG["gatilla (1:N)"]:::relation
+    R_AUDIT["ejecuta (1:N)"]:::relation
+    R_BLOCK["registra (1:N)"]:::relation
+    R_GEN_C["genera (1:N)"]:::relation
+    R_GEN_V["recibe (1:N)"]:::relation
+
+    %% Conexiones Entidad - Relación
+    U --- R_HAS --- P
+    U --- R_SUB --- S
+    PL --- R_DEF --- S
+    P --- R_LINKS --- L
+    P --- R_THEME --- T
+    U --- R_TRIG --- SF
+    U --- R_AUDIT --- AL
+    U --- R_BLOCK --- DB
+    L --- R_GEN_C --- CL
+    P --- R_GEN_V --- PV
+```
+
+### 1.2 Reglas de Negocio Semánticas
+1. **Unicidad de Perfil**: Todo `USUARIO` creador posee exactamente un `PERFIL` público asociado (`1:1`).
+2. **Suscripción Activa**: Un `USUARIO` puede contratar planes a lo largo del tiempo, pero en un momento dado solo una `SUSCRIPCION` rige sus privilegios (`1:N` histórico).
+3. **Integridad de Catálogo**: Un `PLAN` (Free, Pro, Enterprise) define las características y límites de múltiples `SUSCRIPCION`.
+4. **Defensa Sentinel AI**: Cuando un `USUARIO` intenta guardar un enlace sospechoso, el motor in-process gatilla una `ALERTA_SEGURIDAD` (`1:N`).
+5. **Telemetría de Alto Rendimiento**: Un `ENLACE` genera millones de `EVENTO_CLIC` a lo largo del tiempo (`1:N`).
+
+---
+
+## 2. Nivel 2: Modelo Lógico Normalizado (3FN & Reglas de Codd)
+
+El modelo lógico traduce las entidades conceptuales a relaciones estructuradas (tablas), definiendo claves primarias (`PK`), claves foráneas (`FK`), y garantizando la **Tercera Forma Normal (3FN)**:
+
+### 2.1 Justificación de Normalización (1FN, 2FN, 3FN)
+
+* **Primera Forma Normal (1FN - Atomicidad)**:
+  * Todos los atributos contienen valores atómicos indivisibles.
+  * *Aplicación*: Las redes sociales no se guardan como un array o cadena separada por comas dentro de `profiles`. Se extrajeron a la entidad `social_links` con campos independientes (`platform`, `url`, `position`).
+* **Segunda Forma Normal (2FN - Dependencia Funcional Completa)**:
+  * La base de datos está en 1FN y ningún atributo no clave depende de un subconjunto de una clave primaria compuesta.
+  * *Aplicación*: Todas las entidades utilizan identificadores primarios simples `UUID` generados criptográficamente (`id PK`), eliminando cualquier riesgo de dependencia parcial.
+* **Tercera Forma Normal (3FN - No Transitividad)**:
+  * La base de datos está en 2FN y ningún atributo no clave depende transitivamente de otro atributo no clave.
+  * *Aplicación*: El precio mensual (`price_cents`) y las características de suscripción no se guardan en `subscriptions`, sino en `plans`. Si un plan cambia de precio, no se modifica la tupla de suscripción del usuario, evitando anomalías de actualización.
+
+### 2.2 Desnormalizaciones Tácticas de Alto Rendimiento (High-Read Optimization)
+
+En arquitecturas de alta escala (High-Throughput), la pureza académica de la 3FN a veces choca con las latencias de lectura masivas. En OneLink implementamos dos desnormalizaciones conscientes y documentadas:
+
+1. **`links.click_count` (BIGINT)**:
+   * *Teoría pura*: Debería calcularse con `SELECT COUNT(*) FROM click_events WHERE link_id = ?`.
+   * *Problema*: Ejecutar un agregador sobre una tabla con 10 millones de filas cada vez que un creador entra a su dashboard causaría contención masiva de I/O en disco.
+   * *Solución*: Mantenemos `click_count` en la fila de `links`. BullMQ acumula lotes de clics en Redis y actualiza el contador de forma atómica cada 10 segundos.
+2. **`plans.features` y `admin_audit_logs.metadata` (JSONB)**:
+   * Permite extensibilidad dinámica de feature flags (`{"custom_domains": true, "sentinel_ai_pro": true}`) sin requerir migraciones DDL de esquema bloqueantes en producción.
+
+---
+
+## 3. Nivel 3: Modelo Físico & Relacional (Crows Foot ERD + PostgreSQL + TimescaleDB)
+
+El modelo físico detalla los tipos de datos exactos, constraints a nivel de motor, hypertables de series temporales y estrategias de indexación:
 
 ```mermaid
 erDiagram
@@ -23,34 +146,34 @@ erDiagram
     links ||--o{ click_events : "generates"
 
     users {
-        uuid id PK "Default gen_random_uuid()"
-        varchar email UK "Unique indexed email"
-        varchar password_hash "Nullable for OAuth users"
-        varchar name "User display name"
-        varchar google_id UK "Unique Google OpenID"
+        uuid id PK "gen_random_uuid()"
+        varchar email UK "Indexed lower(email)"
+        varchar password_hash "Nullable for OAuth"
+        varchar name "Display name"
+        varchar google_id UK "Nullable OpenID"
         enum role "CREATOR, SUPER_ADMIN, OWNER"
-        boolean is_banned "Suspension flag default false"
+        boolean is_banned "Default false"
         timestamptz created_at "Default now()"
         timestamptz updated_at
-        timestamptz deleted_at "Soft delete timestamp"
+        timestamptz deleted_at "Soft delete"
     }
 
     plans {
         uuid id PK
         varchar code UK "FREE, PRO, ENTERPRISE"
-        varchar name "Display name"
-        integer price_cents "E.g. 900 for $9.00/mo"
-        varchar interval "MONTHLY, YEARLY"
-        jsonb features "Tier limit flags (custom_domain, etc.)"
-        varchar stripe_price_id UK "Stripe price identifier"
+        varchar name "Plan name"
+        integer price_cents "Price in USD cents"
+        enum interval "MONTHLY, YEARLY"
+        jsonb features "Tier limit flags"
+        varchar stripe_price_id UK
         boolean is_active "Default true"
         timestamptz created_at
     }
 
     subscriptions {
         uuid id PK
-        uuid user_id FK
-        uuid plan_id FK
+        uuid user_id FK "References users"
+        uuid plan_id FK "References plans"
         varchar stripe_customer_id
         varchar stripe_subscription_id UK
         enum status "ACTIVE, PAST_DUE, CANCELED, TRIALING"
@@ -61,34 +184,34 @@ erDiagram
 
     security_flags {
         uuid id PK
-        uuid user_id FK "User who submitted the URL"
-        text submitted_url "Target suspicious URL"
-        decimal risk_score "Sentinel AI score 0.00 to 1.00"
+        uuid user_id FK "Submitting user"
+        text submitted_url "Target URL"
+        decimal risk_score "Sentinel score 0.0000-1.0000"
         enum threat_type "PHISHING, MALWARE, CRYPTO_DRAINER, SPAM"
-        decimal ai_confidence "Model confidence level 0.00-1.00"
-        inet ip_address "Origin client IP"
+        decimal ai_confidence "0.0000-1.0000"
+        inet ip_address "Origin IP"
         enum status "BLOCKED_AUTO, PENDING_REVIEW, RESOLVED_BENIGN, BANNED"
-        uuid reviewed_by FK "Super Admin user id"
+        uuid reviewed_by FK "Super Admin"
         text resolution_notes
         timestamptz created_at
     }
 
     domain_blocklist {
         uuid id PK
-        varchar domain_pattern UK "E.g. *.drainer.xyz or bit.ly/*"
-        varchar reason "Phishing campaign, Ransomware, etc."
-        uuid added_by FK "Super Admin who added the ban"
+        varchar domain_pattern UK "*.drainer.xyz"
+        varchar reason "Campaign details"
+        uuid added_by FK "Super Admin id"
         timestamptz created_at
     }
 
     admin_audit_logs {
         uuid id PK
-        uuid admin_user_id FK "Super Admin or Owner performing action"
-        varchar action "BAN_USER, BLOCK_DOMAIN, UPDATE_PLAN, UNPUBLISH_PROFILE"
+        uuid admin_user_id FK "Super Admin / Owner"
+        varchar action "BAN_USER, BLOCK_DOMAIN, etc."
         varchar target_type "USER, LINK, PROFILE, PLAN"
-        uuid target_id "Identifier of target entity"
-        text reason "Mandatory audit justification"
-        jsonb metadata "Snapshot of state diff before/after"
+        uuid target_id
+        text reason "Audit justification"
+        jsonb metadata "Diff before/after"
         timestamptz created_at
     }
 
@@ -96,44 +219,44 @@ erDiagram
         uuid id PK
         uuid user_id FK,UK "One-to-one with user"
         varchar username UK "Indexed vanity slug (3-30 chars)"
-        varchar title "Profile display title"
-        varchar bio "Bio description (max 500 chars)"
-        text avatar_url "CDN URL of processed avatar"
-        uuid theme_id FK "References themes table"
+        varchar title "Display title"
+        varchar bio "Bio description (max 500)"
+        text avatar_url "CDN processed URL"
+        uuid theme_id FK "References themes"
         boolean is_published "Default false"
-        varchar seo_title "Meta title (max 60 chars)"
-        varchar seo_description "Meta desc (max 160 chars)"
-        text og_image_url "Dynamic OG image URL"
+        varchar seo_title "Meta title (max 60)"
+        varchar seo_description "Meta desc (max 160)"
+        text og_image_url "Dynamic OG URL"
         timestamptz created_at
         timestamptz updated_at
     }
 
     links {
         uuid id PK
-        uuid profile_id FK "References profile"
-        varchar title "Link label (max 200 chars)"
+        uuid profile_id FK "References profiles"
+        varchar title "Link label (max 200)"
         text url "Target destination URL"
         enum type "LINK, HEADER, DIVIDER"
-        integer position "Order priority index"
-        text thumbnail_url "Optional icon/thumbnail"
-        boolean is_active "Toggle visibility"
-        bigint click_count "Cached aggregate counter"
+        integer position "Order index (0,1,2...)"
+        text thumbnail_url "Icon or image"
+        boolean is_active "Default true"
+        bigint click_count "High-read atomic counter"
         timestamptz created_at
         timestamptz updated_at
     }
 
     themes {
         uuid id PK
-        varchar name "Theme label"
+        varchar name "Theme name"
         enum bg_type "SOLID, GRADIENT, IMAGE"
-        text bg_value "CSS color, gradient, or URL"
+        text bg_value "CSS string or image URL"
         enum btn_style "FILLED, OUTLINE, SHADOW, ROUNDED"
-        varchar btn_color "Hex or rgba string"
-        varchar btn_text_color "Hex or rgba string"
-        varchar font_family "Google Font family"
+        varchar btn_color "Hex or rgba"
+        varchar btn_text_color "Hex or rgba"
+        varchar font_family "Inter, Geist, etc."
         varchar text_color "Hex color code"
         boolean is_default "Default theme flag"
-        text preview_url "Thumbnail of theme"
+        text preview_url
         timestamptz created_at
     }
 
@@ -154,9 +277,9 @@ erDiagram
 
     social_links {
         uuid id PK
-        uuid profile_id FK
+        uuid profile_id FK "References profiles"
         enum platform "INSTAGRAM, TIKTOK, YOUTUBE, etc."
-        text url "Direct social profile URL"
+        text url "Social profile URL"
         integer position "Display order"
         boolean is_active "Toggle visibility"
         timestamptz created_at
@@ -169,9 +292,9 @@ erDiagram
         inet ip_address "Truncated anonymized IP"
         text user_agent
         text referrer
-        char country "2-letter ISO code"
-        boolean is_unique "Daily unique visitor flag"
-        boolean is_bot "Crawler/bot flag"
+        char country "2-letter ISO"
+        boolean is_unique "Daily unique flag"
+        boolean is_bot "Crawler flag"
     }
 
     click_events {
@@ -182,73 +305,31 @@ erDiagram
         inet ip_address "Truncated anonymized IP"
         text user_agent
         text referrer
-        char country "2-letter ISO code"
-        boolean is_bot "Crawler/bot flag"
+        char country "2-letter ISO"
+        boolean is_bot "Crawler flag"
     }
 ```
 
 ---
 
-## 2. Data Dictionary & Table Specifications
+## 4. Particionamiento TimescaleDB (Hypertables) & Compresión Columnar
 
-### 2.1 `users` Table
-Stores authentication credentials, RBAC role designations, and account lifecycle states.
-- **`id`** (`UUID`, PK): Immutable unique identifier generated via `gen_random_uuid()`.
-- **`email`** (`VARCHAR(255)`, UNIQUE, NOT NULL): User email address normalized to lowercase.
-- **`password_hash`** (`VARCHAR(255)`, NULLABLE): Bcrypt hashed password (null for Google-only OAuth signups).
-- **`google_id`** (`VARCHAR(255)`, UNIQUE, NULLABLE): Subject identifier from Google OAuth 2.0 token.
-- **`role`** (`ENUM`, DEFAULT `'CREATOR'`): Role-Based Access Control: `'CREATOR'`, `'SUPER_ADMIN'`, or `'OWNER'`.
-- **`is_banned`** (`BOOLEAN`, DEFAULT `false`): Suspension flag enforced by middleware to block login and unpublish vanity URL.
-
-### 2.2 `plans` & `subscriptions` Tables (SaaS Monetization)
-- **`plans`**: Canonical pricing catalog synchronized with Stripe Product Catalog. Supports customizable feature flags (e.g. `{"custom_domains": true, "max_links": 100, "priority_support": true}`).
-- **`subscriptions`**: Tracks active Stripe customer subscriptions, lifecycle status (`ACTIVE`, `PAST_DUE`), and billing periods.
-
-### 2.3 `security_flags` & `domain_blocklist` (OneLink Sentinel AI)
-- **`security_flags`**: Real-time event log populated when the embedded ONNX engine intercepts a suspicious URL (`risk_score >= 0.75`). Stores threat classification (`PHISHING`, `CRYPTO_DRAINER`) and IP metadata for Super Admin audits.
-- **`domain_blocklist`**: High-speed blacklist synchronized into Redis sets (`blocklist:domains`) for O(1) instantaneous rejection before tensor computation.
-
-### 2.4 `admin_audit_logs` Table
-- Tamper-evident ledger capturing all privileged Super Admin actions (account suspensions, domain blocks, plan price edits) with mandatory human justification strings.
-
-### 2.5 `profiles` Table
-Core vanity landing page entity.
-- **`username`** (`VARCHAR(30)`, UNIQUE, NOT NULL): Indexed URL slug. Sanitized against `RESERVED_USERNAMES`.
-- **`is_published`** (`BOOLEAN`, DEFAULT `false`): Controls public accessibility (`/@username`).
-- **`theme_id`** (`UUID`, FK, NULLABLE): Foreign key pointing to curated `themes` table.
-- **`seo_title` & `seo_description`**: Custom Open Graph metadata for rich social sharing cards.
-
-### 2.6 `links` Table
-Individual items displayed on the creator profile.
-- **`profile_id`** (`UUID`, FK, NOT NULL): Cascades on profile deletion.
-- **`type`** (`ENUM`): Discriminates between clickable `LINK`, text `HEADER`, and visual `DIVIDER`.
-- **`position`** (`INTEGER`, NOT NULL, DEFAULT 0): Zero-indexed order on screen. Managed atomically via drag-and-drop.
-- **`click_count`** (`BIGINT`, DEFAULT 0): Denormalized counter incremented atomically by BullMQ workers to avoid expensive `COUNT(*)` queries on dashboard views.
-
----
-
-## 3. High-Throughput Analytics & TimescaleDB Hypertables
-
-For tracking millions of events without degrading transactional database performance, `click_events` and `page_views` are partitioned time-series **Hypertables**:
+Para garantizar que millones de eventos de telemetría no saturen el almacenamiento ni degraden los tiempos de consulta del creador:
 
 ```sql
--- Convert standard tables to 1-day chunk hypertables
+-- 1. Conversión a Hypertables particionadas por día
 SELECT create_hypertable('click_events', 'clicked_at', chunk_time_interval => INTERVAL '1 day');
 SELECT create_hypertable('page_views', 'viewed_at', chunk_time_interval => INTERVAL '1 day');
 
--- Automatic compression policy: compress chunks older than 7 days
+-- 2. Compresión Columnar automática para fragmentos mayores a 7 días
 ALTER TABLE click_events SET (
   timescaledb.compress,
   timescaledb.compress_segmentby = 'profile_id, link_id',
   timescaledb.compress_orderby = 'clicked_at DESC'
 );
 SELECT add_compression_policy('click_events', INTERVAL '7 days');
-```
 
-### Continuous Aggregates (Real-time Materialized Views)
-
-```sql
--- Hourly rollups for high-speed dashboard analytics
+-- 3. Vista Materializada Continua para métricas por hora
 CREATE MATERIALIZED VIEW hourly_link_clicks
 WITH (timescaledb.continuous) AS
 SELECT
@@ -264,11 +345,12 @@ GROUP BY link_id, profile_id, time_bucket('1 hour', clicked_at);
 
 ---
 
-## 4. Strategic Indexing Plan
+## 5. Plan Estratégico de Indexación
 
-| Table | Index Definition | Access Pattern Justification |
+| Tabla | Definición del Índice | Patrón de Acceso Justificado |
 |---|---|---|
-| `profiles` | `CREATE UNIQUE INDEX idx_profiles_username ON profiles(LOWER(username))` | **Hot path**: Case-insensitive vanity URL lookup on every public profile view |
-| `links` | `CREATE INDEX idx_links_profile_position ON links(profile_id, position) WHERE is_active = true` | Fetches active links for a profile pre-sorted by position |
-| `social_links` | `CREATE INDEX idx_social_links_profile ON social_links(profile_id, position) WHERE is_active = true` | Quick retrieval of social icons for profile headers |
-| `click_events` | `CREATE INDEX idx_clicks_link_time ON click_events(link_id, clicked_at DESC)` | Powers link performance graphs over customizable date ranges |
+| `profiles` | `CREATE UNIQUE INDEX idx_profiles_username ON profiles(LOWER(username))` | **Hot Path**: Resolución instantánea (<1ms) de slugs de creador en `/@username` |
+| `links` | `CREATE INDEX idx_links_profile_position ON links(profile_id, position) WHERE is_active = true` | Índice parcial: Carga ultra-rápida de enlaces activos ordenados por posición |
+| `security_flags` | `CREATE INDEX idx_security_flags_risk ON security_flags(risk_score DESC, created_at DESC)` | Alimenta la cola de moderación del Super Admin priorizando amenazas críticas |
+| `domain_blocklist` | `CREATE UNIQUE INDEX idx_blocklist_pattern ON domain_blocklist(domain_pattern)` | Búsqueda y sincronización instantánea con los sets de Redis |
+| `click_events` | `CREATE INDEX idx_clicks_link_time ON click_events(link_id, clicked_at DESC)` | Rango de fechas para las gráficas analíticas del estudio |
