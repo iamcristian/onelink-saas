@@ -119,3 +119,94 @@ sequenceDiagram
     API-->>DASH: HTTP 200 { success: true }
     DASH-->>C: Confirm change with toast notification
 ```
+
+---
+
+## 4. Flow 4: OneLink Sentinel AI Zero-Token Threat Interception & Mitigation
+
+When a user attempts to add a link, the in-process Sentinel AI engine inspects the URL before saving to PostgreSQL. Malicious or phishing links are blocked in <25ms with HTTP 422 and immediately routed to the Super Admin moderation queue.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor C as 🎨 Content Creator / Threat Actor
+    participant DASH as 💻 Studio Dashboard (Next.js)
+    participant API as 🚀 NestJS LinkService
+    participant REDIS as ⚡ Redis Blocklist Set
+    participant SENTINEL as 🛡️ SentinelAiService (ONNX In-Memory)
+    participant DB as 🐘 PostgreSQL (Prisma)
+    participant ADMIN as 🚨 Super Admin WebSocket / Queue
+
+    C->>DASH: Submits Link: "http://metamask-security-auth.xyz/drain"
+    DASH->>API: POST /api/links { title: "Claim Tokens", url: "..." }
+    
+    API->>REDIS: SISMEMBER blocklist:domains "metamask-security-auth.xyz"
+    alt Domain already permanently banned
+        REDIS-->>API: 1 (Match in Blocklist)
+        API-->>DASH: HTTP 422 "Blocked: Domain permanently banned"
+        DASH-->>C: Display Red Error Toast: Blocked by Security Policy
+    else Domain not yet blacklisted
+        API->>SENTINEL: evaluateUrl("http://metamask-security-auth.xyz/drain")
+        
+        Note over SENTINEL: Phase 1: Lexical & Shannon Entropy Scan (<2ms)
+        Note over SENTINEL: Phase 2: In-Memory ONNX Tensor Evaluation (<18ms)
+        SENTINEL-->>API: Verdict: { riskScore: 0.94, threatType: "CRYPTO_DRAINER", confidence: 0.98 }
+        
+        alt riskScore >= 0.75 (Critical Threat Detected)
+            API->>DB: INSERT INTO security_flags (user_id, submitted_url, risk_score, threat_type, status: "BLOCKED_AUTO")
+            API->>ADMIN: Broadcast Event: NEW_THREAT_INTERCEPTED (Live SSE / WebSocket)
+            API-->>DASH: HTTP 422 Unprocessable Entity { error: "Blocked by OneLink Sentinel AI: High threat of crypto drainer" }
+            DASH-->>C: Display Warning Dialog (Link is NOT saved, Bio remains clean)
+        else riskScore < 0.75 (Legitimate URL)
+            API->>DB: INSERT INTO links (profile_id, title, url, position, is_active: true)
+            API->>REDIS: DEL profile:username (Cache Invalidation)
+            API-->>DASH: HTTP 201 Created { link }
+            DASH-->>C: Optimistic Link Inserted & Live Phone Preview Synced
+        end
+    end
+```
+
+---
+
+## 5. Flow 5: SaaS Owner Subscription Provisioning & Stripe Webhook Lifecycle
+
+When a creator upgrades to "Creator Pro" ($9/mo) or "Enterprise Studio" ($29/mo), Stripe checkout handles billing and dispatches secure webhooks to provision features atomically.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor C as 🎨 Content Creator
+    participant DASH as 💻 Studio (Next.js)
+    participant STRIPE_UI as 💳 Stripe Checkout Portal
+    participant STRIPE_API as 🌐 Stripe Billing API
+    participant API as 🚀 NestJS BillingController
+    participant DB as 🐘 PostgreSQL (Prisma)
+    participant REDIS as ⚡ Redis (Feature Flags Cache)
+
+    C->>DASH: Clicks "Upgrade to Creator Pro ($9/mo)"
+    DASH->>API: POST /api/billing/create-checkout-session { planCode: "PRO" }
+    API->>STRIPE_API: stripe.checkout.sessions.create({ customer, line_items, success_url })
+    STRIPE_API-->>API: { sessionUrl: "https://checkout.stripe.com/c/pay/..." }
+    API-->>DASH: HTTP 200 { sessionUrl }
+    DASH->>STRIPE_UI: Redirect Creator to Stripe Hosted Checkout
+    
+    C->>STRIPE_UI: Enters Payment Details & Confirms $9.00
+    STRIPE_UI->>STRIPE_API: Process Payment
+    STRIPE_UI-->>C: Redirects back to onelink.bio/studio/billing?success=true
+    
+    Note over STRIPE_API,API: Asynchronous Webhook Delivery (HMAC Signature Verified)
+    STRIPE_API-)API: POST /api/billing/webhook (Event: invoice.payment_succeeded)
+    
+    API->>API: Verify Stripe-Signature header with STRIPE_WEBHOOK_SECRET
+    alt Invalid Signature
+        API-->>STRIPE_API: HTTP 400 Bad Request (Tamper Protection)
+    else Signature Verified
+        API->>DB: UPSERT INTO subscriptions (user_id, plan_id: "PRO", status: "ACTIVE", current_period_end)
+        API->>REDIS: SET user:features:{userId} '{"customThemes": true, "removeBranding": true}'
+        API-->>STRIPE_API: HTTP 200 OK (Event Acknowledged)
+    end
+    
+    DASH->>API: GET /api/users/me/subscription
+    API-->>DASH: HTTP 200 { plan: "Creator Pro", status: "ACTIVE", features }
+    DASH-->>C: Unlock Pro Themes, Custom Fonts & Remove Watermark immediately
+```
