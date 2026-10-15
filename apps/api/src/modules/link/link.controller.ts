@@ -9,9 +9,12 @@ import {
   Body,
   Req,
   ParseUUIDPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { CreateLinkSchema, UpdateLinkSchema, ReorderLinksSchema } from '@repo/shared';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { LinkService } from './link.service';
 import { CreateLinkDto, UpdateLinkDto, ReorderLinksDto } from './dto/link.dto';
 
@@ -21,6 +24,7 @@ export class LinkController {
   constructor(private readonly linkService: LinkService) {}
 
   @Post('profile/:profileId')
+  @UsePipes(new ZodValidationPipe(CreateLinkSchema))
   @ApiOperation({ summary: 'Create a new link or section header' })
   @ApiResponse({ status: 201, description: 'Link created successfully' })
   @ApiResponse({ status: 400, description: 'URL rejected by Sentinel AI threat engine' })
@@ -42,6 +46,7 @@ export class LinkController {
   }
 
   @Patch(':id/profile/:profileId')
+  @UsePipes(new ZodValidationPipe(UpdateLinkSchema))
   @ApiOperation({ summary: 'Update an existing link' })
   async updateLink(
     @Param('id', ParseUUIDPipe) id: string,
@@ -64,6 +69,7 @@ export class LinkController {
   }
 
   @Put('profile/:profileId/reorder')
+  @UsePipes(new ZodValidationPipe(ReorderLinksSchema))
   @ApiOperation({ summary: 'Atomically reorder links within a profile' })
   async reorderLinks(
     @Param('profileId', ParseUUIDPipe) profileId: string,

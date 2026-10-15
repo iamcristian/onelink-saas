@@ -1,5 +1,7 @@
-import { Controller, Post, Get, Body, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, HttpCode, HttpStatus, Query, UsePipes } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { EvaluateUrlSchema, CreateBlocklistSchema } from '@repo/shared';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { SentinelAiService } from './sentinel-ai.service';
 import { SentinelEvaluationResult } from './sentinel-ai.types';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
@@ -22,6 +24,7 @@ export class SentinelAiController {
   ) {}
 
   @Post('evaluate')
+  @UsePipes(new ZodValidationPipe(EvaluateUrlSchema))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Evaluate URL with Sentinel AI',
@@ -89,6 +92,7 @@ export class AdminSecurityController {
   }
 
   @Post('blocklist')
+  @UsePipes(new ZodValidationPipe(CreateBlocklistSchema))
   @ApiOperation({ summary: 'Add domain to global blocklist' })
   async addBlocklist(@Body() dto: AddBlocklistDto) {
     return await this.sentinelAi.addDomainToBlocklist(dto.domainPattern, dto.reason);

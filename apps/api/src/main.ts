@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
@@ -12,15 +12,6 @@ async function bootstrap() {
     origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
     credentials: true,
   });
-
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
 
   // Global route prefix
   app.setGlobalPrefix('api');
