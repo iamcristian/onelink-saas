@@ -203,6 +203,30 @@ describe('LinkService (with Sentinel AI Interception)', () => {
       );
       expect(redisService.del).toHaveBeenCalledWith('profile:alexrivera');
     });
+
+    it('should throw BadRequestException when URL is plain text without domain (e.g. asdfasdf)', async () => {
+      await expect(
+        service.createLink(mockProfileId, mockUserId, {
+          title: 'Invalid Plain Text',
+          url: 'asdfasdf',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(sentinelAiService.evaluateUrl).not.toHaveBeenCalled();
+      expect(prismaService.link.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when URL is empty or whitespace for outbound link', async () => {
+      await expect(
+        service.createLink(mockProfileId, mockUserId, {
+          title: 'Empty URL',
+          url: '   ',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(sentinelAiService.evaluateUrl).not.toHaveBeenCalled();
+      expect(prismaService.link.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateLink', () => {
@@ -255,6 +279,23 @@ describe('LinkService (with Sentinel AI Interception)', () => {
         }),
       ).rejects.toThrow(BadRequestException);
 
+      expect(prismaService.link.update).not.toHaveBeenCalled();
+    });
+
+    it('should reject update if changed URL is plain text without domain', async () => {
+      prismaService.link.findFirst.mockResolvedValue({
+        id: 'link-1',
+        profileId: mockProfileId,
+        url: 'https://old-url.com',
+      });
+
+      await expect(
+        service.updateLink('link-1', mockProfileId, mockUserId, {
+          url: 'justsometext',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(sentinelAiService.evaluateUrl).not.toHaveBeenCalled();
       expect(prismaService.link.update).not.toHaveBeenCalled();
     });
   });

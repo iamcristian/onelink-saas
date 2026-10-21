@@ -11,6 +11,7 @@ import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { SentinelAiService } from '../sentinel-ai/sentinel-ai.service';
 import { ProfileAccessService } from '../../common/services/profile-access.service';
 import { CreateLinkDto, UpdateLinkDto, ReorderItemDto } from './dto/link.dto';
+import { isValidWebUrl } from '@repo/shared';
 
 @Injectable()
 export class LinkService {
@@ -47,11 +48,20 @@ export class LinkService {
     userId: string,
     clientIp?: string,
   ): Promise<void> {
-    if (!url || url === '#' || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+    if (!url || url === '#') {
       return;
     }
 
-    const evaluation = await this.sentinelAi.evaluateUrl(url);
+    if (!isValidWebUrl(url)) {
+      throw new BadRequestException(
+        'Invalid destination URL format. A valid domain or web link is required (e.g., https://example.com). Plain text is not allowed.',
+      );
+    }
+
+    const normalizedUrl =
+      url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
+
+    const evaluation = await this.sentinelAi.evaluateUrl(normalizedUrl);
 
     if (evaluation.action === 'BLOCK_IMMEDIATE') {
       await this.sentinelAi.recordSecurityFlag({
@@ -103,7 +113,10 @@ export class LinkService {
 
     // 1. Evaluate outbound link safety
     const isOutbound = dto.type === LinkType.LINK || dto.type === LinkType.DONATION || !dto.type;
-    if (isOutbound && dto.url) {
+    if (isOutbound) {
+      if (!dto.url || !dto.url.trim()) {
+        throw new BadRequestException('A valid destination URL is required for links and donation blocks.');
+      }
       await this.validateOutboundUrl(dto.url, userId, clientIp);
     }
 
@@ -207,8 +220,13 @@ export class LinkService {
         existing.type !== LinkType.HEADER &&
         existing.type !== LinkType.DIVIDER &&
         existing.type !== LinkType.NOTE);
-    if (isOutbound && dto.url && dto.url !== existing.url) {
-      await this.validateOutboundUrl(dto.url, userId, clientIp);
+    if (isOutbound && dto.url !== undefined) {
+      if (!dto.url || !dto.url.trim()) {
+        throw new BadRequestException('A valid destination URL is required for links and donation blocks.');
+      }
+      if (dto.url !== existing.url) {
+        await this.validateOutboundUrl(dto.url, userId, clientIp);
+      }
     }
 
     // Secure password hashing for updated PIN-protected links

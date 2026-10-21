@@ -10,6 +10,7 @@ import { scanForHomoglyphs } from './utils/homoglyph.util';
 import { extractUrlFeatures, ExtractedFeatures } from './utils/features.util';
 import { isAuthoritativeDomain } from './utils/allowlist.util';
 import { SentinelEvaluationResult, SecurityFlagCreationParams } from './sentinel-ai.types';
+import { isValidWebUrl } from '@repo/shared';
 
 const HIGH_VALUE_BRANDS = [
   'paypal',
@@ -94,9 +95,21 @@ export class SentinelAiService implements OnModuleInit {
   async evaluateUrl(rawUrl: string): Promise<SentinelEvaluationResult> {
     const startTime = performance.now();
 
+    const trimmed = rawUrl ? rawUrl.trim() : '';
+    if (!isValidWebUrl(trimmed)) {
+      throw new BadRequestException(
+        `Invalid URL format: "${rawUrl}". A valid domain or web link is required (e.g., https://example.com). Plain text is not allowed.`,
+      );
+    }
+
+    const normalized =
+      trimmed.startsWith('http://') || trimmed.startsWith('https://')
+        ? trimmed
+        : `https://${trimmed}`;
+
     let parsed: URL;
     try {
-      parsed = new URL(rawUrl);
+      parsed = new URL(normalized);
     } catch {
       throw new BadRequestException(`Invalid URL format: "${rawUrl}"`);
     }

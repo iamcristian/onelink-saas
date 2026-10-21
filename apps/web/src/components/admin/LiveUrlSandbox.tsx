@@ -8,7 +8,9 @@ import {
   Play,
   Sparkles,
   Search,
+  AlertCircle,
 } from "lucide-react";
+import { isValidWebUrl } from "@repo/shared";
 import {
   evaluateUrlWithSentinel,
   type SentinelEvaluationResult,
@@ -25,14 +27,24 @@ export function LiveUrlSandbox() {
   const [testUrl, setTestUrl] = useState<string>("http://metamask-security-auth.xyz/drain");
   const [evaluating, setEvaluating] = useState<boolean>(false);
   const [result, setResult] = useState<SentinelEvaluationResult | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleEvaluate = async (targetUrl?: string) => {
-    const urlToRun = targetUrl || testUrl;
-    if (!urlToRun || !urlToRun.trim()) return;
+    const urlToRun = (targetUrl || testUrl).trim();
+    if (!urlToRun) return;
 
+    if (!isValidWebUrl(urlToRun)) {
+      setValidationError(
+        "Invalid URL format. A valid domain or web link is required (e.g., https://example.com). Plain text is not allowed."
+      );
+      setResult(null);
+      return;
+    }
+
+    setValidationError(null);
     setEvaluating(true);
     try {
-      const res = await evaluateUrlWithSentinel(urlToRun.trim());
+      const res = await evaluateUrlWithSentinel(urlToRun);
       if (res) {
         setResult(res);
       } else {
@@ -102,7 +114,10 @@ export function LiveUrlSandbox() {
           <input
             type="text"
             value={testUrl}
-            onChange={(e) => setTestUrl(e.target.value)}
+            onChange={(e) => {
+              setTestUrl(e.target.value);
+              if (validationError) setValidationError(null);
+            }}
             onKeyDown={(e) => e.key === "Enter" && handleEvaluate()}
             placeholder="Enter URL to inspect (e.g. https://crypto-claim-airdrop.xyz)..."
             className="w-full bg-[#09090b] border border-white/10 rounded-lg pl-9 pr-3 py-2.5 text-xs font-mono text-white placeholder-zinc-600 focus:outline-hidden focus:border-white/30"
@@ -123,6 +138,13 @@ export function LiveUrlSandbox() {
           <span>{evaluating ? "Evaluating..." : "Evaluate with Sentinel AI"}</span>
         </button>
       </div>
+
+      {validationError && (
+        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-mono flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+          <span>{validationError}</span>
+        </div>
+      )}
 
       {/* Real-time Verdict Output */}
       {result && (

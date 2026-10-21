@@ -162,22 +162,102 @@ export type ReorderSocialLinksInput = z.infer<typeof ReorderSocialLinksSchema>;
 
 export const LinkTypeEnum = z.enum(['LINK', 'HEADER', 'DIVIDER', 'DONATION', 'NOTE']);
 
-export const CreateLinkSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
-  url: z.string().max(2048).nullable().optional(),
-  type: LinkTypeEnum.default('LINK'),
-  thumbnailUrl: z.string().max(2048).nullable().optional(),
-  isActive: z.boolean().default(true),
-  // Scheduling (Creator Pro)
-  startsAt: z.string().datetime().nullable().optional(),
-  expiresAt: z.string().datetime().nullable().optional(),
-  // Security & Compliance (Enterprise)
-  isPasswordProtected: z.boolean().default(false),
-  password: z.string().max(100).nullable().optional(),
-  isAgeRestricted: z.boolean().default(false),
-});
+/**
+ * Validates whether a raw string represents a valid internet web URL with a legitimate domain.
+ * Rejects bare text like "asdfasdf", strings without dots/TLDs, and invalid protocols.
+ */
+export function isValidWebUrl(raw?: string | null): boolean {
+  if (!raw || typeof raw !== 'string') return false;
+  const trimmed = raw.trim();
+  if (trimmed === '#' || trimmed === '') return false;
 
-export const UpdateLinkSchema = CreateLinkSchema.partial();
+  const withProto =
+    trimmed.startsWith('http://') || trimmed.startsWith('https://')
+      ? trimmed
+      : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(withProto);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return false;
+    }
+    const host = parsed.hostname;
+    if (!host) return false;
+
+    // Localhost or IPv4/IPv6 loopback for development
+    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') return true;
+
+    // Standard IPv4 address (e.g. 192.168.1.1)
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(host)) return true;
+
+    // Valid domain must contain at least one dot separating name and TLD (>=2 characters)
+    const parts = host.split('.');
+    if (parts.length < 2) return false;
+    const tld = parts[parts.length - 1];
+    if (!tld || tld.length < 2) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export const CreateLinkSchema = z
+  .object({
+    title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
+    url: z.string().max(2048).nullable().optional(),
+    type: LinkTypeEnum.default('LINK'),
+    thumbnailUrl: z.string().max(2048).nullable().optional(),
+    isActive: z.boolean().default(true),
+    // Scheduling (Creator Pro)
+    startsAt: z.string().datetime().nullable().optional(),
+    expiresAt: z.string().datetime().nullable().optional(),
+    // Security & Compliance (Enterprise)
+    isPasswordProtected: z.boolean().default(false),
+    password: z.string().max(100).nullable().optional(),
+    isAgeRestricted: z.boolean().default(false),
+  })
+  .refine(
+    (data) => {
+      // For standard links and donation tips, a valid web URL with a domain is strictly required
+      if (data.type === 'LINK' || data.type === 'DONATION') {
+        return Boolean(data.url && isValidWebUrl(data.url));
+      }
+      return true;
+    },
+    {
+      message:
+        'A valid web URL is required (e.g. https://example.com or youtube.com/@channel). Plain text is not allowed.',
+      path: ['url'],
+    }
+  );
+
+export const UpdateLinkSchema = z
+  .object({
+    title: z.string().min(1, 'Title is required').max(200, 'Title is too long').optional(),
+    url: z.string().max(2048).nullable().optional(),
+    type: LinkTypeEnum.optional(),
+    thumbnailUrl: z.string().max(2048).nullable().optional(),
+    isActive: z.boolean().optional(),
+    startsAt: z.string().datetime().nullable().optional(),
+    expiresAt: z.string().datetime().nullable().optional(),
+    isPasswordProtected: z.boolean().optional(),
+    password: z.string().max(100).nullable().optional(),
+    isAgeRestricted: z.boolean().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.url && (data.type === 'LINK' || data.type === 'DONATION' || !data.type)) {
+        return isValidWebUrl(data.url);
+      }
+      return true;
+    },
+    {
+      message:
+        'A valid web URL is required (e.g. https://example.com or youtube.com/@channel). Plain text is not allowed.',
+      path: ['url'],
+    }
+  );
 
 export const ReorderLinksSchema = z.object({
   items: z.array(
@@ -229,7 +309,12 @@ export const SecurityFlagStatusEnum = z.enum([
 export type SecurityFlagStatus = z.infer<typeof SecurityFlagStatusEnum>;
 
 export const EvaluateUrlSchema = z.object({
-  url: z.string().url('Must be a valid URL to evaluate'),
+  url: z
+    .string()
+    .min(1, 'URL is required')
+    .refine((val) => isValidWebUrl(val), {
+      message: 'Must be a valid web URL with a domain (e.g. https://example.com). Plain text is not allowed.',
+    }),
 });
 export type EvaluateUrlInput = z.infer<typeof EvaluateUrlSchema>;
 

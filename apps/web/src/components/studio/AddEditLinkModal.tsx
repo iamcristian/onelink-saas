@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { StudioLinkItem } from "./LinkCard";
 import { AVAILABLE_LINK_ICONS } from "./IconHelper";
+import { isValidWebUrl } from "@repo/shared";
 
 export interface AddEditLinkModalProps {
   isOpen: boolean;
@@ -147,14 +148,10 @@ function AddEditLinkForm({
         setError("URL is required.");
         return;
       }
-      try {
-        const testUrl =
-          url.startsWith("http://") || url.startsWith("https://")
-            ? url
-            : `https://${url}`;
-        new URL(testUrl);
-      } catch {
-        setError("Please enter a valid destination URL (e.g. https://example.com)");
+      if (!isValidWebUrl(url)) {
+        setError(
+          "Please enter a valid web URL with a domain (e.g. https://example.com or youtube.com/@channel). Plain text is not allowed."
+        );
         return;
       }
     }
@@ -511,8 +508,18 @@ function AddEditLinkForm({
                     ? "https://buymeacoffee.com/yourhandle or https://buy.stripe.com/..."
                     : "https://youtube.com/watch?v=..."
                 }
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white placeholder-zinc-500 text-sm font-mono focus:outline-none focus:border-zinc-400 transition-colors"
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border text-white placeholder-zinc-500 text-sm font-mono focus:outline-none transition-colors ${
+                  url.trim() && !isValidWebUrl(url)
+                    ? "border-amber-500/60 focus:border-amber-500"
+                    : "border-white/10 focus:border-zinc-400"
+                }`}
               />
+              {url.trim() && !isValidWebUrl(url) && (
+                <p className="mt-1.5 text-xs text-amber-400/90 flex items-center gap-1.5 font-mono">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  Must be a valid web link with a domain (e.g. example.com or https://...). Plain text is not allowed.
+                </p>
+              )}
             </div>
 
             <div>
