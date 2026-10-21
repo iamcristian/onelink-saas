@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Heading, Minus, Sparkles, ArrowUpDown, Lock, Coffee, X, CheckCircle2, Sliders, Eye, StickyNote } from "lucide-react";
 import { LinkCard, StudioLinkItem } from "@/components/studio/LinkCard";
 import { AddEditLinkModal } from "@/components/studio/AddEditLinkModal";
@@ -69,8 +70,9 @@ const INITIAL_ITEMS: StudioLinkItem[] = [
 ];
 
 export default function StudioLinksPage() {
-  const [profileId, setProfileId] = useState<string>("f2cdfd17-0537-4ac3-acb2-8deafc9373c9");
-  const [items, setItems] = useState<StudioLinkItem[]>(INITIAL_ITEMS);
+  const router = useRouter();
+  const [profileId, setProfileId] = useState<string>("");
+  const [items, setItems] = useState<StudioLinkItem[]>([]);
   const [filter, setFilter] = useState<"all" | "active" | "archived">("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<StudioLinkItem | null>(null);
@@ -79,12 +81,10 @@ export default function StudioLinksPage() {
   >("LINK");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [subscription, setSubscription] = useState<BillingSubscription | null>(null);
-  const [profileUsername, setProfileUsername] = useState("alexrivera");
-  const [profileDisplayName, setProfileDisplayName] = useState("Alex Rivera");
-  const [profileBio, setProfileBio] = useState("Scaling distributed systems & building clean developer tools.");
-  const [profileAvatarUrl, setProfileAvatarUrl] = useState(
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
-  );
+  const [profileUsername, setProfileUsername] = useState("");
+  const [profileDisplayName, setProfileDisplayName] = useState("");
+  const [profileBio, setProfileBio] = useState("");
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState("");
   const [activeTheme, setActiveTheme] = useState<PhonePreviewTheme | null>(null);
   const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor");
 
@@ -109,8 +109,8 @@ export default function StudioLinksPage() {
           setSubscription(sub);
         }
 
-        let targetProfileId = "f2cdfd17-0537-4ac3-acb2-8deafc9373c9";
-        let targetUsername = userSession?.profile?.username || "alexrivera";
+        let targetProfileId = "";
+        let targetUsername = "";
 
         // Check if user selected an active workspace
         const activeWs = localStorage.getItem("onelink_active_workspace");
@@ -144,6 +144,13 @@ export default function StudioLinksPage() {
         } else if (userSession?.profile?.id) {
           targetProfileId = userSession.profile.id;
           targetUsername = userSession.profile.username;
+        }
+
+        if (!targetProfileId || !targetUsername) {
+          if (isMounted) {
+            router.push("/login");
+          }
+          return;
         }
 
         // Fetch full profile to retrieve active/custom theme and metadata

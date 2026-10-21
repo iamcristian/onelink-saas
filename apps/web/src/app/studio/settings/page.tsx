@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   User,
   Globe,
@@ -25,6 +26,7 @@ import {
 } from "@/lib/api-client";
 
 export default function StudioSettingsPage() {
+  const router = useRouter();
   const [profileId, setProfileId] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [title, setTitle] = useState<string>("");
@@ -45,7 +47,7 @@ export default function StudioSettingsPage() {
     const initData = async () => {
       try {
         const userSession = await fetchCurrentUser();
-        let usernameToLoad = userSession?.profile?.username || "alexrivera";
+        let usernameToLoad = userSession?.profile?.username || "";
 
         // Check if user selected an active workspace
         const storedWs =
@@ -61,6 +63,13 @@ export default function StudioSettingsPage() {
           } catch {
             // Ignore parse error
           }
+        }
+
+        if (!usernameToLoad) {
+          if (mounted) {
+            router.push("/login");
+          }
+          return;
         }
 
         const p = await fetchProfile(usernameToLoad);

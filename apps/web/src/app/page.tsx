@@ -63,9 +63,12 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2.5 cursor-pointer group">
-            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-zinc-950 font-bold text-lg group-hover:scale-105 transition-transform">
-              1
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icon.svg"
+              alt="OneLink"
+              className="w-8 h-8 rounded-lg group-hover:scale-105 transition-transform"
+            />
             <span className="font-bold text-lg tracking-tight text-white">OneLink</span>
           </Link>
 

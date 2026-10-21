@@ -12,12 +12,16 @@ export default function UserRedirectPage() {
     fetchCurrentUser()
       .then((user) => {
         if (!active) return;
-        const targetUsername = user?.profile?.username || "alexrivera";
-        router.replace(`/${targetUsername}`);
+        const targetUsername = user?.profile?.username;
+        if (targetUsername) {
+          router.replace(`/${targetUsername}`);
+        } else {
+          router.replace("/login");
+        }
       })
       .catch(() => {
         if (active) {
-          router.replace("/alexrivera");
+          router.replace("/login");
         }
       });
 

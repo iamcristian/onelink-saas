@@ -124,12 +124,18 @@ export default function StudioLayout({ children }: StudioLayoutProps) {
   };
 
   const reloadSession = useCallback(() => {
-    fetchCurrentUser().then((user) => {
-      if (user) {
-        setSession(user);
-      }
-    });
-  }, []);
+    fetchCurrentUser()
+      .then((user) => {
+        if (user) {
+          setSession(user);
+        } else {
+          router.push("/login");
+        }
+      })
+      .catch(() => {
+        router.push("/login");
+      });
+  }, [router]);
 
   useEffect(() => {
     reloadSession();
@@ -185,7 +191,7 @@ export default function StudioLayout({ children }: StudioLayoutProps) {
     };
   }, [activeWorkspace]);
 
-  const username = activeWorkspace?.ownerUsername || session?.profile?.username || "alexrivera";
+  const username = activeWorkspace?.ownerUsername || session?.profile?.username || "";
   const avatarUrl =
     profileAvatarOverride ||
     (activeWorkspace ? activeWorkspaceAvatar || activeWorkspace.ownerAvatarUrl : null) ||
@@ -266,9 +272,12 @@ export default function StudioLayout({ children }: StudioLayoutProps) {
             className="flex items-center space-x-2.5 group cursor-pointer"
             title="Volver a Inicio OneLink"
           >
-            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#09090b] transition-transform duration-200 group-hover:scale-105 active:scale-95 shadow-sm font-bold text-sm">
-              1
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icon.svg"
+              alt="OneLink"
+              className="w-8 h-8 rounded-lg transition-transform duration-200 group-hover:scale-105 active:scale-95 shadow-sm shrink-0"
+            />
             <div className="hidden sm:flex flex-col">
               <span className="text-sm sm:text-base font-semibold tracking-tight text-white group-hover:text-zinc-200 transition-colors leading-none">
                 OneLink

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Palette,
   Sparkles,
@@ -227,6 +228,7 @@ function findMatchingPreset(themeData: {
 }
 
 export default function StudioAppearancePage() {
+  const router = useRouter();
   const [profileId, setProfileId] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [initialUsername, setInitialUsername] = useState<string>("");
@@ -321,7 +323,10 @@ export default function StudioAppearancePage() {
       }
 
       if (!targetUsername) {
-        targetUsername = "alexrivera";
+        if (isMounted) {
+          router.push("/login");
+        }
+        return;
       }
 
       try {

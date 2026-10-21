@@ -9,8 +9,8 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
 
-  const [email, setEmail] = useState("alex@onelink.bio");
-  const [password, setPassword] = useState("Password123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(urlError);
 
@@ -44,31 +44,20 @@ function LoginForm() {
     }
   };
 
-  const handleDemoAccess = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "alex@onelink.bio", password: "Password123!" }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.accessToken) {
-          localStorage.setItem("onelink_token", data.accessToken);
-        }
-      }
-      window.location.href = "/studio/links";
-    } catch {
-      window.location.href = "/studio/links";
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   return (
     <div className="w-full max-w-md bg-zinc-900/80 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
       <div className="text-center mb-6">
+        <Link href="/" className="inline-flex items-center gap-2 mb-3 group cursor-pointer" title="OneLink Home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icon.svg"
+            alt="OneLink"
+            className="w-9 h-9 rounded-xl group-hover:scale-105 transition-transform"
+          />
+          <span className="font-bold text-xl tracking-tight text-white">OneLink</span>
+        </Link>
         <h1 className="text-2xl font-bold tracking-tight text-white mb-2">
           Welcome to Studio
         </h1>
@@ -161,16 +150,35 @@ function LoginForm() {
         </button>
       </form>
 
-      {/* Instant Demo Access Button */}
-      <div className="mt-4 pt-4 border-t border-white/5">
-        <button
-          type="button"
-          onClick={handleDemoAccess}
-          className="w-full py-2 px-3 rounded-xl bg-zinc-800/80 border border-white/10 hover:border-zinc-500 text-xs font-mono text-zinc-300 hover:text-white flex items-center justify-center gap-2 transition-all cursor-pointer"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Instant Studio Demo Access (No Auth Required) →</span>
-        </button>
+      {/* Demo Credentials Quick-Fill (Click to populate) */}
+      <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider text-center">
+          Demo Test Accounts (Click to Fill)
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("alex@onelink.bio");
+              setPassword("Password123!");
+            }}
+            className="p-2.5 rounded-xl bg-zinc-950 border border-white/10 hover:border-zinc-500 text-left transition-colors cursor-pointer group"
+          >
+            <span className="block text-xs font-semibold text-zinc-300 group-hover:text-white">Alex Rivera</span>
+            <span className="block text-[10px] text-zinc-500 font-mono truncate">alex@onelink.bio</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("admin@onelink.bio");
+              setPassword("AdminPassword123!");
+            }}
+            className="p-2.5 rounded-xl bg-zinc-950 border border-white/10 hover:border-zinc-500 text-left transition-colors cursor-pointer group"
+          >
+            <span className="block text-xs font-semibold text-zinc-300 group-hover:text-white">Super Admin</span>
+            <span className="block text-[10px] text-zinc-500 font-mono truncate">admin@onelink.bio</span>
+          </button>
+        </div>
       </div>
 
       <div className="text-center mt-6">

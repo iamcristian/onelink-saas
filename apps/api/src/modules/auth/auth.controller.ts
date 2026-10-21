@@ -59,10 +59,15 @@ export class AuthController {
   ) {
     const forwardedHost = (req.headers['x-forwarded-host'] as string) || (req.headers['host'] as string);
     const forwardedProto = (req.headers['x-forwarded-proto'] as string) || 'http';
-    const appUrl =
+    let appUrl =
       this.configService.get<string>('APP_URL') ||
       this.configService.get<string>('NEXT_PUBLIC_APP_URL') ||
-      (forwardedHost ? `${forwardedProto}://${forwardedHost}` : 'http://localhost:3000');
+      'http://localhost:3000';
+
+    if (forwardedHost && !forwardedHost.startsWith('127.0.0.1') && !forwardedHost.startsWith('localhost')) {
+      const cleanHost = forwardedHost.replace(/:3001$/, ':3000');
+      appUrl = `${forwardedProto}://${cleanHost}`;
+    }
 
     if (error || !code) {
       const errorMsg = encodeURIComponent(error || 'Google authentication was cancelled');

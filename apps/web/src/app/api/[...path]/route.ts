@@ -11,26 +11,6 @@ async function proxyRequest(req: NextRequest, { params }: { params: Promise<{ pa
   const proto = req.headers.get("x-forwarded-proto") || (req.nextUrl.protocol ? req.nextUrl.protocol.replace(":", "") : "http");
   const isLanClient = !host.startsWith("localhost") && !host.startsWith("127.0.0.1");
 
-  // Google OAuth on physical mobile / LAN devices:
-  // Google OAuth 2.0 strictly rejects private LAN IPs (192.168.x.x) as redirect URIs.
-  // When accessed from a mobile LAN device, immediately complete authentication via dev simulation.
-  if (pathString === "auth/google" && (isLanClient || req.nextUrl.searchParams.get("mode") === "dev")) {
-    const devTargetUrl = `${API_BACKEND}/api/auth/google/callback?code=mock_google_dev_code_${Date.now()}`;
-    try {
-      const devRes = await fetch(devTargetUrl, { redirect: "manual" });
-      const devLocation = devRes.headers.get("location");
-      if (devLocation) {
-        const clientBase = `${proto}://${host}`;
-        const rewritten = devLocation
-          .replace(/https?:\/\/(localhost|127\.0\.0\.1):3001/gi, clientBase)
-          .replace(/https?:\/\/(localhost|127\.0\.0\.1):3000/gi, clientBase);
-        return NextResponse.redirect(rewritten);
-      }
-    } catch {
-      // Fallback to normal proxy if simulation fails
-    }
-  }
-
   const targetUrl = `${API_BACKEND}/api/${pathString}${search}`;
 
   // Build headers to forward

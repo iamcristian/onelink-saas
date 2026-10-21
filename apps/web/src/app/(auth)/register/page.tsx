@@ -87,6 +87,15 @@ function RegisterForm() {
   return (
     <div className="w-full max-w-md bg-zinc-900/80 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
       <div className="text-center mb-6">
+        <Link href="/" className="inline-flex items-center gap-2 mb-3 group cursor-pointer" title="OneLink Home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icon.svg"
+            alt="OneLink"
+            className="w-9 h-9 rounded-xl group-hover:scale-105 transition-transform"
+          />
+          <span className="font-bold text-xl tracking-tight text-white">OneLink</span>
+        </Link>
         <h1 className="text-2xl font-bold tracking-tight text-white mb-2">
           Claim Your OneLink
         </h1>

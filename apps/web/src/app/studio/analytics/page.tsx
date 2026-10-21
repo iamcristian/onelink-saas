@@ -10,6 +10,7 @@ import {
   Lock,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   fetchProfile,
   fetchCurrentUser,
@@ -24,6 +25,7 @@ import { TopLinksTable } from "@/components/studio/analytics/TopLinksTable";
 import { BreakdownCards } from "@/components/studio/analytics/BreakdownCards";
 
 export default function StudioAnalyticsPage() {
+  const router = useRouter();
   const [profileId, setProfileId] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [days, setDays] = useState<number>(30);
@@ -112,13 +114,19 @@ export default function StudioAnalyticsPage() {
           targetUsername = userSession.profile.username;
         }
 
-        if (!targetProfileId) {
-          const usernameToLoad = userSession?.profile?.username || "alexrivera";
-          const p = await fetchProfile(usernameToLoad);
+        if (!targetProfileId && userSession?.profile?.username) {
+          const p = await fetchProfile(userSession.profile.username);
           if (p?.id) {
             targetProfileId = p.id;
-            targetUsername = p.username || usernameToLoad;
+            targetUsername = p.username || userSession.profile.username;
           }
+        }
+
+        if (!targetProfileId) {
+          if (mounted) {
+            router.push("/login");
+          }
+          return;
         }
 
         if (mounted) {
