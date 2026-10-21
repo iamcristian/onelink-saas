@@ -1,6 +1,5 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -43,6 +42,8 @@ enum LinkType {
   LINK
   HEADER
   DIVIDER
+  DONATION
+  NOTE
 }
 
 enum BgType {
@@ -92,6 +93,10 @@ model User {
   adminAuditLogs AdminAuditLog[]
   reviewedFlags  SecurityFlag[]    @relation("ReviewedByAdmin")
   addedBlocks    DomainBlocklist[] @relation("AddedByAdmin")
+  teamMemberships TeamMember[]     @relation("WorkspaceOwner")
+  collaborations  TeamMember[]     @relation("CollaboratorUser")
+  sentInvitations TeamInvitation[] @relation("WorkspaceInvitations")
+  billingEvents   BillingEvent[]
 
   @@map("users")
 }
@@ -116,25 +121,34 @@ model Profile {
   links        Link[]
   socialLinks  SocialLink[]
   customTheme  CustomTheme?
+  pageViews    PageView[]
+  clickEvents  ClickEvent[]
 
   @@index([username])
   @@map("profiles")
 }
 
 model Link {
-  id            String    @id @default(uuid()) @db.Uuid
-  profileId     String    @map("profile_id") @db.Uuid
-  title         String    @db.VarChar(200)
+  id            String       @id @default(uuid()) @db.Uuid
+  profileId     String       @map("profile_id") @db.Uuid
+  title         String       @db.VarChar(200)
   url           String?
-  type          LinkType  @default(LINK)
-  position      Int       @default(0)
-  thumbnailUrl  String?   @map("thumbnail_url")
-  isActive      Boolean   @default(true) @map("is_active")
-  clickCount    BigInt    @default(0) @map("click_count")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  type          LinkType     @default(LINK)
+  position      Int          @default(0)
+  thumbnailUrl  String?      @map("thumbnail_url")
+  isActive      Boolean      @default(true) @map("is_active")
+  clickCount          BigInt       @default(0) @map("click_count")
+  startsAt            DateTime?    @map("starts_at")
+  expiresAt           DateTime?    @map("expires_at")
+  isPasswordProtected Boolean      @default(false) @map("is_password_protected")
+  password            String?      @db.VarChar(100)
+  isAgeRestricted     Boolean      @default(false) @map("is_age_restricted")
+  badge               String?      @db.VarChar(50)
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
 
-  profile       Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile       Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  clickEvents   ClickEvent[]
 
   @@index([profileId, position])
   @@map("links")
@@ -274,5 +288,98 @@ model AdminAuditLog {
   @@index([adminUserId])
   @@index([action])
   @@map("admin_audit_logs")
+}
+
+model PageView {
+  id         String   @id @default(uuid()) @db.Uuid
+  profileId  String   @map("profile_id") @db.Uuid
+  timestamp  DateTime @default(now())
+  referrer   String?  @db.VarChar(500)
+  device     String?  @db.VarChar(50)
+  browser    String?  @db.VarChar(50)
+  os         String?  @db.VarChar(50)
+  country    String?  @db.VarChar(10)
+  ipHash     String?  @map("ip_hash") @db.VarChar(64)
+
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, timestamp])
+  @@map("page_views")
+}
+
+model ClickEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  linkId     String   @map("link_id") @db.Uuid
+  profileId  String   @map("profile_id") @db.Uuid
+  timestamp  DateTime @default(now())
+  referrer   String?  @db.VarChar(500)
+  device     String?  @db.VarChar(50)
+  browser    String?  @db.VarChar(50)
+  os         String?  @db.VarChar(50)
+  country    String?  @db.VarChar(10)
+  ipHash     String?  @map("ip_hash") @db.VarChar(64)
+
+  link       Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, timestamp])
+  @@index([linkId, timestamp])
+  @@map("click_events")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  ownerId   String   @map("owner_id") @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  email     String   @db.VarChar(255)
+  role      String   @default("Editor") @db.VarChar(50)
+  status    String   @default("Active") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  owner     User     @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  user      User?    @relation("CollaboratorUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([ownerId, email])
+  @@index([ownerId])
+  @@index([email])
+  @@map("team_members")
+}
+
+model TeamInvitation {
+  id        String   @id @default(uuid()) @db.Uuid
+  ownerId   String   @map("owner_id") @db.Uuid
+  email     String   @db.VarChar(255)
+  name      String   @db.VarChar(100)
+  role      String   @default("Editor") @db.VarChar(50)
+  token     String   @unique @db.VarChar(255)
+  status    String   @default("Pending") @db.VarChar(20)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  owner     User     @relation("WorkspaceInvitations", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([email])
+  @@map("team_invitations")
+}
+
+model BillingEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String?  @map("user_id") @db.Uuid
+  stripeEventId  String?  @map("stripe_event_id") @db.VarChar(255)
+  type           String   @db.VarChar(100)
+  tier           String   @db.VarChar(100)
+  amount         String   @db.VarChar(50)
+  handle         String   @db.VarChar(50)
+  status         String   @db.VarChar(50)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("billing_events")
 }
 

@@ -73,8 +73,15 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 // ============================================================================
 
 export const UpdateProfileSchema = z.object({
+  username: z
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username cannot exceed 30 characters')
+    .regex(/^[a-z0-9_-]+$/, 'Username can only contain lowercase letters, numbers, hyphens, and underscores')
+    .optional(),
   title: z.string().max(100, 'Title is too long').nullable().optional(),
   bio: z.string().max(500, 'Bio is too long').nullable().optional(),
+  avatarUrl: z.string().max(2000, 'Avatar URL too long').nullable().optional(),
   themeId: z.string().uuid().nullable().optional(),
   isPublished: z.boolean().optional(),
   seoTitle: z.string().max(60).nullable().optional(),
@@ -84,17 +91,90 @@ export const UpdateProfileSchema = z.object({
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 
 // ============================================================================
+// Theme & Custom Theme Schemas
+// ============================================================================
+
+export const BgTypeEnum = z.enum(['SOLID', 'GRADIENT', 'IMAGE']);
+export type BgType = z.infer<typeof BgTypeEnum>;
+
+export const BtnStyleEnum = z.enum(['FILLED', 'OUTLINE', 'SHADOW', 'ROUNDED']);
+export type BtnStyle = z.infer<typeof BtnStyleEnum>;
+
+export const UpdateCustomThemeSchema = z.object({
+  bgType: BgTypeEnum.default('SOLID'),
+  bgValue: z.string().min(1, 'Background value is required'),
+  btnStyle: BtnStyleEnum.default('FILLED'),
+  btnColor: z.string().min(1, 'Button color is required'),
+  btnTextColor: z.string().min(1, 'Button text color is required'),
+  fontFamily: z.string().default('Inter'),
+  textColor: z.string().default('#000000'),
+  btnRadius: z.number().int().min(0).max(9999).default(8),
+});
+
+export type UpdateCustomThemeInput = z.infer<typeof UpdateCustomThemeSchema>;
+
+// ============================================================================
+// Social Links Schemas
+// ============================================================================
+
+export const SocialPlatformEnum = z.enum([
+  'INSTAGRAM',
+  'TIKTOK',
+  'YOUTUBE',
+  'TWITTER',
+  'FACEBOOK',
+  'LINKEDIN',
+  'GITHUB',
+  'TWITCH',
+  'DISCORD',
+  'SPOTIFY',
+  'APPLEMUSIC',
+  'WEBSITE',
+  'EMAIL',
+]);
+export type SocialPlatform = z.infer<typeof SocialPlatformEnum>;
+
+export const CreateSocialLinkSchema = z.object({
+  platform: SocialPlatformEnum,
+  url: z.string().min(1, 'URL or account handle is required'),
+  position: z.number().int().min(0).optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const UpdateSocialLinkSchema = CreateSocialLinkSchema.partial();
+
+export const ReorderSocialLinksSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string().uuid(),
+      position: z.number().int().min(0),
+    })
+  ),
+});
+
+export type CreateSocialLinkInput = z.infer<typeof CreateSocialLinkSchema>;
+export type UpdateSocialLinkInput = z.infer<typeof UpdateSocialLinkSchema>;
+export type ReorderSocialLinksInput = z.infer<typeof ReorderSocialLinksSchema>;
+
+// ============================================================================
 // Link Schemas
 // ============================================================================
 
-export const LinkTypeEnum = z.enum(['LINK', 'HEADER', 'DIVIDER']);
+export const LinkTypeEnum = z.enum(['LINK', 'HEADER', 'DIVIDER', 'DONATION', 'NOTE']);
 
 export const CreateLinkSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
-  url: z.string().url('Must be a valid URL').nullable().optional(),
+  url: z.string().max(2048).nullable().optional(),
   type: LinkTypeEnum.default('LINK'),
-  thumbnailUrl: z.string().url().nullable().optional(),
+  thumbnailUrl: z.string().max(2048).nullable().optional(),
   isActive: z.boolean().default(true),
+  // Scheduling (Creator Pro)
+  startsAt: z.string().datetime().nullable().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  // Security & Compliance (Enterprise)
+  isPasswordProtected: z.boolean().default(false),
+  password: z.string().max(100).nullable().optional(),
+  isAgeRestricted: z.boolean().default(false),
 });
 
 export const UpdateLinkSchema = CreateLinkSchema.partial();
@@ -170,9 +250,116 @@ export const UpdatePlanSchema = z.object({
 });
 export type UpdatePlanInput = z.infer<typeof UpdatePlanSchema>;
 
-export const InviteTeamMemberSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  role: RoleEnum,
+export const PlanIntervalEnum = z.enum(['MONTHLY', 'YEARLY']);
+export type PlanInterval = z.infer<typeof PlanIntervalEnum>;
+
+export const CreateCheckoutSessionSchema = z.object({
+  planCode: z.string().min(1, 'Plan code is required'),
+  interval: PlanIntervalEnum.default('MONTHLY'),
+  successUrl: z.string().url().optional(),
+  cancelUrl: z.string().url().optional(),
 });
-export type InviteTeamMemberInput = z.infer<typeof InviteTeamMemberSchema>;
+export type CreateCheckoutSessionInput = z.infer<typeof CreateCheckoutSessionSchema>;
+
+export const InviteCollaboratorSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  name: z.string().min(1, 'Name is required').max(100),
+  role: z.string().min(1, 'Role is required'),
+});
+export type InviteCollaboratorInput = z.infer<typeof InviteCollaboratorSchema>;
+
+export const UpdateTeamMemberRoleSchema = z.object({
+  role: z.string().min(1, 'Role is required'),
+});
+export type UpdateTeamMemberRoleInput = z.infer<typeof UpdateTeamMemberRoleSchema>;
+
+export interface PlanFeatures {
+  maxLinks: number;
+  customDomains: boolean;
+  removeBranding: boolean;
+  customThemes: boolean;
+  analyticsRetentionDays: number;
+  directMonetizationFeePercent: number;
+  scheduledLinks: boolean;
+  passwordProtection: boolean;
+  ageRestriction: boolean;
+  analyticsExport: boolean;
+  webhooks: boolean;
+  teamSeats: number;
+}
+
+export interface CanonicalPlan {
+  id: string;
+  code: 'FREE' | 'PRO' | 'ENTERPRISE';
+  name: string;
+  monthlyPriceCents: number;
+  yearlyPriceCents: number;
+  features: PlanFeatures;
+}
+
+export const CANONICAL_PLANS: Record<'FREE' | 'PRO' | 'ENTERPRISE', CanonicalPlan> = {
+  FREE: {
+    id: 'plan_free',
+    code: 'FREE',
+    name: 'Free Plan',
+    monthlyPriceCents: 0,
+    yearlyPriceCents: 0,
+    features: {
+      maxLinks: 5,
+      customDomains: false,
+      removeBranding: false,
+      customThemes: false,
+      analyticsRetentionDays: 7,
+      directMonetizationFeePercent: 10,
+      scheduledLinks: false,
+      passwordProtection: false,
+      ageRestriction: false,
+      analyticsExport: false,
+      webhooks: false,
+      teamSeats: 1,
+    },
+  },
+  PRO: {
+    id: 'plan_pro',
+    code: 'PRO',
+    name: 'Creator Pro',
+    monthlyPriceCents: 200,
+    yearlyPriceCents: 2000,
+    features: {
+      maxLinks: 9999,
+      customDomains: false,
+      removeBranding: true,
+      customThemes: true,
+      analyticsRetentionDays: 90,
+      directMonetizationFeePercent: 0,
+      scheduledLinks: true,
+      passwordProtection: false,
+      ageRestriction: false,
+      analyticsExport: false,
+      webhooks: false,
+      teamSeats: 1,
+    },
+  },
+  ENTERPRISE: {
+    id: 'plan_ent',
+    code: 'ENTERPRISE',
+    name: 'Enterprise Studio',
+    monthlyPriceCents: 500,
+    yearlyPriceCents: 5000,
+    features: {
+      maxLinks: 9999,
+      customDomains: true,
+      removeBranding: true,
+      customThemes: true,
+      analyticsRetentionDays: 365,
+      directMonetizationFeePercent: 0,
+      scheduledLinks: true,
+      passwordProtection: true,
+      ageRestriction: true,
+      analyticsExport: true,
+      webhooks: true,
+      teamSeats: 5,
+    },
+  },
+};
 

@@ -1,6 +1,6 @@
-import { Controller, Post, Get, Body, HttpCode, HttpStatus, Query, UsePipes } from '@nestjs/common';
+import { Controller, Post, Get, Body, HttpCode, HttpStatus, UsePipes } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { EvaluateUrlSchema, CreateBlocklistSchema } from '@repo/shared';
+import { EvaluateUrlSchema } from '@repo/shared';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { SentinelAiService } from './sentinel-ai.service';
 import { SentinelEvaluationResult } from './sentinel-ai.types';
@@ -8,11 +8,6 @@ import { PrismaService } from '../../infrastructure/database/prisma.service';
 
 export class EvaluateUrlDto {
   url!: string;
-}
-
-export class AddBlocklistDto {
-  domainPattern!: string;
-  reason!: string;
 }
 
 @ApiTags('Sentinel AI Security')
@@ -60,41 +55,5 @@ export class SentinelAiController {
       totalFlagsRecorded: totalBlocked,
       breakdown: flagCounts,
     };
-  }
-}
-
-@ApiTags('Admin Security Moderation')
-@Controller('admin/security')
-export class AdminSecurityController {
-  constructor(
-    private readonly sentinelAi: SentinelAiService,
-    private readonly prisma: PrismaService,
-  ) {}
-
-  @Get('threats')
-  @ApiOperation({ summary: 'List recent threats detected by Sentinel AI' })
-  async listThreats(@Query('limit') limit = '20') {
-    const take = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
-    return await this.prisma.securityFlag.findMany({
-      take,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-            isBanned: true,
-          },
-        },
-      },
-    });
-  }
-
-  @Post('blocklist')
-  @UsePipes(new ZodValidationPipe(CreateBlocklistSchema))
-  @ApiOperation({ summary: 'Add domain to global blocklist' })
-  async addBlocklist(@Body() dto: AddBlocklistDto) {
-    return await this.sentinelAi.addDomainToBlocklist(dto.domainPattern, dto.reason);
   }
 }

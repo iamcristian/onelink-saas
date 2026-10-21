@@ -139,6 +139,24 @@ All primary commands can be executed from the **monorepo root**:
 
 ---
 
+## 💎 Release Feature Highlights & Subscription Tiers
+
+| Tier | Price | Highlights |
+|---|---|---|
+| **Free Plan** | **$0 / forever** | 5 active links, standard bio profile, 7-day analytics retention, mobile responsive reader |
+| **Creator Pro** | **$2.00 / month** ($20/yr) | Unlimited links, Link Scheduling, 0% tip fee, 90-day telemetry, no watermark, calibrated WCAG AAA themes |
+| **Enterprise Studio** | **$5.00 / month** ($50/yr) | 5 collaborative team seats with hierarchical RBAC, PIN/password locked links, 18+ age gate, executive CSV export, custom domain support |
+
+### 🚀 Core Platform Capabilities
+- **Responsive Mobile Studio Dashboard**: Dynamic segmented control (`[ Editor | Live Preview ]`), responsive device frames (MacBook Pro 16" & fluid iPhone chassis), and non-colliding two-tier link cards.
+- **Interactive Digital Notepad (`NOTE` Block)**: Rich-text announcement and memo block that opens a frosted-glass reader modal with word count badge and one-click "Copy Text" button.
+- **WCAG AAA Theme Engine**: 8 calibrated high-contrast presets (Minimal Dark, Clean Light, Sunset Aurora, Forest Emerald, Midnight Ocean, Cyberpunk Neon, Bento Linen, Solar Gold).
+- **Enterprise Multi-User RBAC**: Numerical hierarchy (`Platform Owner (5)` > `Admin (4)` > `Safety Admin (3)` > `Content Editor (2)` > `Viewer (1)`) with anti-redundancy and anti-recursion guardrails.
+- **Stripe Tax Invoices & PDF Receipts**: Native Stripe customer portal integration and instant official PDF invoice receipt downloads.
+- **Sentinel AI Threat Engine**: Zero-token in-process lexical analysis and ONNX threat classification intercepting crypto-drainers, phishing, and malware in <25ms.
+
+---
+
 ## 📚 SDLC Documentation Hub
 
 Every technical decision, schema, user journey, and wireframe is formally documented in [`docs/`](./docs):
@@ -148,8 +166,9 @@ Every technical decision, schema, user journey, and wireframe is formally docume
 - 📄 **[Product Requirements Document (PRD)](./docs/prd.md)**: Personas, Gherkin user stories, MoSCoW.
 - 📑 **[Software Requirements Specification (SRS)](./docs/srs.md)**: IEEE 830 functional & non-functional requirements.
 - 🗄️ **[Database Design & ERD](./docs/architecture/database-design.md)**: Mermaid ERD, TimescaleDB Hypertables, indexes.
-- 🏛️ **[System Architecture (C4)](./docs/architecture/system-architecture.md)**: C4 Context, Container, and Component diagrams.
+- 🏛️ **[System Architecture (C4)](./docs/architecture/system-architecture.md)**: C4 Context, Container, Component, and Deployment diagrams.
 - 🔄 **[Sequence Flows](./docs/architecture/sequence-flows.md)**: Hot path profile rendering, click beacons, and caching.
 - 🎨 **[UI/UX Wireframes & Google Stitch](./docs/ui-ux/wireframes-and-mockups.md)**: Split-screen dashboard wireframes & design tokens.
 - 🧪 **[Quality & Test Plan](./docs/test-plan.md)**: TDD Red-Green-Refactor testing matrix.
 - 📐 **[Architecture Decision Records (ADR)](./docs/adr/)**: ADRs 001 through 004.
+

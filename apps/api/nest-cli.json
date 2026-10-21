@@ -4,6 +4,9 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "builder": "swc"
+    "builder": "swc",
+    "assets": [
+      { "include": "modules/sentinel-ai/models/**/*", "outDir": "dist" }
+    ]
   }
 }

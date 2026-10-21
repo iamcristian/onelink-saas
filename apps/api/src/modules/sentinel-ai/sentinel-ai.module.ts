@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SentinelAiService } from './sentinel-ai.service';
-import { SentinelAiController, AdminSecurityController } from './sentinel-ai.controller';
+import { SentinelAiController } from './sentinel-ai.controller';
+import { AdminSecurityController } from './admin-security.controller';
 
 @Module({
   controllers: [SentinelAiController, AdminSecurityController],

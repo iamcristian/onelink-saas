@@ -16,6 +16,24 @@ export class CreateLinkDto {
 
   @ApiPropertyOptional({ default: true })
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: 'Scheduled appearance date ISO string' })
+  startsAt?: string | null;
+
+  @ApiPropertyOptional({ description: 'Scheduled expiration date ISO string' })
+  expiresAt?: string | null;
+
+  @ApiPropertyOptional({ default: false })
+  isPasswordProtected?: boolean;
+
+  @ApiPropertyOptional({ description: 'Access PIN or password for gated content' })
+  password?: string | null;
+
+  @ApiPropertyOptional({ default: false })
+  isAgeRestricted?: boolean;
+
+  @ApiPropertyOptional({ example: 'NEW', description: 'Badge pill text' })
+  badge?: string;
 }
 
 export class UpdateLinkDto {
@@ -33,6 +51,24 @@ export class UpdateLinkDto {
 
   @ApiPropertyOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: 'Scheduled appearance date ISO string' })
+  startsAt?: string | null;
+
+  @ApiPropertyOptional({ description: 'Scheduled expiration date ISO string' })
+  expiresAt?: string | null;
+
+  @ApiPropertyOptional()
+  isPasswordProtected?: boolean;
+
+  @ApiPropertyOptional()
+  password?: string | null;
+
+  @ApiPropertyOptional()
+  isAgeRestricted?: boolean;
+
+  @ApiPropertyOptional({ example: 'NEW', description: 'Badge pill text' })
+  badge?: string;
 }
 
 export class ReorderItemDto {

@@ -1,0 +1,42 @@
+{
+  "modelName": "Sentinel-URL-Classifier",
+  "version": "2.0.0",
+  "architecture": "RandomForestClassifier",
+  "dataset": "UCI Machine Learning Repository - PhiUSIIL Phishing URL Dataset (235,795 real URLs)",
+  "datasetPath": "tools/ml/data/phiusiil_dataset.csv",
+  "trainedSamples": 22564,
+  "testSamples": 7522,
+  "nEstimators": 50,
+  "maxDepth": 12,
+  "features": [
+    "url_length",
+    "domain_length",
+    "path_length",
+    "query_length",
+    "dot_count",
+    "hyphen_count",
+    "digit_ratio",
+    "subdomain_count",
+    "has_ip_address",
+    "is_punycode",
+    "entropy",
+    "has_suspicious_tld",
+    "has_crypto_keywords",
+    "has_auth_path_keywords",
+    "is_url_shortener",
+    "is_https"
+  ],
+  "metrics": {
+    "testSampleSize": 7522,
+    "accuracy": 0.9761,
+    "precision": 0.9937,
+    "recall": 0.9583,
+    "f1Score": 0.9757,
+    "rocAuc": 0.9932,
+    "truePositives": 3611,
+    "falsePositives": 23,
+    "trueNegatives": 3731,
+    "falseNegatives": 157
+  },
+  "targetOpset": 17
+}

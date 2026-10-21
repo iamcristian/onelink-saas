@@ -1,9 +1,14 @@
 import { Injectable, Logger, OnModuleInit, BadRequestException } from '@nestjs/common';
+import * as path from 'path';
+import * as fs from 'fs';
+import { domainToUnicode } from 'url';
+import * as ort from 'onnxruntime-node';
 import { ThreatType, SecurityFlagStatus } from '@repo/prisma';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { RedisService } from '../../infrastructure/cache/redis.service';
-import { calculateShannonEntropy } from './utils/entropy.util';
 import { scanForHomoglyphs } from './utils/homoglyph.util';
+import { extractUrlFeatures, ExtractedFeatures } from './utils/features.util';
+import { isAuthoritativeDomain } from './utils/allowlist.util';
 import { SentinelEvaluationResult, SecurityFlagCreationParams } from './sentinel-ai.types';
 
 const HIGH_VALUE_BRANDS = [
@@ -27,54 +32,11 @@ const HIGH_VALUE_BRANDS = [
   'whatsapp',
 ];
 
-const CRYPTO_DRAINER_KEYWORDS = [
-  'airdrop',
-  'claim-free',
-  'walletconnect',
-  'wallet-connect',
-  'seed-phrase',
-  'drainer',
-  'free-nft',
-  'crypto-giveaway',
-  'mint-pass',
-  'presale-tokens',
-];
-
-const SUSPICIOUS_PATH_KEYWORDS = [
-  'login',
-  'signin',
-  'verify',
-  'banking',
-  'secure-account',
-  'update-password',
-  'auth-token',
-  'confirm-identity',
-];
-
-const HIGH_RISK_TLDS = new Set([
-  '.xyz',
-  '.top',
-  '.click',
-  '.buzz',
-  '.cam',
-  '.work',
-  '.rest',
-  '.loan',
-  '.tk',
-  '.ml',
-  '.ga',
-  '.cf',
-  '.gq',
-  '.fit',
-  '.kim',
-]);
-
-const IPV4_REGEX = /^(\d{1,3}\.){3}\d{1,3}$/;
-
 @Injectable()
 export class SentinelAiService implements OnModuleInit {
   private readonly logger = new Logger(SentinelAiService.name);
   private static readonly REDIS_BLOCKLIST_KEY = 'sentinel:blocked_domains';
+  private onnxSession: ort.InferenceSession | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -82,12 +44,52 @@ export class SentinelAiService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    await this.initOnnxModel();
     await this.syncBlocklistToRedis();
   }
 
   /**
-   * Evaluates an arbitrary URL in-process using Shannon entropy,
-   * homoglyph heuristics, and lexical risk classification in <18ms without external tokens.
+   * Initializes the ONNX URL classification model in-process for zero-token inference.
+   */
+  private async initOnnxModel() {
+    const candidatePaths = [
+      path.resolve(__dirname, 'models/sentinel-url-classifier.onnx'),
+      path.resolve(__dirname, '../models/sentinel-url-classifier.onnx'),
+      path.resolve(process.cwd(), 'src/modules/sentinel-ai/models/sentinel-url-classifier.onnx'),
+      path.resolve(process.cwd(), 'apps/api/src/modules/sentinel-ai/models/sentinel-url-classifier.onnx'),
+      path.resolve(process.cwd(), 'dist/modules/sentinel-ai/models/sentinel-url-classifier.onnx'),
+    ];
+
+    let modelPath: string | null = null;
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        modelPath = p;
+        break;
+      }
+    }
+
+    if (!modelPath) {
+      this.logger.warn(
+        `ONNX model not found in any candidate path. Sentinel AI will run in heuristic-only mode.`,
+      );
+      return;
+    }
+
+    try {
+      this.onnxSession = await ort.InferenceSession.create(modelPath, {
+        executionProviders: ['cpu'],
+        graphOptimizationLevel: 'all',
+      });
+      this.logger.log(`ONNX Security Model loaded successfully from ${modelPath}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Failed to load ONNX model: ${msg}`);
+    }
+  }
+
+  /**
+   * Evaluates an arbitrary URL in-process using trained ONNX Random Forest model,
+   * Shannon entropy, homoglyph heuristics, and lexical risk classification in <18ms without external tokens.
    */
   async evaluateUrl(rawUrl: string): Promise<SentinelEvaluationResult> {
     const startTime = performance.now();
@@ -100,132 +102,168 @@ export class SentinelAiService implements OnModuleInit {
     }
 
     const hostname = parsed.hostname.toLowerCase();
-    const pathname = parsed.pathname.toLowerCase();
     const signals: string[] = [];
     let riskScore = 0;
     let threatType: ThreatType | undefined;
+    let mlRiskScore = 0;
+    let mlConfidence = 0.99;
 
-    // Layer 0: Check Redis fast global blocklist (<1ms O(1) lookup)
-    const isGloballyBlocked = await this.redis.sismember(
-      SentinelAiService.REDIS_BLOCKLIST_KEY,
-      hostname,
-    );
-
-    if (isGloballyBlocked) {
-      signals.push('Matched active Redis domain blocklist');
-      return {
-        isSafe: false,
-        riskScore: 1.0,
-        threatType: ThreatType.SPAM,
-        aiConfidence: 0.9999,
-        action: 'BLOCK_IMMEDIATE',
-        signals,
-        entropy: calculateShannonEntropy(hostname),
-        normalizedDomain: hostname,
-        latencyMs: Math.round((performance.now() - startTime) * 100) / 100,
-      };
+    // Layer 0: Authoritative Domain Fast Bypass (Guarantees zero false positives for legitimate link-in-bio services)
+    if (isAuthoritativeDomain(hostname)) {
+      const unicodeDomain = domainToUnicode(hostname);
+      const homoglyphCheck = scanForHomoglyphs(unicodeDomain);
+      if (!homoglyphCheck.hasHomoglyphs) {
+        signals.push('Authoritative domain allowlist match');
+        return {
+          isSafe: true,
+          riskScore: 0.0,
+          aiConfidence: 0.9999,
+          action: 'ALLOW',
+          signals,
+          entropy: 0.0,
+          normalizedDomain: hostname,
+          latencyMs: Math.round((performance.now() - startTime) * 100) / 100,
+        };
+      }
     }
 
-    // Layer 1: Raw IP Address as hostname (phishing / C2 server indicator)
-    if (IPV4_REGEX.test(hostname)) {
-      riskScore += 0.75;
-      threatType = ThreatType.PHISHING;
-      signals.push(`Host is a raw IP address (${hostname}) instead of a qualified domain`);
+    // Layer 1: Redis Global Blocklist (O(1) fast lookup <1ms)
+    try {
+      const isGloballyBlocked = await this.redis.sismember(
+        SentinelAiService.REDIS_BLOCKLIST_KEY,
+        hostname,
+      );
+
+      if (isGloballyBlocked) {
+        signals.push('Matched active Redis domain blocklist');
+        return {
+          isSafe: false,
+          riskScore: 1.0,
+          threatType: ThreatType.SPAM,
+          aiConfidence: 0.9999,
+          action: 'BLOCK_IMMEDIATE',
+          signals,
+          entropy: 0.0,
+          normalizedDomain: hostname,
+          latencyMs: Math.round((performance.now() - startTime) * 100) / 100,
+        };
+      }
+    } catch (err: unknown) {
+      this.logger.warn(`Redis blocklist check error: ${err}`);
     }
 
-    // Layer 2: Homoglyph and Punycode spoofing detection
-    // WHATWG URL parser automatically encodes unicode characters in hostname to Punycode (xn--)
+    // Layer 2: Extract 16 lexical and structural numerical features
+    const features: ExtractedFeatures = extractUrlFeatures(rawUrl);
+
+    // Layer 3: ONNX Machine Learning Inference
+    if (this.onnxSession) {
+      try {
+        const inputTensor = new ort.Tensor('float32', features.vector, [1, 16]);
+        const results = await this.onnxSession.run({ float_input: inputTensor });
+        const probTensor = results.probabilities as ort.Tensor;
+        const probs = probTensor.data as Float32Array;
+
+        // Index 0: Benign, Index 1: Malicious
+        const probBenign = probs[0];
+        const probMalicious = probs[1];
+
+        mlRiskScore = Math.round(probMalicious * 10000) / 10000;
+        mlConfidence = Math.round(Math.max(probBenign, probMalicious) * 10000) / 10000;
+
+        if (mlRiskScore >= 0.75) {
+          signals.push(`Sentinel ML classified URL as malicious (confidence: ${(mlConfidence * 100).toFixed(1)}%)`);
+          if (!threatType) threatType = ThreatType.PHISHING;
+        } else if (mlRiskScore >= 0.45) {
+          signals.push(`Sentinel ML flagged URL for review (risk: ${mlRiskScore})`);
+        }
+      } catch (err: unknown) {
+        this.logger.warn(`ONNX inference failed: ${err}`);
+      }
+    }
+
+    riskScore = mlRiskScore;
+
+    // Layer 4: Deterministic Security Safety Net
+    // 4A: Homoglyph spoofing detection (Cyrillic, Greek, or mixed scripts mimicking protected ASCII)
     const rawHostMatch = rawUrl.match(/^[a-zA-Z]+:\/\/([^/?#:]+)/);
     const rawHost = rawHostMatch ? rawHostMatch[1].toLowerCase() : hostname;
-    const homoglyphResult = scanForHomoglyphs(rawHost);
+    // Decode Punycode to Unicode for accurate homoglyph scanning (e.g. xn--pple-43d -> аpple)
+    const unicodeHost = domainToUnicode(rawHost);
+    const homoglyphResult = scanForHomoglyphs(unicodeHost);
 
-    if (homoglyphResult.hasHomoglyphs || hostname.includes('xn--')) {
-      riskScore += 0.85;
-      threatType = ThreatType.PHISHING;
+    if (homoglyphResult.hasHomoglyphs) {
+      riskScore = Math.max(riskScore, 0.95);
+      if (!threatType) threatType = ThreatType.PHISHING;
       if (homoglyphResult.detectedChars.length > 0) {
         signals.push(
           `Cyrillic/Greek homoglyphs detected mimicking Latin letters: [${homoglyphResult.detectedChars.join(', ')}]`,
         );
       }
-      if (hostname.includes('xn--') || homoglyphResult.isPunycode) {
-        signals.push('Punycode internationalized domain (IDN) detected');
+      if (features.isPunycode) {
+        signals.push('Punycode internationalized domain (IDN) spoofing indicator');
       }
+    } else if (features.isPunycode && features.hasSuspiciousTld) {
+      riskScore = Math.max(riskScore, 0.85);
+      if (!threatType) threatType = ThreatType.PHISHING;
+      signals.push('Punycode internationalized domain on high-risk TLD detected');
     }
 
-    // Layer 3: High Shannon Entropy (algorithmic DGA domain randomness)
-    const domainParts = hostname.split('.');
-    const primaryLabel = domainParts.length > 1 ? domainParts[domainParts.length - 2] : hostname;
-    const entropy = calculateShannonEntropy(primaryLabel);
+    // 4B: Raw IP Address Host
+    if (features.hasIp) {
+      riskScore = Math.max(riskScore, 0.85);
+      if (!threatType) threatType = ThreatType.PHISHING;
+      signals.push(`Host is a raw IP address (${hostname}) instead of a qualified domain`);
+    }
 
-    if (entropy >= 3.5 && primaryLabel.length >= 10) {
-      riskScore += 0.50;
-      signals.push(`High Shannon entropy (${entropy} bits/char) indicates algorithmic DGA domain`);
+    // 4C: Crypto Drainer and Wallet Phishing Keywords
+    if (features.hasCryptoKeywords) {
+      riskScore = Math.max(riskScore, 0.85);
+      threatType = ThreatType.CRYPTO_DRAINER;
+      signals.push(`Crypto drainer / wallet-theft keyword pattern found in URL`);
+    }
+
+    // 4D: High Shannon Entropy (Algorithmic DGA domain randomness)
+    // Threshold set to >= 3.85 to avoid false positives on natural vocabulary like stackoverflow
+    if (features.entropy >= 3.85 && features.primaryLabel.length >= 10) {
+      riskScore = Math.max(riskScore, 0.70);
+      signals.push(`High Shannon entropy (${features.entropy} bits/char) indicates algorithmic DGA domain`);
       if (!threatType) threatType = ThreatType.MALWARE;
     }
 
-    // Layer 4: High-Value Brand Impersonation / Typosquatting
-    const normalizedDomain = homoglyphResult.normalizedString;
+    // 4E: URL Shorteners (Require destination review to prevent evasion)
+    if (features.isShortener) {
+      riskScore = Math.max(riskScore, 0.50);
+      signals.push('URL shortener masks target destination — requires manual review');
+      if (!threatType) threatType = ThreatType.SPAM;
+    }
+
+    // 4F: Token-Based High-Value Brand Impersonation (Avoids naive substring false positives like pineapple/purchase)
+    const domainTokens = hostname.split(/[.-]/);
     for (const brand of HIGH_VALUE_BRANDS) {
-      if (normalizedDomain.includes(brand)) {
-        // Legitimate brand check: must be exactly brand.tld or brand.com / brand.org etc.
+      if (domainTokens.includes(brand)) {
         const isOfficial =
-          normalizedDomain === `${brand}.com` ||
-          normalizedDomain.endsWith(`.${brand}.com`) ||
-          normalizedDomain === `${brand}.org` ||
-          normalizedDomain.endsWith(`.${brand}.org`);
+          hostname === `${brand}.com` ||
+          hostname.endsWith(`.${brand}.com`) ||
+          hostname === `${brand}.org` ||
+          hostname.endsWith(`.${brand}.org`) ||
+          hostname === `${brand}.me` ||
+          hostname.endsWith(`.${brand}.me`) ||
+          hostname === `${brand}.gg` ||
+          hostname.endsWith(`.${brand}.gg`);
 
         if (!isOfficial) {
-          riskScore += 0.80;
-          threatType = ThreatType.PHISHING;
+          riskScore = Math.max(riskScore, 0.85);
+          if (!threatType || threatType === ThreatType.PHISHING) {
+            threatType = ThreatType.PHISHING;
+          }
           signals.push(`Impersonation of protected brand "${brand}" in non-official domain`);
           break;
         }
       }
     }
 
-    // Layer 5: Crypto Drainer & Wallet Phishing keywords
-    const fullUrlString = `${hostname}${pathname}`;
-    for (const keyword of CRYPTO_DRAINER_KEYWORDS) {
-      if (fullUrlString.includes(keyword)) {
-        riskScore += 0.70;
-        threatType = ThreatType.CRYPTO_DRAINER;
-        signals.push(`Crypto drainer / wallet-theft keyword pattern found: "${keyword}"`);
-        break;
-      }
-    }
-
-    // Layer 6: Suspicious Path Keywords in non-authoritative hostnames
-    for (const pathKey of SUSPICIOUS_PATH_KEYWORDS) {
-      if (pathname.includes(pathKey) && riskScore > 0.2) {
-        riskScore += 0.20;
-        signals.push(`Credential phishing path detected: "${pathKey}"`);
-        break;
-      }
-    }
-
-    // Layer 7: High-Risk TLD multiplier
-    for (const tld of HIGH_RISK_TLDS) {
-      if (hostname.endsWith(tld)) {
-        if (signals.length > 0) {
-          riskScore += 0.25;
-          signals.push(`High-risk top-level domain (${tld}) associated with fraudulent activity`);
-        }
-        break;
-      }
-    }
-
-    // Layer 8: Excessive Subdomain Stacking (e.g. login.secure.bank.scam.xyz)
-    if (domainParts.length >= 4) {
-      riskScore += 0.20;
-      signals.push(`Excessive subdomain depth (${domainParts.length} levels) indicates evasion tactic`);
-    }
-
     // Clamp risk score to [0.0, 1.0]
     const finalRiskScore = Math.min(1.0, Math.round(riskScore * 10000) / 10000);
-
-    // AI Confidence is elevated when multiple distinct security signals align
-    const baseConfidence = signals.length === 0 ? 0.99 : Math.min(0.98, 0.75 + signals.length * 0.08);
-    const aiConfidence = Math.round(baseConfidence * 10000) / 10000;
 
     let action: 'ALLOW' | 'FLAG_FOR_REVIEW' | 'BLOCK_IMMEDIATE' = 'ALLOW';
     if (finalRiskScore >= 0.75) {
@@ -242,11 +280,11 @@ export class SentinelAiService implements OnModuleInit {
       isSafe: action === 'ALLOW',
       riskScore: finalRiskScore,
       threatType: action !== 'ALLOW' ? threatType : undefined,
-      aiConfidence,
+      aiConfidence: mlConfidence,
       action,
       signals,
-      entropy,
-      normalizedDomain: homoglyphResult.normalizedString,
+      entropy: features.entropy,
+      normalizedDomain: homoglyphResult.normalizedString || hostname,
       latencyMs,
     };
   }
@@ -299,22 +337,161 @@ export class SentinelAiService implements OnModuleInit {
   }
 
   /**
-   * Manually adds a domain pattern to blocklist and updates Redis immediately
+   * Adds a domain pattern to both PostgreSQL and Redis blocklist cache
    */
   async addDomainToBlocklist(domainPattern: string, reason: string, adminUserId?: string) {
-    const pattern = domainPattern.toLowerCase().trim();
-
-    const record = await this.prisma.domainBlocklist.upsert({
+    const pattern = domainPattern.toLowerCase();
+    const entry = await this.prisma.domainBlocklist.upsert({
       where: { domainPattern: pattern },
-      update: { reason },
-      create: {
-        domainPattern: pattern,
-        reason,
-        addedById: adminUserId,
-      },
+      update: { reason, addedById: adminUserId },
+      create: { domainPattern: pattern, reason, addedById: adminUserId },
     });
 
     await this.redis.sadd(SentinelAiService.REDIS_BLOCKLIST_KEY, pattern);
-    return record;
+    this.logger.log(`Added "${pattern}" to global blocklist`);
+
+    if (adminUserId) {
+      await this.prisma.adminAuditLog.create({
+        data: {
+          adminUserId,
+          action: 'BLOCKLIST_DOMAIN_ADD',
+          targetType: 'DOMAIN',
+          targetId: entry.id,
+          reason,
+          metadata: { domainPattern: pattern },
+        },
+      });
+    }
+
+    return entry;
+  }
+
+  /**
+   * Removes a domain pattern from PostgreSQL and Redis blocklist cache
+   */
+  async removeDomainFromBlocklist(id: string, adminUserId?: string) {
+    const entry = await this.prisma.domainBlocklist.findUnique({ where: { id } });
+    if (!entry) {
+      throw new BadRequestException('Domain blocklist entry not found.');
+    }
+
+    await this.prisma.domainBlocklist.delete({ where: { id } });
+    await this.redis.srem(SentinelAiService.REDIS_BLOCKLIST_KEY, entry.domainPattern.toLowerCase());
+    this.logger.log(`Removed "${entry.domainPattern}" from global blocklist`);
+
+    if (adminUserId) {
+      await this.prisma.adminAuditLog.create({
+        data: {
+          adminUserId,
+          action: 'BLOCKLIST_DOMAIN_REMOVE',
+          targetType: 'DOMAIN',
+          targetId: id,
+          reason: 'Removed by security administrator',
+          metadata: { domainPattern: entry.domainPattern },
+        },
+      });
+    }
+
+    return { success: true, removedPattern: entry.domainPattern };
+  }
+
+  /**
+   * Updates status of a SecurityFlag (e.g. RESOLVED_BENIGN, BANNED, BLOCKED_AUTO)
+   */
+  async updateThreatStatus(
+    flagId: string,
+    status: SecurityFlagStatus,
+    notes?: string,
+    adminUserId?: string,
+  ) {
+    const flag = await this.prisma.securityFlag.update({
+      where: { id: flagId },
+      data: {
+        status,
+        resolutionNotes: notes,
+        reviewedById: adminUserId,
+      },
+    });
+
+    if (adminUserId) {
+      await this.prisma.adminAuditLog.create({
+        data: {
+          adminUserId,
+          action: `FLAG_STATUS_CHANGE_${status}`,
+          targetType: 'SECURITY_FLAG',
+          targetId: flagId,
+          reason: notes || `Threat marked as ${status}`,
+          metadata: { url: flag.submittedUrl, previousStatus: flag.status },
+        },
+      });
+    }
+
+    return flag;
+  }
+
+  /**
+   * Suspends or reinstates a user account and deactivates links on suspension
+   */
+  async suspendUser(
+    userId: string,
+    isBanned: boolean,
+    reason: string,
+    adminUserId?: string,
+  ) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { isBanned },
+      include: { profile: true },
+    });
+
+    // If banned, deactivate all published profile links to neutralize threats
+    if (isBanned && user.profile) {
+      await this.prisma.link.updateMany({
+        where: { profileId: user.profile.id },
+        data: { isActive: false },
+      });
+      this.logger.warn(`User ${user.email} banned. Deactivated all profile links.`);
+    }
+
+    if (adminUserId) {
+      await this.prisma.adminAuditLog.create({
+        data: {
+          adminUserId,
+          action: isBanned ? 'USER_SUSPEND' : 'USER_REINSTATE',
+          targetType: 'USER',
+          targetId: userId,
+          reason,
+          metadata: { email: user.email, username: user.profile?.username },
+        },
+      });
+    }
+
+    return {
+      userId: user.id,
+      email: user.email,
+      isBanned: user.isBanned,
+      username: user.profile?.username,
+    };
+  }
+
+  /**
+   * Fetches latest moderation audit logs
+   */
+  async getAuditLogs(limit = 25) {
+    const take = Math.min(100, Math.max(1, limit));
+    return await this.prisma.adminAuditLog.findMany({
+      take,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        adminUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+    });
   }
 }

@@ -99,6 +99,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async srem(key: string, ...members: string[]): Promise<number> {
+    if (!this.client || !this.isConnected || members.length === 0) return 0;
+    try {
+      return await this.client.srem(key, ...members);
+    } catch (error) {
+      this.logger.warn(`Set remove error for key ${key}: ${error}`);
+      return 0;
+    }
+  }
+
   getClient(): Redis | null {
     return this.client;
   }

@@ -1,0 +1,103 @@
+### OneLink API - Local Testing File
+### Use with "REST Client" extension (click 'Send Request' above any query)
+
+@baseUrl = http://localhost:3001/api
+
+### 1. Sentinel AI Telemetry
+GET {{baseUrl}}/sentinel/telemetry
+
+### 2. Evaluate Legitimate Link (PayPal.me)
+POST {{baseUrl}}/sentinel/evaluate
+Content-Type: application/json
+
+{
+  "url": "https://paypal.me/alexrivera"
+}
+
+### 3. Evaluate Phishing Threat (Homoglyph Attack)
+POST {{baseUrl}}/sentinel/evaluate
+Content-Type: application/json
+
+{
+  "url": "http://pаypal.com/signin"
+}
+
+### 4. Evaluate Crypto Drainer
+POST {{baseUrl}}/sentinel/evaluate
+Content-Type: application/json
+
+{
+  "url": "https://metamask-free-airdrop-claim.xyz/walletconnect"
+}
+
+### 5. Register Creator User
+# @name registerUser
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "creator@onelink.bio",
+  "password": "SecurePassword123!",
+  "username": "alexrivera",
+  "name": "Alex Rivera"
+}
+
+### 6. Login User
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "creator@onelink.bio",
+  "password": "SecurePassword123!"
+}
+
+### 7. Get Authenticated Profile
+# Paste the accessToken returned from request #6 above, or use: {{loginUser.response.body.accessToken}}
+@authToken = YOUR_JWT_ACCESS_TOKEN_HERE
+
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{authToken}}
+
+### 8. Try Accessing Admin Threats without Super Admin Token (Expect 401/403)
+GET {{baseUrl}}/admin/security/threats
+
+### 9. Get Preset Themes (Public)
+GET {{baseUrl}}/themes
+
+### 10. Get Public Profile (Hot Path - Redis Cached)
+GET {{baseUrl}}/profiles/alexrivera
+
+### 11. Get Authenticated Creator Profile
+GET {{baseUrl}}/profiles/me
+Authorization: Bearer {{authToken}}
+
+### 12. Create Social Link for Creator Profile
+# Replace :profileId with the creator's profile ID
+@profileId = YOUR_PROFILE_UUID_HERE
+
+POST {{baseUrl}}/profiles/{{profileId}}/social-links
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "platform": "TWITTER",
+  "url": "https://x.com/alexrivera"
+}
+
+### 13. Update Custom Theme CSS Tokens
+PUT {{baseUrl}}/profiles/{{profileId}}/custom-theme
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "bgType": "SOLID",
+  "bgValue": "#09090b",
+  "btnStyle": "ROUNDED",
+  "btnColor": "#27272a",
+  "btnTextColor": "#ffffff",
+  "fontFamily": "Inter",
+  "textColor": "#ffffff",
+  "btnRadius": 9999
+}
+

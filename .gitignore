@@ -48,3 +48,6 @@ tmp/
 # AI Agent Configs & Secrets
 .agents/mcp_config.json
 !.agents/mcp_config.example.json
+
+# Machine Learning Raw Datasets
+tools/ml/data/

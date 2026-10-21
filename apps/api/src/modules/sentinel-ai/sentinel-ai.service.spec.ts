@@ -13,15 +13,29 @@ describe('SentinelAiService (Zero-Token AI Threat Detection)', () => {
     redisService = {
       sismember: jest.fn().mockResolvedValue(false),
       sadd: jest.fn().mockResolvedValue(1),
+      srem: jest.fn().mockResolvedValue(1),
     };
 
     prismaService = {
       domainBlocklist: {
         findMany: jest.fn().mockResolvedValue([]),
         upsert: jest.fn().mockResolvedValue({ id: 'mock-id' }),
+        findUnique: jest.fn().mockResolvedValue({ id: 'mock-id', domainPattern: 'evil.xyz' }),
+        delete: jest.fn().mockResolvedValue({ id: 'mock-id' }),
       } as any,
       securityFlag: {
         create: jest.fn().mockResolvedValue({ id: 'flag-uuid' }),
+        update: jest.fn().mockResolvedValue({ id: 'flag-uuid', submittedUrl: 'http://evil.com', status: 'RESOLVED_BENIGN' }),
+      } as any,
+      user: {
+        update: jest.fn().mockResolvedValue({ id: 'user-uuid', email: 'spammer@evil.com', isBanned: true, profile: { id: 'prof-id', username: 'spammer' } }),
+      } as any,
+      link: {
+        updateMany: jest.fn().mockResolvedValue({ count: 3 }),
+      } as any,
+      adminAuditLog: {
+        create: jest.fn().mockResolvedValue({ id: 'log-uuid' }),
+        findMany: jest.fn().mockResolvedValue([{ id: 'log-uuid', action: 'USER_SUSPEND' }]),
       } as any,
     };
 
@@ -34,9 +48,10 @@ describe('SentinelAiService (Zero-Token AI Threat Detection)', () => {
     }).compile();
 
     service = module.get<SentinelAiService>(SentinelAiService);
+    await service.onModuleInit();
   });
 
-  describe('evaluateUrl - Benign URLs', () => {
+  describe('evaluateUrl - Benign URLs & Allowlist (Zero False Positives)', () => {
     it('should classify legitimate YouTube URL as SAFE with low risk score', async () => {
       const result = await service.evaluateUrl('https://youtube.com/watch?v=dQw4w9WgXcQ');
 
@@ -52,6 +67,36 @@ describe('SentinelAiService (Zero-Token AI Threat Detection)', () => {
       expect(result.isSafe).toBe(true);
       expect(result.action).toBe('ALLOW');
       expect(result.riskScore).toBeLessThan(0.3);
+    });
+
+    it('should allow legitimate link-in-bio services without false positives (paypal.me, discord.gg)', async () => {
+      const discord = await service.evaluateUrl('https://discord.gg/community');
+      const paypal = await service.evaluateUrl('https://paypal.me/alexrivera');
+      const amazon = await service.evaluateUrl('https://amazon.de/dp/B0C1234');
+
+      expect(discord.isSafe).toBe(true);
+      expect(discord.action).toBe('ALLOW');
+      expect(paypal.isSafe).toBe(true);
+      expect(paypal.action).toBe('ALLOW');
+      expect(amazon.isSafe).toBe(true);
+      expect(amazon.action).toBe('ALLOW');
+    });
+
+    it('should not flag legitimate vocabulary containing brand substrings (pineapple, purchase.edu)', async () => {
+      const pineapple = await service.evaluateUrl('https://pineapple.com/products/fresh');
+      const purchase = await service.evaluateUrl('https://www.purchase.edu/programs/arts');
+
+      expect(pineapple.isSafe).toBe(true);
+      expect(pineapple.action).toBe('ALLOW');
+      expect(purchase.isSafe).toBe(true);
+      expect(purchase.action).toBe('ALLOW');
+    });
+
+    it('should allow legitimate internationalized domains (münchen.de) without false positives', async () => {
+      const result = await service.evaluateUrl('https://münchen.de/');
+
+      expect(result.isSafe).toBe(true);
+      expect(result.action).toBe('ALLOW');
     });
   });
 
@@ -79,7 +124,7 @@ describe('SentinelAiService (Zero-Token AI Threat Detection)', () => {
       );
     });
 
-    it('should detect Punycode IDN spoofing (xn--)', async () => {
+    it('should detect Punycode IDN spoofing (xn--pple-43d.com)', async () => {
       const punycodeUrl = 'https://xn--pple-43d.com/login';
       const result = await service.evaluateUrl(punycodeUrl);
 
@@ -112,14 +157,23 @@ describe('SentinelAiService (Zero-Token AI Threat Detection)', () => {
       expect(result.riskScore).toBeGreaterThanOrEqual(0.75);
     });
 
-    it('should detect high Shannon entropy in algorithmic DGA domains', async () => {
-      // "xj89akq-zp01m9x88" has high random character entropy
-      const dgaUrl = 'https://xj89akq-zp01m9x88.info/download';
+    it('should detect high Shannon entropy in algorithmic DGA domains (>3.85 bits/char)', async () => {
+      // "xkj89aqzp01m9x74b3" has high random character entropy (3.95 bits/char)
+      const dgaUrl = 'https://xkj89aqzp01m9x74b3.info/download';
       const result = await service.evaluateUrl(dgaUrl);
 
-      expect(result.entropy).toBeGreaterThan(3.5);
+      expect(result.entropy).toBeGreaterThan(3.85);
       expect(result.signals).toEqual(
         expect.arrayContaining([expect.stringContaining('High Shannon entropy')]),
+      );
+    });
+
+    it('should flag URL shorteners for destination review', async () => {
+      const result = await service.evaluateUrl('https://bit.ly/3xYzAbC');
+
+      expect(result.action).toBe('FLAG_FOR_REVIEW');
+      expect(result.signals).toEqual(
+        expect.arrayContaining([expect.stringContaining('URL shortener')]),
       );
     });
   });
@@ -160,6 +214,63 @@ describe('SentinelAiService (Zero-Token AI Threat Detection)', () => {
           }),
         }),
       );
+    });
+  });
+
+  describe('moderation operations (Trust & Safety)', () => {
+    it('should update threat status and write audit log', async () => {
+      const result = await service.updateThreatStatus(
+        'flag-uuid',
+        'RESOLVED_BENIGN' as any,
+        'False positive verified by admin',
+        'admin-uuid',
+      );
+
+      expect(result).toBeDefined();
+      expect(prismaService.securityFlag?.update).toHaveBeenCalledWith({
+        where: { id: 'flag-uuid' },
+        data: {
+          status: 'RESOLVED_BENIGN',
+          resolutionNotes: 'False positive verified by admin',
+          reviewedById: 'admin-uuid',
+        },
+      });
+      expect(prismaService.adminAuditLog?.create).toHaveBeenCalled();
+    });
+
+    it('should suspend user and deactivate their links', async () => {
+      const result = await service.suspendUser(
+        'user-uuid',
+        true,
+        'Repeated malware distribution',
+        'admin-uuid',
+      );
+
+      expect(result.isBanned).toBe(true);
+      expect(prismaService.user?.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-uuid' },
+          data: { isBanned: true },
+        }),
+      );
+      expect(prismaService.link?.updateMany).toHaveBeenCalledWith({
+        where: { profileId: 'prof-id' },
+        data: { isActive: false },
+      });
+    });
+
+    it('should remove domain from blocklist in DB and Redis', async () => {
+      const result = await service.removeDomainFromBlocklist('mock-id', 'admin-uuid');
+
+      expect(result.success).toBe(true);
+      expect(prismaService.domainBlocklist?.delete).toHaveBeenCalledWith({ where: { id: 'mock-id' } });
+      expect(redisService.srem).toHaveBeenCalledWith(expect.any(String), 'evil.xyz');
+    });
+
+    it('should retrieve audit logs', async () => {
+      const logs = await service.getAuditLogs(10);
+      expect(logs).toHaveLength(1);
+      expect(prismaService.adminAuditLog?.findMany).toHaveBeenCalled();
     });
   });
 });
