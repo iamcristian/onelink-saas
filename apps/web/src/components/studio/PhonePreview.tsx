@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { StudioLinkItem } from "./LinkCard";
 import { renderLinkIcon } from "./IconHelper";
+import { isLightColor } from "@/lib/theme-contrast";
 
 export interface PhonePreviewTheme {
   bgType?: "SOLID" | "GRADIENT" | string;
@@ -109,6 +110,10 @@ export function PhonePreview({
   const previewTextColor = theme?.textColor || "#fafafa";
   const previewFont = theme?.fontFamily ? `${theme.fontFamily}, sans-serif` : undefined;
 
+  const isPageLight = isLightColor(theme?.bgValue);
+  const isEffectiveBtnLight =
+    theme?.btnStyle === "OUTLINE" ? isPageLight : isLightColor(theme?.btnColor);
+
   const getButtonInlineStyle = (): React.CSSProperties => {
     const radius = typeof theme?.btnRadius === "number" ? theme.btnRadius : 9999;
     const btnColor = theme?.btnColor || "#18181b";
@@ -120,20 +125,22 @@ export function PhonePreview({
       color: btnTextColor,
     };
 
-    if (btnStyle === "FILLED") {
+    if (btnStyle === "FILLED" || btnStyle === "ROUNDED") {
       base.backgroundColor = btnColor;
-      base.border = "1px solid rgba(255, 255, 255, 0.1)";
+      base.border =
+        isEffectiveBtnLight && isPageLight
+          ? "1px solid rgba(0, 0, 0, 0.12)"
+          : "1px solid rgba(255, 255, 255, 0.1)";
+      if (isEffectiveBtnLight && isPageLight) {
+        base.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
+      }
     } else if (btnStyle === "OUTLINE") {
       base.backgroundColor = "transparent";
       base.border = `2px solid ${btnColor}`;
     } else if (btnStyle === "SHADOW") {
       base.backgroundColor = btnColor;
-      base.boxShadow = "3px 3px 0px rgba(255, 255, 255, 0.45)";
-      base.border = "1px solid rgba(255, 255, 255, 0.8)";
-    } else {
-      // ROUNDED
-      base.backgroundColor = btnColor;
-      base.border = "1px solid rgba(255, 255, 255, 0.1)";
+      base.boxShadow = "3px 3px 0px rgba(0, 0, 0, 0.85)";
+      base.border = "2px solid #000000";
     }
     return base;
   };
@@ -186,7 +193,10 @@ export function PhonePreview({
                 >
                   <span
                     className="text-[11px] uppercase font-semibold tracking-wider"
-                    style={{ color: previewTextColor, opacity: 0.7 }}
+                    style={{
+                      color: isPageLight ? "#0f172a" : previewTextColor,
+                      opacity: 0.75,
+                    }}
                   >
                     {item.title}
                   </span>
@@ -200,7 +210,7 @@ export function PhonePreview({
                   key={item.id}
                   className="w-full flex items-center justify-center my-4"
                 >
-                  <div className="w-full border-t border-white/10" />
+                  <div className={`w-full border-t ${isPageLight ? "border-black/10" : "border-white/10"}`} />
                 </div>
               );
             }
@@ -212,19 +222,38 @@ export function PhonePreview({
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="phone-item w-full flex items-center justify-between p-3 rounded-2xl bg-linear-to-r from-amber-500/20 via-amber-600/10 to-amber-500/20 border border-amber-500/40 hover:border-amber-400 text-left transition-all duration-150 group cursor-pointer shadow-md"
+                  className={`phone-item w-full flex items-center justify-between p-3 rounded-2xl text-left transition-all duration-150 group cursor-pointer shadow-md ${
+                    isPageLight
+                      ? "bg-amber-500/10 border-2 border-amber-500/30 hover:border-amber-500 shadow-amber-900/5"
+                      : "bg-linear-to-r from-amber-500/20 via-amber-600/15 to-amber-500/20 border border-amber-400/50 hover:border-amber-300 shadow-md"
+                  }`}
                 >
                   <div className="flex items-center space-x-2.5 min-w-0 pr-2">
-                    <div className="w-7 h-7 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-300">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                        isPageLight
+                          ? "bg-amber-500/20 text-amber-900 border border-amber-500/40"
+                          : "bg-amber-500/30 text-amber-300 border border-amber-400/40"
+                      }`}
+                    >
                       <Coffee className="w-3.5 h-3.5" />
                     </div>
                     <div className="truncate">
-                      <span className="text-xs text-amber-200 truncate font-semibold block">
+                      <span
+                        className="text-xs truncate font-bold block"
+                        style={{ color: isPageLight ? "#78350f" : "#ffffff" }}
+                      >
                         {item.title}
                       </span>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-bold shrink-0">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 transition-all ${
+                      isPageLight
+                        ? "bg-amber-500 text-black shadow-xs"
+                        : "bg-amber-400 text-black shadow-xs"
+                    }`}
+                  >
                     Tip ☕
                   </span>
                 </a>
@@ -237,22 +266,44 @@ export function PhonePreview({
                   key={item.id}
                   type="button"
                   onClick={() => setActiveNoteModal({ title: item.title, content: item.url || "" })}
-                  className="phone-item w-full flex items-center justify-between p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 hover:border-amber-400 text-left transition-all duration-150 group cursor-pointer shadow-sm"
+                  className={`phone-item w-full flex items-center justify-between p-3 rounded-2xl text-left transition-all duration-150 group cursor-pointer shadow-sm ${
+                    isPageLight
+                      ? "bg-amber-500/10 border-2 border-amber-500/30 hover:border-amber-500 shadow-amber-900/5"
+                      : "bg-amber-500/15 border border-amber-400/40 hover:border-amber-300 shadow-sm"
+                  }`}
                 >
                   <div className="flex items-center space-x-2.5 min-w-0 pr-2">
-                    <div className="w-7 h-7 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-300">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                        isPageLight
+                          ? "bg-amber-500/20 text-amber-900 border border-amber-500/40"
+                          : "bg-amber-500/30 text-amber-300 border border-amber-400/40"
+                      }`}
+                    >
                       <StickyNote className="w-3.5 h-3.5" />
                     </div>
                     <div className="truncate">
-                      <span className="text-xs text-amber-100 truncate font-semibold block">
+                      <span
+                        className="text-xs truncate font-bold block"
+                        style={{ color: isPageLight ? "#78350f" : "#ffffff" }}
+                      >
                         {item.title}
                       </span>
-                      <span className="text-[10px] text-amber-300/70 truncate block">
+                      <span
+                        className="text-[10px] truncate block font-medium"
+                        style={{ color: isPageLight ? "#92400e" : "#fde68a" }}
+                      >
                         Tap to read creator note
                       </span>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[9px] font-bold shrink-0">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 transition-all ${
+                      isPageLight
+                        ? "bg-amber-200 border border-amber-400 text-amber-950 font-mono"
+                        : "bg-amber-400/25 border border-amber-400/50 text-amber-200 font-mono"
+                    }`}
+                  >
                     📝 Note
                   </span>
                 </button>
@@ -280,17 +331,32 @@ export function PhonePreview({
                 <div className="flex items-center space-x-1.5 shrink-0">
                   {item.badge && (
                     <span
-                      className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider bg-white/15 border border-white/20 shrink-0"
-                      style={{ color: theme?.btnTextColor || "#fafafa" }}
+                      className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider shrink-0 ${
+                        isEffectiveBtnLight
+                          ? "bg-black/10 border border-black/15 text-zinc-950"
+                          : "bg-white/15 border border-white/20 text-white"
+                      }`}
                     >
                       {item.badge}
                     </span>
                   )}
                   {item.isPasswordProtected && (
-                    <Lock className="w-3 h-3 text-purple-400" />
+                    <span
+                      className={`p-0.5 rounded flex items-center ${
+                        isEffectiveBtnLight ? "text-purple-900" : "text-purple-300"
+                      }`}
+                    >
+                      <Lock className="w-3 h-3" />
+                    </span>
                   )}
                   {item.isAgeRestricted && (
-                    <span className="px-1 rounded bg-rose-500/20 text-rose-300 text-[9px] font-bold">
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                        isEffectiveBtnLight
+                          ? "bg-rose-100 border border-rose-300 text-rose-800"
+                          : "bg-rose-500/20 text-rose-300"
+                      }`}
+                    >
                       18+
                     </span>
                   )}

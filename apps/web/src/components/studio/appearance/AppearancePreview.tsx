@@ -15,6 +15,7 @@ import {
   BookOpen,
   Mail,
 } from "lucide-react";
+import { isLightColor } from "@/lib/theme-contrast";
 
 interface AppearancePreviewProps {
   bgValue: string;
@@ -81,6 +82,9 @@ export function AppearancePreview({
 
   // Compute button styles based on settings
   const getButtonInlineStyle = (): React.CSSProperties => {
+    const isPageLight = isLightColor(bgValue);
+    const isEffectiveBtnLight = btnStyle === "OUTLINE" ? isPageLight : isLightColor(btnColor);
+
     const base: React.CSSProperties = {
       borderRadius: `${btnRadius}px`,
       color: btnTextColor,
@@ -88,18 +92,26 @@ export function AppearancePreview({
 
     if (btnStyle === "FILLED") {
       base.backgroundColor = btnColor;
-      base.border = "1px solid rgba(255, 255, 255, 0.1)";
+      base.border =
+        isEffectiveBtnLight && isPageLight
+          ? "1px solid rgba(0, 0, 0, 0.12)"
+          : "1px solid rgba(255, 255, 255, 0.1)";
+      if (isEffectiveBtnLight && isPageLight) {
+        base.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
+      }
     } else if (btnStyle === "OUTLINE") {
       base.backgroundColor = "transparent";
       base.border = `2px solid ${btnColor}`;
     } else if (btnStyle === "SHADOW") {
       base.backgroundColor = btnColor;
-      base.boxShadow = "3px 3px 0px rgba(255, 255, 255, 0.45)";
-      base.border = "1px solid rgba(255, 255, 255, 0.8)";
+      base.boxShadow = "3px 3px 0px rgba(0, 0, 0, 0.85)";
+      base.border = "2px solid #000000";
     } else if (btnStyle === "ROUNDED") {
-      base.backgroundColor = "rgba(255, 255, 255, 0.08)";
-      base.backdropFilter = "blur(12px)";
-      base.border = "1px solid rgba(255, 255, 255, 0.15)";
+      base.backgroundColor = btnColor;
+      base.border =
+        isEffectiveBtnLight && isPageLight
+          ? "1px solid rgba(0, 0, 0, 0.12)"
+          : "1px solid rgba(255, 255, 255, 0.1)";
     }
 
     return base;

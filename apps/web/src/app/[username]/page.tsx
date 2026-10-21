@@ -451,6 +451,8 @@ async function ProfileContent({
                 btnRadius={btnRadius}
                 isPasswordProtected={link.isPasswordProtected}
                 isAgeRestricted={link.isAgeRestricted}
+                pageBgColor={bgValue}
+                pageTextColor={textColor}
               />
             ))
           ) : (

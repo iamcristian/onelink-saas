@@ -25,14 +25,14 @@ const PRESET_THEMES = [
     isDefault: true,
   },
   {
-    name: 'Clean Light',
+    name: 'Alpine Snow',
     bgType: BgType.SOLID,
     bgValue: '#f8fafc',
     btnStyle: BtnStyle.FILLED,
     btnColor: '#ffffff',
-    btnTextColor: '#09090b',
+    btnTextColor: '#0f172a',
     fontFamily: 'Inter',
-    textColor: '#09090b',
+    textColor: '#0f172a',
     isDefault: false,
   },
   {
