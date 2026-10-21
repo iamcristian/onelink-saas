@@ -378,6 +378,10 @@ export async function apiUpdateProfile(
     throw new Error(err?.message || "Failed to update profile");
   }
 
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("profile_updated", { detail: data }));
+  }
+
   return true;
 }
 

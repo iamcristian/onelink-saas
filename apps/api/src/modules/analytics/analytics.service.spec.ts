@@ -48,6 +48,7 @@ describe('AnalyticsService', () => {
             url: 'https://youtube.com',
             clickCount: 42n,
             isActive: true,
+            type: 'LINK',
           },
         ]),
         update: jest.fn(),
@@ -172,6 +173,49 @@ describe('AnalyticsService', () => {
       expect(result.topLinks).toHaveLength(1);
       expect(result.topLinks[0].title).toBe('My Video');
       expect(result.trafficSources[0].name).toBe('Instagram');
+    });
+
+    it('should exclude dividers, headers, notes, and placeholder links from topLinks and activeLinksCount', async () => {
+      prismaService.link.findMany.mockResolvedValue([
+        {
+          id: 'link-1',
+          title: 'My Outbound Link',
+          url: 'https://youtube.com',
+          clickCount: 10n,
+          isActive: true,
+          type: 'LINK',
+        },
+        {
+          id: 'link-divider',
+          title: 'Divider',
+          url: '#',
+          clickCount: 0n,
+          isActive: true,
+          type: 'DIVIDER',
+        },
+        {
+          id: 'link-header',
+          title: 'Section Header',
+          url: '#',
+          clickCount: 0n,
+          isActive: true,
+          type: 'HEADER',
+        },
+        {
+          id: 'link-note',
+          title: 'Important Note',
+          url: 'Some note text',
+          clickCount: 0n,
+          isActive: true,
+          type: 'NOTE',
+        },
+      ]);
+
+      const result = await service.getProfileAnalytics(mockProfileId, 7);
+
+      expect(result.topLinks).toHaveLength(1);
+      expect(result.topLinks[0].title).toBe('My Outbound Link');
+      expect(result.metrics.activeLinksCount).toBe(1);
     });
   });
 });

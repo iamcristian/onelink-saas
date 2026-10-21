@@ -17,7 +17,15 @@ interface TopLinksTableProps {
 }
 
 export function TopLinksTable({ links, totalClicks }: TopLinksTableProps) {
-  if (!links || links.length === 0) {
+  // Only display actual outbound links (filter out dividers, headers, notes, or placeholder '#' URLs)
+  const outboundLinks = (links || []).filter((link) => {
+    if (!link.url || link.url === "#" || link.url.trim() === "") return false;
+    const lower = (link.title || "").toLowerCase().trim();
+    if (lower === "divider" || lower === "header") return false;
+    return true;
+  });
+
+  if (outboundLinks.length === 0) {
     return (
       <div className="p-8 text-center text-zinc-500 text-sm bg-[#121215] rounded-xl border border-white/5">
         <MousePointerClick className="w-8 h-8 mx-auto mb-2 opacity-40" />
@@ -52,12 +60,12 @@ export function TopLinksTable({ links, totalClicks }: TopLinksTableProps) {
           </p>
         </div>
         <span className="text-xs text-zinc-400 bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
-          {links.length} {links.length === 1 ? "Link" : "Links"} Active
+          {outboundLinks.length} {outboundLinks.length === 1 ? "Link" : "Links"} Active
         </span>
       </div>
 
       <div className="divide-y divide-white/5">
-        {links.map((link, index) => {
+        {outboundLinks.map((link, index) => {
           const rank = index + 1;
           const sharePct = totalClicks > 0 ? Math.round((link.clicks / totalClicks) * 100) : 0;
 

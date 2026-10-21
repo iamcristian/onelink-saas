@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { LinkType } from '@repo/prisma';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { ProfileAccessService } from '../../common/services/profile-access.service';
 import {
@@ -193,7 +194,7 @@ export class AnalyticsService {
       }),
       this.prisma.link.findMany({
         where: { profileId },
-        select: { id: true, title: true, url: true, clickCount: true, isActive: true },
+        select: { id: true, title: true, url: true, clickCount: true, isActive: true, type: true },
       }),
       this.prisma.pageView.findMany({
         where: { profileId, timestamp: { gte: currentStart } },
@@ -241,23 +242,35 @@ export class AnalyticsService {
       clicks: data.clicks,
     }));
 
-    // Top Links Performance
+    // Top Links Performance: Only consider real outbound links (exclude structural elements: headers, dividers, notes, '#')
     const clickMap = new Map<string, number>();
     for (const c of rawClicks) {
       clickMap.set(c.linkId, (clickMap.get(c.linkId) || 0) + 1);
     }
 
-    const topLinks: LinkPerformanceMetric[] = links.map((l) => {
-      const clicks = clickMap.get(l.id) || Number(l.clickCount);
-      const linkCtr = currentViews > 0 ? Number(((clicks / currentViews) * 100).toFixed(1)) : 0;
-      return {
-        id: l.id,
-        title: l.title,
-        url: l.url,
-        clicks,
-        ctr: linkCtr,
-      };
-    }).sort((a, b) => b.clicks - a.clicks);
+    const outboundLinks = links.filter((l) => {
+      if (l.type === LinkType.HEADER || l.type === LinkType.DIVIDER || l.type === LinkType.NOTE) {
+        return false;
+      }
+      if (!l.url || l.url === '#' || l.url.trim() === '') {
+        return false;
+      }
+      return true;
+    });
+
+    const topLinks: LinkPerformanceMetric[] = outboundLinks
+      .map((l) => {
+        const clicks = clickMap.get(l.id) || Number(l.clickCount);
+        const linkCtr = currentViews > 0 ? Number(((clicks / currentViews) * 100).toFixed(1)) : 0;
+        return {
+          id: l.id,
+          title: l.title,
+          url: l.url,
+          clicks,
+          ctr: linkCtr,
+        };
+      })
+      .sort((a, b) => b.clicks - a.clicks);
 
     // Traffic Sources Categorization
     const sourceCount = new Map<string, number>();
@@ -317,7 +330,7 @@ export class AnalyticsService {
         totalClicks: currentClicks,
         clicksGrowth,
         ctr,
-        activeLinksCount: links.filter((l) => l.isActive).length,
+        activeLinksCount: outboundLinks.filter((l) => l.isActive).length,
       },
       timeSeries,
       topLinks,

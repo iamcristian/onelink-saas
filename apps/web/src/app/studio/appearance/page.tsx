@@ -543,6 +543,18 @@ export default function StudioAppearancePage() {
       ]);
       setInitialUsername(cleanUser);
       setSaved(true);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("profile_updated", {
+            detail: {
+              avatarUrl,
+              username: cleanUser,
+              title: displayName,
+              bio,
+            },
+          })
+        );
+      }
       setTimeout(() => setSaved(false), 2400);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to update profile";

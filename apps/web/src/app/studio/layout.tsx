@@ -53,6 +53,8 @@ export default function StudioLayout({ children }: StudioLayoutProps) {
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
   const [isProcessingCollab, setIsProcessingCollab] = useState<string | null>(null);
 
+  const [profileAvatarOverride, setProfileAvatarOverride] = useState<string | null>(null);
+
   const handleLogout = () => {
     clearAuthToken();
     localStorage.removeItem("onelink_active_workspace");
@@ -137,13 +139,26 @@ export default function StudioLayout({ children }: StudioLayoutProps) {
       reloadSession();
       loadCollaborations();
     };
+
+    const handleProfileUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ avatarUrl?: string; username?: string }>;
+      if (customEvent.detail?.avatarUrl) {
+        setProfileAvatarOverride(customEvent.detail.avatarUrl);
+        setActiveWorkspaceAvatar(customEvent.detail.avatarUrl);
+      }
+      reloadSession();
+      loadCollaborations();
+    };
+
     window.addEventListener("subscription_updated", handleUpdate);
     window.addEventListener("focus", handleUpdate);
     window.addEventListener("collaboration_updated", handleUpdate);
+    window.addEventListener("profile_updated", handleProfileUpdate);
     return () => {
       window.removeEventListener("subscription_updated", handleUpdate);
       window.removeEventListener("focus", handleUpdate);
       window.removeEventListener("collaboration_updated", handleUpdate);
+      window.removeEventListener("profile_updated", handleProfileUpdate);
     };
   }, [reloadSession, loadCollaborations]);
 
@@ -172,6 +187,7 @@ export default function StudioLayout({ children }: StudioLayoutProps) {
 
   const username = activeWorkspace?.ownerUsername || session?.profile?.username || "alexrivera";
   const avatarUrl =
+    profileAvatarOverride ||
     (activeWorkspace ? activeWorkspaceAvatar || activeWorkspace.ownerAvatarUrl : null) ||
     session?.profile?.avatarUrl ||
     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80";
