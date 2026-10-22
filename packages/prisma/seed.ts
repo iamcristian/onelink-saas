@@ -351,14 +351,21 @@ async function main() {
   });
 
   // Seed sample analytics for @crisarando if none exist
-  const existingViews = await prisma.pageView.count({
-    where: { profileId: 'f2cdfd17-0537-4ac3-acb2-8deafc9373c9' },
+  const ownerUser = await prisma.user.findUnique({
+    where: { email: 'cris@onelink.bio' },
+    include: { profile: true },
   });
+  const ownerProfileId = ownerUser?.profile?.id;
 
-  if (existingViews === 0) {
-    console.log('Seeding 30-day analytics telemetry for @crisarando...');
-    const profileId = 'f2cdfd17-0537-4ac3-acb2-8deafc9373c9';
-    const profileLinks = await prisma.link.findMany({ where: { profileId } });
+  if (ownerProfileId) {
+    const existingViews = await prisma.pageView.count({
+      where: { profileId: ownerProfileId },
+    });
+
+    if (existingViews === 0) {
+      console.log('Seeding 30-day analytics telemetry for @crisarando...');
+      const profileId = ownerProfileId;
+      const profileLinks = await prisma.link.findMany({ where: { profileId } });
 
     const referrers = [
       'https://www.instagram.com',
@@ -416,6 +423,7 @@ async function main() {
     await prisma.pageView.createMany({ data: pageViewsToInsert });
     await prisma.clickEvent.createMany({ data: clickEventsToInsert });
     console.log(`  ✓ Inserted ${pageViewsToInsert.length} page views and ${clickEventsToInsert.length} click events.`);
+    }
   }
 
   // =========================================================================
