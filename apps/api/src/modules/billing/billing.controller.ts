@@ -186,4 +186,16 @@ export class BillingController {
   ) {
     return await this.billingService.declineCollaboration(user.id, memberId);
   }
+
+  @Post('collaborations/leave/:memberId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Voluntarily leave a collaborated workspace' })
+  @ApiResponse({ status: 200, description: 'Workspace left successfully' })
+  async leaveCollaboration(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('memberId') memberId: string,
+  ) {
+    return await this.billingService.leaveCollaboration(user.id, memberId);
+  }
 }

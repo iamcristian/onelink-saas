@@ -80,7 +80,7 @@ const DEFAULT_BILLING_EVENTS: BillingEventItem[] = [
     type: 'invoice.payment_succeeded',
     tier: 'Creator Pro ($2.00)',
     amount: '$2.00',
-    handle: '@alexrivera',
+    handle: '@crisarando',
     timestamp: '2 mins ago',
     status: 'Paid',
   },
@@ -1084,6 +1084,64 @@ export class BillingService {
     }
 
     return { success: true };
+  }
+
+  /**
+   * Allows an accepted collaborator to voluntarily leave/quit a workspace.
+   */
+  async leaveCollaboration(userId: string, memberId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    if (!user?.email) throw new NotFoundException('User not found');
+
+    const userEmail = user.email.toLowerCase().trim();
+    const userInvitesKey = `billing:user_invites:${userEmail}`;
+    const invites = (await this.redisService.get<any[]>(userInvitesKey)) || [];
+    const targetInvite = invites.find((inv) => inv.id === memberId);
+
+    let ownerUserId = targetInvite?.ownerUserId;
+    if (!ownerUserId && this.prisma.teamMember?.findFirst) {
+      const dbMember = await this.prisma.teamMember.findFirst({
+        where: {
+          OR: [
+            { id: memberId },
+            { email: userEmail, id: memberId },
+            { userId, id: memberId },
+          ],
+        },
+      });
+      if (dbMember) {
+        ownerUserId = dbMember.ownerId;
+      }
+    }
+
+    const updatedInvites = invites.filter((inv) => inv.id !== memberId);
+    await this.redisService.set(userInvitesKey, updatedInvites, 86400 * 30);
+
+    if (this.prisma.teamMember?.deleteMany) {
+      await this.prisma.teamMember.deleteMany({
+        where: {
+          OR: [
+            { id: memberId },
+            { email: userEmail, ...(ownerUserId ? { ownerId: ownerUserId } : {}) },
+            { userId, ...(ownerUserId ? { ownerId: ownerUserId } : {}) },
+          ],
+        },
+      });
+    }
+
+    if (ownerUserId) {
+      const ownerTeamKey = `${this.TEAM_CACHE_KEY}:${ownerUserId}`;
+      const ownerMembers = (await this.redisService.get<TeamMemberItem[]>(ownerTeamKey)) || [];
+      const updatedOwnerMembers = ownerMembers.filter(
+        (m) => m.id !== memberId && m.email.toLowerCase() !== userEmail,
+      );
+      await this.redisService.set(ownerTeamKey, updatedOwnerMembers, 86400 * 30);
+    }
+
+    return { success: true, message: 'You have left the workspace.' };
   }
 
   /**

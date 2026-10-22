@@ -57,6 +57,16 @@ describe('BillingService', () => {
       upsert: jest.fn().mockResolvedValue({ id: 'sub_upserted' }),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
+    user: {
+      findUnique: jest.fn().mockImplementation(({ where }) => {
+        return Promise.resolve({ id: where.id, email: 'collab@onelink.bio', name: 'Collab' });
+      }),
+    },
+    teamMember: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
   };
 
   const mockConfig = {
@@ -252,6 +262,20 @@ describe('BillingService', () => {
     it('should revoke a collaborator and free seat', async () => {
       const revoked = await service.revokeTeamMember('mem_4');
       expect(revoked.usedSeats).toBe(3);
+    });
+
+    it('should allow an accepted collaborator to voluntarily leave a workspace', async () => {
+      // Setup invite in cache
+      await mockRedis.set('billing:user_invites:collab@onelink.bio', [
+        { id: 'mem_target', ownerUserId: 'owner_99', role: 'Safety Admin', status: 'Active' },
+      ]);
+
+      const result = await service.leaveCollaboration('user_collab', 'mem_target');
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('left the workspace');
+
+      const remainingInvites = await mockRedis.get('billing:user_invites:collab@onelink.bio');
+      expect(remainingInvites).toEqual([]);
     });
   });
 });
