@@ -203,29 +203,34 @@ async function main() {
     console.log(`  ✓ Synchronized plan: ${plan.name} (${plan.code}) [Stripe: ${stripePriceId || 'None'}]`);
   }
 
-  console.log('🌱 Seeding demo creator profile (Alex Rivera)...');
+  console.log('🌱 Seeding demo platform owner profile (Cristian Arando)...');
 
   const defaultTheme = await prisma.theme.findFirst({
     where: { isDefault: true },
   });
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email: 'alex@onelink.bio' },
-    include: { profile: true },
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: 'cris@onelink.bio' },
+        { email: 'alex@onelink.bio' },
+      ],
+    },
+    include: { profile: { include: { links: true } } },
   });
 
   if (!existingUser) {
     const user = await prisma.user.create({
       data: {
-        email: 'alex@onelink.bio',
+        email: 'cris@onelink.bio',
         // Password123! hashed with bcrypt (salt 10)
         passwordHash: '$2b$10$hij3KtJtnDeggt4E.ZQohe.rd/TAeQ8yzmBPROKoiMrH1FA5DLbwK',
-        name: 'Alex Rivera',
-        role: 'CREATOR',
+        name: 'Cristian Arando',
+        role: Role.OWNER,
         profile: {
           create: {
-            username: 'alexrivera',
-            title: 'Alex Rivera',
+            username: 'crisarando',
+            title: 'Cristian Arando',
             bio: 'Scaling distributed systems & building clean developer tools.',
             avatarUrl:
               'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
@@ -242,7 +247,7 @@ async function main() {
                 },
                 {
                   title: 'Free System Design Architecture Guide',
-                  url: 'https://alexrivera.gumroad.com/l/sysdesign',
+                  url: 'https://crisarando.gumroad.com/l/sysdesign',
                   type: 'LINK',
                   position: 1,
                   isActive: true,
@@ -256,14 +261,14 @@ async function main() {
                 },
                 {
                   title: 'Join 15k Engineers on Substack',
-                  url: 'https://newsletter.alexrivera.dev',
+                  url: 'https://newsletter.crisarando.dev',
                   type: 'LINK',
                   position: 3,
                   isActive: true,
                 },
                 {
                   title: 'Support my work (Buy Me a Coffee)',
-                  url: 'https://buymeacoffee.com/alexrivera',
+                  url: 'https://buymeacoffee.com/crisarando',
                   type: 'LINK',
                   position: 4,
                   isActive: true,
@@ -302,24 +307,56 @@ async function main() {
         },
       },
     });
-    console.log(`  ✓ Created creator user & profile: @alexrivera (${user.email})`);
+    console.log(`  ✓ Created Platform Owner user & profile: @crisarando (${user.email})`);
   } else {
     await prisma.user.update({
-      where: { email: 'alex@onelink.bio' },
+      where: { id: existingUser.id },
       data: {
+        email: 'cris@onelink.bio',
+        name: 'Cristian Arando',
+        role: Role.OWNER,
         passwordHash: '$2b$10$hij3KtJtnDeggt4E.ZQohe.rd/TAeQ8yzmBPROKoiMrH1FA5DLbwK',
       },
     });
-    console.log(`  ✓ Updated password for @alexrivera (alex@onelink.bio).`);
+    if (existingUser.profile) {
+      await prisma.profile.update({
+        where: { id: existingUser.profile.id },
+        data: {
+          username: 'crisarando',
+          title: 'Cristian Arando',
+        },
+      });
+
+      for (const l of existingUser.profile.links || []) {
+        if (l.url && l.url.includes('alexrivera')) {
+          await prisma.link.update({
+            where: { id: l.id },
+            data: { url: l.url.replace(/alexrivera/g, 'crisarando') },
+          });
+        }
+      }
+    }
+    console.log(`  ✓ Updated Platform Owner @crisarando (cris@onelink.bio).`);
   }
 
-  // Seed sample analytics for @alexrivera if none exist
+  // Ensure Cristian Arando Google accounts retain OWNER role
+  await prisma.user.updateMany({
+    where: {
+      OR: [
+        { email: 'crisarando10@gmail.com' },
+        { email: 'crisarandosyse@gmail.com' },
+      ],
+    },
+    data: { role: Role.OWNER },
+  });
+
+  // Seed sample analytics for @crisarando if none exist
   const existingViews = await prisma.pageView.count({
     where: { profileId: 'f2cdfd17-0537-4ac3-acb2-8deafc9373c9' },
   });
 
   if (existingViews === 0) {
-    console.log('Seeding 30-day analytics telemetry for @alexrivera...');
+    console.log('Seeding 30-day analytics telemetry for @crisarando...');
     const profileId = 'f2cdfd17-0537-4ac3-acb2-8deafc9373c9';
     const profileLinks = await prisma.link.findMany({ where: { profileId } });
 
@@ -388,7 +425,10 @@ async function main() {
 
   // 1. Super Admin Account
   const adminEmail = 'admin@onelink.bio';
-  let adminUser = await prisma.user.findUnique({ where: { email: adminEmail } });
+  let adminUser = await prisma.user.findUnique({
+    where: { email: adminEmail },
+    include: { profile: true },
+  });
   if (!adminUser) {
     adminUser = await prisma.user.create({
       data: {
@@ -396,9 +436,31 @@ async function main() {
         passwordHash: '$2b$10$hij3KtJtnDeggt4E.ZQohe.rd/TAeQ8yzmBPROKoiMrH1FA5DLbwK',
         name: 'Cris Super Admin',
         role: Role.SUPER_ADMIN,
+        profile: {
+          create: {
+            username: 'admin',
+            title: 'Cris Super Admin',
+            bio: 'Platform Security & Operations Lead',
+            themeId: defaultTheme?.id,
+            isPublished: true,
+          },
+        },
+      },
+      include: { profile: true },
+    });
+    console.log(`  ✓ Created Super Admin user & profile: @admin (${adminEmail})`);
+  } else if (!adminUser.profile) {
+    await prisma.profile.create({
+      data: {
+        userId: adminUser.id,
+        username: 'admin',
+        title: 'Cris Super Admin',
+        bio: 'Platform Security & Operations Lead',
+        themeId: defaultTheme?.id,
+        isPublished: true,
       },
     });
-    console.log(`  ✓ Created Super Admin user: ${adminEmail}`);
+    console.log(`  ✓ Created missing profile for Super Admin: @admin (${adminEmail})`);
   }
 
   // 2. Sample Suspect Creator Users

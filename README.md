@@ -81,6 +81,21 @@ pnpm dev
 
 ---
 
+## 👥 Default Demo Accounts & Test Credentials
+
+All preconfigured accounts seeded via `pnpm db:seed` use the shared password **`Password123!`**:
+
+| Account | Email | Password | Role | Description & Scope |
+|---|---|---|---|---|
+| **Cristian Arando** | `cris@onelink.bio` | `Password123!` | `OWNER` | **Platform Founder & Owner Account** (`/@crisarando`). Complete personal Creator Studio access + direct access to `/admin/moderation` + global SaaS financial telemetry (MRR/ARR). |
+| **Cris Super Admin** | `admin@onelink.bio` | `Password123!` | `SUPER_ADMIN` | **Global Infrastructure & Security Admin**. Operates exclusively in **Sentinel AI Threat Center** (`/admin/moderation`) with User Directory & Threat Governance (ban/unban, role updates, threat queue, domain blocklisting). |
+| **Crypto Free Airdrops** | `drainer@crypto-scam.xyz` | `Password123!` | `CREATOR` *(Banned)* | **Malicious Test Account**. Seeded with punycode crypto-drainer contracts, automatically blocked and suspended by Sentinel AI to demonstrate threat neutralization. |
+| **Daily Promo Deals** | `deals@daily-promos.top` | `Password123!` | `CREATOR` *(Suspicious)* | **Suspicious Phishing Account**. Seeded with brand impersonation links (`.top` domain) currently flagged as `SUSPICIOUS` for admin review and moderation. |
+
+> 📖 *For complete details on role hierarchies, Workspace team roles, and security policies, see [docs/demo-accounts.md](./docs/demo-accounts.md).*
+
+---
+
 ## 🛠️ Master Command Reference
 
 All primary commands can be executed from the **monorepo root**:
@@ -162,6 +177,7 @@ All primary commands can be executed from the **monorepo root**:
 Every technical decision, schema, user journey, and wireframe is formally documented in [`docs/`](./docs):
 
 - 📋 **[Progress Tracker & Setup Log](./docs/progress-tracker.md)**: Full inventory of setup and SDLC checklist.
+- 👥 **[Demo Accounts & Role Guide](./docs/demo-accounts.md)**: Preconfigured seed accounts, role hierarchy, and login guide.
 - 🗺️ **[Master Documentation Hub](./docs/README.md)**: Master map of all specifications.
 - 📄 **[Product Requirements Document (PRD)](./docs/prd.md)**: Personas, Gherkin user stories, MoSCoW.
 - 📑 **[Software Requirements Specification (SRS)](./docs/srs.md)**: IEEE 830 functional & non-functional requirements.
