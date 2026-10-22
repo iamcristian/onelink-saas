@@ -108,13 +108,13 @@ flowchart LR
    FRONTEND_URL=https://your-frontend-domain.vercel.app
    ```
 5. Click **Create Web Service**. Once built, note your API URL:
-   `https://onelink-api.onrender.com`
+   `https://onelink-api-8ydf.onrender.com`
 
 ### ⚡ Eliminating Render Cold Starts for Free
 Render free instances go to sleep after 15 minutes of inactivity. To keep your API running 24/7 with **0-second response latency**:
 1. Go to [cron-job.org](https://cron-job.org) (or [uptimerobot.com](https://uptimerobot.com)).
 2. Create a free ping job:
-   - **URL**: `https://onelink-api.onrender.com/api`
+   - **URL**: `https://onelink-api-8ydf.onrender.com/api`
    - **Schedule**: Every `10 minutes`.
 3. This keeps the free server permanently active without cost!
 
@@ -129,7 +129,7 @@ Render free instances go to sleep after 15 minutes of inactivity. To keep your A
    - **Root Directory**: Click edit and choose `apps/web`.
 4. In **Environment Variables**, add:
    ```env
-   NEXT_PUBLIC_API_URL=https://onelink-api.onrender.com
+   NEXT_PUBLIC_API_URL=https://onelink-api-8ydf.onrender.com
    NEXT_PUBLIC_APP_URL=https://your-frontend-domain.vercel.app
    ```
 5. Click **Deploy**. Vercel will build the Next.js app, configure global Edge CDN caching, and assign a production URL:
@@ -155,7 +155,7 @@ Render free instances go to sleep after 15 minutes of inactivity. To keep your A
 
 | Variable | Description | Example |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | Public backend API origin | `https://onelink-api.onrender.com` |
+| `NEXT_PUBLIC_API_URL` | Public backend API origin | `https://onelink-api-8ydf.onrender.com` |
 | `NEXT_PUBLIC_APP_URL` | Canonical frontend domain | `https://onelink.vercel.app` |
 
 ---
