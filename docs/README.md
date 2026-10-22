@@ -53,6 +53,7 @@ docs/
 | Category | Document Link | Description & Key Artifacts | Status |
 |---|---|---|---|
 | **Tracking & Status** | [progress-tracker.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/progress-tracker.md) | Audit of all completed setups, verification logs, and SDLC checklist | ✅ Active Track |
+| **Git Flow & Releases** | [git-flow.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/git-flow.md) | Branching strategy, PR policies, SemVer tagging, and Conventional Commits | ✅ Active Standard |
 | **Demo Accounts** | [demo-accounts.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/demo-accounts.md) | Preconfigured seed accounts, role hierarchy, and login guide | ✅ Active |
 | **Requirements** | [prd.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/prd.md) | 4 Personas, Gherkin user stories, feature prioritization | ✅ Approved |
 | **Specifications** | [srs.md](file:///c:/Users/crisa/Workspace/system-design/url-shortener/docs/srs.md) | IEEE 830 functional & non-functional requirements, SLA matrix | ✅ Approved |
