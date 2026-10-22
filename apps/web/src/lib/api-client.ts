@@ -522,11 +522,15 @@ export interface AdminAuditLogItem {
 export interface SentinelEvaluationResult {
   url: string;
   isSafe: boolean;
-  action: "ALLOW" | "FLAG" | "BLOCK";
+  action: "ALLOW" | "FLAG_FOR_REVIEW" | "BLOCK_IMMEDIATE" | "BLOCK" | "FLAG" | string;
   riskScore: number;
   confidence: number;
-  threatType: "PHISHING" | "MALWARE" | "CRYPTO_DRAINER" | "SPAM" | null;
+  aiConfidence?: number;
+  threatType?: "PHISHING" | "MALWARE" | "CRYPTO_DRAINER" | "SPAM" | string | null;
   reasons: string[];
+  signals?: string[];
+  entropy?: number;
+  normalizedDomain?: string;
   latencyMs: number;
   features?: Record<string, unknown>;
 }
@@ -536,7 +540,7 @@ export interface SentinelEvaluationResult {
  */
 export async function getAdminAuthToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("onelink_admin_token") || localStorage.getItem("onelink_token");
+  return localStorage.getItem("onelink_token");
 }
 
 /**
@@ -586,7 +590,32 @@ export async function evaluateUrlWithSentinel(url: string): Promise<SentinelEval
       body: JSON.stringify({ url }),
     });
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      const reasonsList: string[] = Array.isArray(data.signals)
+        ? data.signals
+        : Array.isArray(data.reasons)
+        ? data.reasons
+        : [];
+      return {
+        url: data.url || (data.normalizedDomain ? `https://${data.normalizedDomain}` : url),
+        isSafe: Boolean(data.isSafe),
+        action: data.action || (data.isSafe ? "ALLOW" : "BLOCK_IMMEDIATE"),
+        riskScore: typeof data.riskScore === "number" ? data.riskScore : 0,
+        confidence:
+          typeof data.aiConfidence === "number"
+            ? data.aiConfidence
+            : typeof data.confidence === "number"
+            ? data.confidence
+            : 0.99,
+        aiConfidence: data.aiConfidence,
+        threatType: data.threatType || null,
+        reasons: reasonsList,
+        signals: reasonsList,
+        entropy: typeof data.entropy === "number" ? data.entropy : 0,
+        normalizedDomain: data.normalizedDomain || "",
+        latencyMs: typeof data.latencyMs === "number" ? data.latencyMs : 0,
+        features: data.features,
+      };
     }
   } catch {
     // Fail gracefully
@@ -718,6 +747,65 @@ export async function fetchAdminAuditLogs(limit = 30): Promise<AdminAuditLogItem
   }
   return [];
 }
+
+export interface AdminUserItem {
+  id: string;
+  email: string;
+  name: string | null;
+  role: "CREATOR" | "SUPER_ADMIN" | "OWNER";
+  isBanned: boolean;
+  createdAt: string;
+  username: string | null;
+  title: string | null;
+  avatarUrl: string | null;
+  isPublished: boolean;
+  linksCount: number;
+  threatCount: number;
+}
+
+/**
+ * Fetch all platform users for Super Admin directory & governance
+ */
+export async function fetchAdminUsers(search?: string): Promise<AdminUserItem[]> {
+  const token = await getAdminAuthToken();
+  try {
+    const query = search && search.trim() ? `?search=${encodeURIComponent(search.trim())}` : "";
+    const res = await fetch(`${API_BASE_URL}/api/admin/security/users${query}`, {
+      headers: authHeaders(token),
+      cache: "no-store",
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.error("fetchAdminUsers failed:", err);
+  }
+  return [];
+}
+
+/**
+ * Update user platform role
+ */
+export async function apiUpdateUserRole(
+  userId: string,
+  role: "CREATOR" | "SUPER_ADMIN" | "OWNER"
+): Promise<boolean> {
+  const token = await getAdminAuthToken();
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/admin/security/users/${userId}/role`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ role }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 
 // ============================================================================
 // Billing & Subscriptions API (Screen 6)
@@ -1125,6 +1213,26 @@ export async function apiDeclineCollaboration(
   if (!res.ok) {
     const err = await res.json().catch(() => null);
     throw new Error(err?.message || "Failed to decline collaboration");
+  }
+
+  return await res.json();
+}
+
+/**
+ * Voluntarily leave/quit a collaborated workspace
+ */
+export async function apiLeaveCollaboration(
+  memberId: string
+): Promise<{ success: boolean; message?: string }> {
+  const token = await getAuthToken();
+  const res = await fetch(`${API_BASE_URL}/api/billing/collaborations/leave/${memberId}`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.message || "Failed to leave workspace");
   }
 
   return await res.json();

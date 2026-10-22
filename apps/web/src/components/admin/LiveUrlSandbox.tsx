@@ -147,102 +147,120 @@ export function LiveUrlSandbox() {
       )}
 
       {/* Real-time Verdict Output */}
-      {result && (
-        <div className="p-4 rounded-xl bg-[#09090b] border border-white/10 space-y-4 animate-in fade-in duration-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
-            <div className="flex items-center space-x-3">
-              <span
-                className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                  result.action === "BLOCK"
-                    ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                    : result.action === "FLAG"
-                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                    : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                }`}
-              >
-                {result.action === "BLOCK" ? (
-                  <ShieldAlert className="w-5 h-5" />
-                ) : (
-                  <ShieldCheck className="w-5 h-5" />
-                )}
-              </span>
+      {result && (() => {
+        const riskVal = Number(result.riskScore ?? 0);
+        const isBlock = !result.isSafe || Boolean(result.action?.toUpperCase().includes("BLOCK")) || riskVal >= 0.7;
+        const isFlag = !isBlock && (Boolean(result.action?.toUpperCase().includes("FLAG")) || riskVal >= 0.3);
+        const reasonsList = Array.isArray(result.reasons) && result.reasons.length > 0
+          ? result.reasons
+          : Array.isArray(result.signals)
+          ? result.signals
+          : [];
+        const confidenceVal = Number(result.confidence ?? result.aiConfidence ?? 0.99);
 
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span
-                    className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                      result.action === "BLOCK"
-                        ? "bg-rose-500/20 text-rose-300"
-                        : result.action === "FLAG"
-                        ? "bg-amber-500/20 text-amber-300"
-                        : "bg-emerald-500/20 text-emerald-300"
-                    }`}
-                  >
-                    VERDICT: {result.action}
-                  </span>
-                  {result.threatType && (
-                    <span className="text-[11px] font-mono text-zinc-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">
-                      {result.threatType}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs font-mono text-zinc-400 mt-1 truncate max-w-lg">
-                  {result.url}
-                </p>
-              </div>
-            </div>
-
-            {/* Inference Telemetry */}
-            <div className="flex items-center space-x-4 text-xs font-mono">
-              <div className="text-right">
-                <div className="text-zinc-500 text-[10px]">INFERENCE LATENCY</div>
-                <div className="text-emerald-400 font-bold flex items-center justify-end gap-1">
-                  <Zap className="w-3 h-3" />
-                  {result.latencyMs} ms
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-zinc-500 text-[10px]">RISK SCORE</div>
-                <div
-                  className={`font-bold ${
-                    result.riskScore > 0.7
-                      ? "text-rose-400"
-                      : result.riskScore > 0.3
-                      ? "text-amber-400"
-                      : "text-emerald-400"
+        return (
+          <div className="p-4 rounded-xl bg-[#09090b] border border-white/10 space-y-4 animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+              <div className="flex items-center space-x-3">
+                <span
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                    isBlock
+                      ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                      : isFlag
+                      ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                      : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                   }`}
                 >
-                  {(result.riskScore * 100).toFixed(1)}%
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-zinc-500 text-[10px]">AI CONFIDENCE</div>
-                <div className="text-zinc-200 font-bold">
-                  {(result.confidence * 100).toFixed(1)}%
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Heuristic Reasons Detected */}
-          <div>
-            <div className="text-[11px] font-mono uppercase text-zinc-500 tracking-wider mb-2">
-              Detected Heuristic Vectors & Tensor Signals:
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {result.reasons.map((reason, idx) => (
-                <span
-                  key={idx}
-                  className="px-2.5 py-1 rounded bg-white/5 border border-white/5 text-xs text-zinc-300 font-mono flex items-center gap-1.5"
-                >
-                  <Sparkles className="w-3 h-3 text-zinc-500" />
-                  {reason}
+                  {isBlock ? (
+                    <ShieldAlert className="w-5 h-5" />
+                  ) : (
+                    <ShieldCheck className="w-5 h-5" />
+                  )}
                 </span>
-              ))}
+
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span
+                      className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                        isBlock
+                          ? "bg-rose-500/20 text-rose-300"
+                          : isFlag
+                          ? "bg-amber-500/20 text-amber-300"
+                          : "bg-emerald-500/20 text-emerald-300"
+                      }`}
+                    >
+                      VERDICT: {result.action}
+                    </span>
+                    {result.threatType && (
+                      <span className="text-[11px] font-mono text-zinc-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                        {result.threatType}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-mono text-zinc-400 mt-1 truncate max-w-lg">
+                    {result.url || (result.normalizedDomain ? `https://${result.normalizedDomain}` : testUrl)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Inference Telemetry */}
+              <div className="flex items-center space-x-4 text-xs font-mono">
+                <div className="text-right">
+                  <div className="text-zinc-500 text-[10px]">INFERENCE LATENCY</div>
+                  <div className="text-emerald-400 font-bold flex items-center justify-end gap-1">
+                    <Zap className="w-3 h-3" />
+                    {result.latencyMs} ms
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-zinc-500 text-[10px]">RISK SCORE</div>
+                  <div
+                    className={`font-bold ${
+                      riskVal > 0.7
+                        ? "text-rose-400"
+                        : riskVal > 0.3
+                        ? "text-amber-400"
+                        : "text-emerald-400"
+                    }`}
+                  >
+                    {(riskVal * 100).toFixed(1)}%
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-zinc-500 text-[10px]">AI CONFIDENCE</div>
+                  <div className="text-zinc-200 font-bold">
+                    {(confidenceVal * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Heuristic Reasons Detected */}
+            <div>
+              <div className="text-[11px] font-mono uppercase text-zinc-500 tracking-wider mb-2">
+                Detected Heuristic Vectors & Tensor Signals:
+              </div>
+              {reasonsList.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {reasonsList.map((reason, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2.5 py-1 rounded bg-white/5 border border-white/5 text-xs text-zinc-300 font-mono flex items-center gap-1.5"
+                    >
+                      <Sparkles className="w-3 h-3 text-zinc-500" />
+                      {reason}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-zinc-500 font-mono">
+                  No adverse signals detected. Domain adheres to verified benign parameters.
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
