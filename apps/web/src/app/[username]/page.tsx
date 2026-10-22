@@ -122,7 +122,7 @@ const CRISTIAN_ARANDO_DEMO: ProfileData = {
 
 async function getProfile(username: string): Promise<ProfileData | null> {
   const cleanUsername = username.replace(/^%40|^@/, "").toLowerCase();
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/+$/, "").replace(/\/api\/?$/, "");
 
   try {
     const res = await fetch(`${apiUrl}/api/profiles/${cleanUsername}`, {
