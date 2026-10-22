@@ -10,25 +10,35 @@ import {
   Activity,
   Globe,
   History,
+  Sliders,
+  Users,
+  LogOut,
 } from "lucide-react";
 import {
   fetchSentinelTelemetry,
   fetchSecurityThreats,
   fetchDomainBlocklist,
   fetchAdminAuditLogs,
+  fetchAdminUsers,
+  fetchCurrentUser,
+  clearAuthToken,
   type SentinelTelemetry,
   type SecurityThreatItem,
   type DomainBlocklistItem,
   type AdminAuditLogItem,
+  type AdminUserItem,
+  type CurrentUserSession,
 } from "@/lib/api-client";
 import { TelemetryBentoGrid } from "@/components/admin/TelemetryBentoGrid";
 import { LiveUrlSandbox } from "@/components/admin/LiveUrlSandbox";
 import { ThreatQueueTable } from "@/components/admin/ThreatQueueTable";
 import { DomainBlocklistManager } from "@/components/admin/DomainBlocklistManager";
 import { AuditLogsViewer } from "@/components/admin/AuditLogsViewer";
+import { UserDirectoryTable } from "@/components/admin/UserDirectoryTable";
 
 const NAV_TABS = [
   { id: "threats", name: "Threat Stream", icon: ShieldAlert },
+  { id: "users", name: "User Directory & Access", icon: Users },
   { id: "sandbox", name: "Interception Engine", icon: Activity },
   { id: "domains", name: "Domain Registry", icon: Globe },
   { id: "audit", name: "Audit Ledgers", icon: History },
@@ -167,22 +177,35 @@ export default function AdminModerationPage() {
   const [threats, setThreats] = useState<SecurityThreatItem[]>([]);
   const [blocklist, setBlocklist] = useState<DomainBlocklistItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLogItem[]>([]);
+  const [users, setUsers] = useState<AdminUserItem[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUserSession | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const handleLogout = () => {
+    clearAuthToken();
+    localStorage.removeItem("onelink_token");
+    localStorage.removeItem("onelink_active_workspace");
+    window.location.href = "/login";
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [tData, thData, bData, aData] = await Promise.all([
+      const [tData, thData, bData, aData, uData, meData] = await Promise.all([
         fetchSentinelTelemetry(),
         fetchSecurityThreats(50),
         fetchDomainBlocklist(),
         fetchAdminAuditLogs(30),
+        fetchAdminUsers(),
+        fetchCurrentUser().catch(() => null),
       ]);
 
       if (tData) setTelemetry(tData);
       if (thData) setThreats(thData);
       if (bData) setBlocklist(bData);
       if (aData) setAuditLogs(aData);
+      if (uData) setUsers(uData);
+      if (meData) setCurrentUser(meData);
     } catch {
       // Use fallback dataset if backend is completely unavailable
       setThreats(INITIAL_FALLBACK_THREATS);
@@ -290,19 +313,60 @@ export default function AdminModerationPage() {
             <span>Export Audit</span>
           </button>
 
-          {/* Admin Profile Pill */}
+          {/* Creator Studio link (Only available for Platform OWNER accounts) */}
+          {currentUser?.role === "OWNER" && (
+            <Link
+              href="/studio/links"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 text-xs font-mono text-purple-300 hover:text-white transition-all cursor-pointer"
+              title="Switch to Creator Studio"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Creator Studio</span>
+            </Link>
+          )}
+
+          {/* Admin / Owner Profile Pill */}
           <div className="flex items-center space-x-2 pl-2 pr-3 py-1 rounded-full bg-zinc-900 border border-white/10 text-xs">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
-              alt="Cris Super Admin"
-              className="w-6 h-6 rounded-full object-cover ring-1 ring-white/10"
-            />
+            <div className="w-6 h-6 rounded-full overflow-hidden bg-zinc-800 ring-1 ring-white/10 shrink-0 flex items-center justify-center">
+              {currentUser?.profile?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={currentUser.profile.avatarUrl}
+                  alt={currentUser.name || "Administrator"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-[10px] font-bold text-zinc-300 font-mono">
+                  {currentUser?.name?.charAt(0) || currentUser?.email?.charAt(0) || "A"}
+                </span>
+              )}
+            </div>
             <div className="flex flex-col text-left">
-              <span className="font-semibold text-white leading-tight">@cris</span>
-              <span className="text-[10px] text-zinc-400 uppercase font-mono">Super Admin</span>
+              <span className="font-semibold text-white leading-tight">
+                {currentUser?.name || (currentUser?.profile?.username ? `@${currentUser.profile.username}` : "@admin")}
+              </span>
+              <span
+                className={`text-[9px] uppercase font-mono font-bold tracking-wider ${
+                  currentUser?.role === "OWNER"
+                    ? "text-amber-400"
+                    : "text-purple-400"
+                }`}
+              >
+                {currentUser?.role === "OWNER" ? "Platform Owner" : "Super Admin"}
+              </span>
             </div>
           </div>
+
+          {/* Log Out Button */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="p-2 rounded-full text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/30 transition-all cursor-pointer"
+            title="Log out or switch account"
+            aria-label="Log out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
@@ -362,6 +426,16 @@ export default function AdminModerationPage() {
         {activeTab === "threats" && (
           <section aria-label="Threat Moderation Queue">
             <ThreatQueueTable threats={threats} onRefresh={loadData} />
+          </section>
+        )}
+
+        {activeTab === "users" && (
+          <section aria-label="Platform User Directory & Threat Governance">
+            <UserDirectoryTable
+              users={users}
+              currentUser={currentUser}
+              onRefresh={loadData}
+            />
           </section>
         )}
 

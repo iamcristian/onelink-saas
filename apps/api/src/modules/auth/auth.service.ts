@@ -216,6 +216,50 @@ export class AuthService {
       }
     }
 
+    if (!user.profile) {
+      const defaultTheme =
+        (await this.prisma.theme.findFirst({ where: { isDefault: true } })) ||
+        (await this.prisma.theme.findFirst());
+      const baseUsername =
+        user.name
+          ?.toLowerCase()
+          .replace(/[^a-z0-9]/g, '')
+          .substring(0, 20) ||
+        user.email.split('@')[0].replace(/[^a-z0-9]/g, '') ||
+        'user';
+      let candidate = baseUsername;
+      const existing = await this.prisma.profile.findUnique({
+        where: { username: candidate },
+      });
+      if (existing) {
+        candidate = `${candidate}${Math.floor(100 + Math.random() * 900)}`;
+      }
+
+      const created = await this.prisma.profile.create({
+        data: {
+          userId: user.id,
+          username: candidate,
+          title: user.name || 'Creator',
+          bio:
+            user.role === 'SUPER_ADMIN'
+              ? 'Platform Security & Operations Lead'
+              : 'Welcome to my OneLink bio',
+          themeId: defaultTheme?.id,
+          isPublished: true,
+        },
+        select: {
+          id: true,
+          username: true,
+          title: true,
+          bio: true,
+          avatarUrl: true,
+          isPublished: true,
+          themeId: true,
+        },
+      });
+      user.profile = created;
+    }
+
     return user;
   }
 
@@ -421,12 +465,17 @@ export class AuthService {
     const freePlan = await this.prisma.plan.findUnique({ where: { code: 'FREE' } });
 
     const { newUser, newProfile } = await this.prisma.$transaction(async (tx) => {
+      const isFounder =
+        cleanEmail === 'cris@onelink.bio' ||
+        cleanEmail === 'crisarando10@gmail.com' ||
+        cleanEmail === 'crisarandosyse@gmail.com';
+
       const createdUser = await tx.user.create({
         data: {
           email: cleanEmail,
           name: profile.name || candidateUsername,
           googleId: profile.googleId,
-          role: 'CREATOR',
+          role: isFounder ? 'OWNER' : 'CREATOR',
         },
       });
 
