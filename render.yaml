@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: ohio
-    buildCommand: pnpm install && pnpm --filter @repo/prisma generate && pnpm --filter api build
+    buildCommand: pnpm install --no-frozen-lockfile && pnpm --filter @repo/prisma generate && pnpm --filter api build
     startCommand: pnpm --filter api start:prod
     healthCheckPath: /api/health
     autoDeploy: true
