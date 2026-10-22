@@ -59,11 +59,16 @@ export function AppearancePreview({
   textColor,
   fontFamily,
   titleWeight,
-  username = "alexrivera",
-  displayName = "Alex Rivera",
+  username = "crisarando",
+  displayName = "Cristian Arando",
   bio = "Scaling distributed systems & building clean developer tools.",
   avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
 }: AppearancePreviewProps) {
+  const effectiveAvatar =
+    avatarUrl && avatarUrl.trim().length > 0
+      ? avatarUrl.trim()
+      : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80";
+
   const [device, setDevice] = useState<"mobile" | "desktop">("mobile");
   const [copied, setCopied] = useState(false);
 
@@ -206,7 +211,7 @@ export function AppearancePreview({
               <div className="w-20 h-20 rounded-full p-0.5 ring-2 ring-white/40 bg-zinc-900 overflow-hidden transform-gpu group-hover:scale-105 transition-all">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={avatarUrl}
+                  src={effectiveAvatar}
                   alt={displayName}
                   className="w-full h-full rounded-full object-cover"
                 />

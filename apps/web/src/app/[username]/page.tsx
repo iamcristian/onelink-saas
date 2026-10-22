@@ -58,14 +58,14 @@ interface ProfileData {
   planCode?: string;
 }
 
-const ALEX_RIVERA_DEMO: ProfileData = {
-  id: "demo-alex-rivera",
-  username: "alexrivera",
-  title: "Alex Rivera",
+const CRISTIAN_ARANDO_DEMO: ProfileData = {
+  id: "demo-cristian-arando",
+  username: "crisarando",
+  title: "Cristian Arando",
   bio: "Scaling distributed systems & building clean developer tools.",
   avatarUrl:
     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
-  seoTitle: "Alex Rivera | OneLink",
+  seoTitle: "Cristian Arando | OneLink",
   seoDesc: "Scaling distributed systems & building clean developer tools.",
   ogImageUrl: null,
   theme: {
@@ -90,7 +90,7 @@ const ALEX_RIVERA_DEMO: ProfileData = {
     {
       id: "demo-2",
       title: "Free System Design Architecture Guide",
-      url: "https://alexrivera.gumroad.com/l/sysdesign",
+      url: "https://crisarando.gumroad.com/l/sysdesign",
       type: "LINK",
       position: 1,
       thumbnailUrl: null,
@@ -98,7 +98,7 @@ const ALEX_RIVERA_DEMO: ProfileData = {
     {
       id: "demo-3",
       title: "Join 15k Engineers on Substack",
-      url: "https://newsletter.alexrivera.dev",
+      url: "https://newsletter.crisarando.dev",
       type: "LINK",
       position: 2,
       thumbnailUrl: null,
@@ -106,7 +106,7 @@ const ALEX_RIVERA_DEMO: ProfileData = {
     {
       id: "demo-4",
       title: "Support my work (Buy Me a Coffee)",
-      url: "https://buymeacoffee.com/alexrivera",
+      url: "https://buymeacoffee.com/crisarando",
       type: "DONATION",
       position: 3,
       thumbnailUrl: null,
@@ -162,12 +162,8 @@ async function getProfile(username: string): Promise<ProfileData | null> {
     // API not reachable, fallback to demo if username matches
   }
 
-  if (cleanUsername === "user") {
-    return ALEX_RIVERA_DEMO;
-  }
-
-  if (cleanUsername === "alexrivera") {
-    return ALEX_RIVERA_DEMO;
+  if (cleanUsername === "user" || cleanUsername === "crisarando" || cleanUsername === "alexrivera") {
+    return CRISTIAN_ARANDO_DEMO;
   }
 
   return null;
