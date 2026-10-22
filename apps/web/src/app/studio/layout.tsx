@@ -27,6 +27,7 @@ import {
   apiGetCollaborations,
   apiAcceptCollaboration,
   apiDeclineCollaboration,
+  apiLeaveCollaboration,
   WorkspaceCollaboration,
 } from "@/lib/api-client";
 
@@ -123,10 +124,35 @@ export default function StudioLayout({ children }: StudioLayoutProps) {
     }
   };
 
+  const handleLeaveWorkspace = async (collab: WorkspaceCollaboration) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to leave @${collab.ownerUsername}'s workspace? You will lose your ${collab.role} access to this account.`
+    );
+    if (!confirmed) return;
+
+    setIsProcessingCollab(collab.id);
+    try {
+      await apiLeaveCollaboration(collab.id);
+      if (activeWorkspace?.id === collab.id) {
+        handleSelectWorkspace(null);
+      }
+      await loadCollaborations();
+    } catch (err) {
+      console.error("Failed to leave workspace:", err);
+      alert("Failed to leave workspace. Please try again.");
+    } finally {
+      setIsProcessingCollab(null);
+    }
+  };
+
   const reloadSession = useCallback(() => {
     fetchCurrentUser()
       .then((user) => {
         if (user) {
+          if (user.role === "SUPER_ADMIN") {
+            router.push("/admin/moderation");
+            return;
+          }
           setSession(user);
         } else {
           router.push("/login");
@@ -357,27 +383,44 @@ export default function StudioLayout({ children }: StudioLayoutProps) {
                       .map((collab) => {
                         const isCurrent = activeWorkspace?.id === collab.id;
                         return (
-                          <button
+                          <div
                             key={collab.id}
-                            type="button"
-                            onClick={() => handleSelectWorkspace(collab)}
-                            className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-xs transition-all cursor-pointer ${
+                            className={`group w-full flex items-center justify-between p-2 rounded-lg text-left text-xs transition-all ${
                               isCurrent
                                 ? "bg-purple-500/20 text-purple-200 border border-purple-500/30 font-semibold"
                                 : "text-zinc-300 hover:bg-white/5 hover:text-white"
                             }`}
                           >
-                            <div className="flex items-center space-x-2 min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectWorkspace(collab)}
+                              className="flex items-center space-x-2 min-w-0 flex-1 text-left cursor-pointer"
+                            >
                               <Building2 className="w-4 h-4 text-purple-400 shrink-0" />
                               <div className="truncate">
-                                <div className="truncate">@{collab.ownerUsername}</div>
+                                <div className="truncate font-medium">@{collab.ownerUsername}</div>
                                 <div className="text-[10px] font-mono text-purple-300/80">
                                   {collab.ownerPlan} • {collab.role}
                                 </div>
                               </div>
+                            </button>
+                            <div className="flex items-center space-x-1 shrink-0 ml-1.5">
+                              {isCurrent && <Check className="w-3.5 h-3.5 text-purple-300 shrink-0" />}
+                              <button
+                                type="button"
+                                title="Leave workspace (Quit as collaborator)"
+                                aria-label="Leave team workspace"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLeaveWorkspace(collab);
+                                }}
+                                disabled={isProcessingCollab === collab.id}
+                                className="p-1 rounded text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors opacity-70 group-hover:opacity-100 cursor-pointer"
+                              >
+                                <LogOut className="w-3.5 h-3.5" />
+                              </button>
                             </div>
-                            {isCurrent && <Check className="w-3.5 h-3.5 text-purple-300 shrink-0" />}
-                          </button>
+                          </div>
                         );
                       })}
                   </>
@@ -494,7 +537,7 @@ export default function StudioLayout({ children }: StudioLayoutProps) {
             onClick={handleLogout}
             className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/5 border border-white/5 transition-all cursor-pointer"
             title="Log out or switch account"
-            aria-label="Cerrar sesión"
+            aria-label="Log out"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -541,6 +584,18 @@ export default function StudioLayout({ children }: StudioLayoutProps) {
             </Link>
           );
         })}
+
+        {isAdmin && (
+          <Link
+            href="/admin/moderation"
+            className="flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium text-purple-400 hover:text-purple-300 transition-all"
+          >
+            <div className="p-1.5 rounded-xl mb-0.5 text-purple-400 bg-purple-500/10">
+              <Shield className="w-4 h-4" />
+            </div>
+            <span>Admin AI</span>
+          </Link>
+        )}
 
         <Link
           href="/"

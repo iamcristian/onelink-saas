@@ -325,10 +325,10 @@ export default function Home() {
                     </div>
                     <div>
                       <h4 className="text-sm font-bold text-white flex items-center justify-center gap-1">
-                        <span>Alex Rivera</span>
+                        <span>Cristian Arando</span>
                         <Sparkles className="w-3 h-3 text-emerald-400" />
                       </h4>
-                      <p className="text-[10px] font-mono text-zinc-400">@alexrivera</p>
+                      <p className="text-[10px] font-mono text-zinc-400">@crisarando</p>
                       <p className="text-[11px] text-zinc-400 mt-1 max-w-56 leading-snug">
                         Scaling distributed systems &amp; high-throughput developer tools.
                       </p>

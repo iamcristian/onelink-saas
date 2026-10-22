@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, Lock, Mail, Sparkles, AlertCircle } from "lucide-react";
+import { ArrowRight, Lock, Mail, AlertCircle } from "lucide-react";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -35,7 +35,11 @@ function LoginForm() {
       if (data.accessToken) {
         localStorage.setItem("onelink_token", data.accessToken);
       }
-      window.location.href = "/studio/links";
+      if (data.user?.role === "SUPER_ADMIN") {
+        window.location.href = "/admin/moderation";
+      } else {
+        window.location.href = "/studio/links";
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Authentication error.";
       setError(msg);
@@ -149,37 +153,6 @@ function LoginForm() {
           <ArrowRight className="w-4 h-4" />
         </button>
       </form>
-
-      {/* Demo Credentials Quick-Fill (Click to populate) */}
-      <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider text-center">
-          Demo Test Accounts (Click to Fill)
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setEmail("alex@onelink.bio");
-              setPassword("Password123!");
-            }}
-            className="p-2.5 rounded-xl bg-zinc-950 border border-white/10 hover:border-zinc-500 text-left transition-colors cursor-pointer group"
-          >
-            <span className="block text-xs font-semibold text-zinc-300 group-hover:text-white">Alex Rivera</span>
-            <span className="block text-[10px] text-zinc-500 font-mono truncate">alex@onelink.bio</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setEmail("admin@onelink.bio");
-              setPassword("AdminPassword123!");
-            }}
-            className="p-2.5 rounded-xl bg-zinc-950 border border-white/10 hover:border-zinc-500 text-left transition-colors cursor-pointer group"
-          >
-            <span className="block text-xs font-semibold text-zinc-300 group-hover:text-white">Super Admin</span>
-            <span className="block text-[10px] text-zinc-500 font-mono truncate">admin@onelink.bio</span>
-          </button>
-        </div>
-      </div>
 
       <div className="text-center mt-6">
         <p className="text-xs text-zinc-400">

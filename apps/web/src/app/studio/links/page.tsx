@@ -20,55 +20,6 @@ import {
   apiReorderLinks,
 } from "@/lib/api-client";
 
-const INITIAL_ITEMS: StudioLinkItem[] = [
-  {
-    id: "item-1",
-    title: "Latest Video: 10M req/sec Under the Hood",
-    url: "https://youtube.com/watch?v=sysarch",
-    type: "LINK",
-    isActive: true,
-    clicks: 1420,
-    position: 0,
-  },
-  {
-    id: "item-2",
-    title: "Free System Design Architecture Guide",
-    url: "https://alexrivera.gumroad.com/l/sysdesign",
-    type: "LINK",
-    isActive: true,
-    clicks: 3890,
-    badge: "EBOOK",
-    position: 1,
-  },
-  {
-    id: "item-3",
-    title: "COURSES & NEWSLETTER",
-    url: "#",
-    type: "HEADER",
-    isActive: true,
-    clicks: 0,
-    position: 2,
-  },
-  {
-    id: "item-4",
-    title: "Join 15k Engineers on Substack",
-    url: "https://newsletter.alexrivera.dev",
-    type: "LINK",
-    isActive: true,
-    clicks: 15200,
-    position: 3,
-  },
-  {
-    id: "item-5",
-    title: "Support my work (Buy Me a Coffee)",
-    url: "https://buymeacoffee.com/alexrivera",
-    type: "DONATION",
-    isActive: true,
-    clicks: 512,
-    position: 4,
-  },
-];
-
 export default function StudioLinksPage() {
   const router = useRouter();
   const [profileId, setProfileId] = useState<string>("");
@@ -84,7 +35,7 @@ export default function StudioLinksPage() {
   const [profileUsername, setProfileUsername] = useState("");
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [profileBio, setProfileBio] = useState("");
-  const [profileAvatarUrl, setProfileAvatarUrl] = useState("");
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80");
   const [activeTheme, setActiveTheme] = useState<PhonePreviewTheme | null>(null);
   const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor");
 
@@ -162,7 +113,7 @@ export default function StudioLinksPage() {
             fullProfile.title || fullProfile.username
           );
           if (fullProfile.bio) setProfileBio(fullProfile.bio);
-          if (fullProfile.avatarUrl) setProfileAvatarUrl(fullProfile.avatarUrl);
+          if (fullProfile.avatarUrl?.trim()) setProfileAvatarUrl(fullProfile.avatarUrl.trim());
 
           const resolvedTheme = fullProfile.customTheme || fullProfile.theme;
           if (resolvedTheme) {

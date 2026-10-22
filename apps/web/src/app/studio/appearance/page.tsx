@@ -673,7 +673,7 @@ export default function StudioAppearancePage() {
                 <div className="w-20 h-20 rounded-full p-0.5 ring-2 ring-white/20 hover:ring-white/50 bg-zinc-900 overflow-hidden transition-all shadow-md">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={avatarUrl}
+                    src={avatarUrl?.trim() || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"}
                     alt="Avatar"
                     className="w-full h-full object-cover rounded-full"
                   />
