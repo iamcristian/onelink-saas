@@ -57,17 +57,27 @@ export class AuthController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const forwardedHost = (req.headers['x-forwarded-host'] as string) || (req.headers['host'] as string);
-    const forwardedProto = (req.headers['x-forwarded-proto'] as string) || 'http';
     let appUrl =
+      this.configService.get<string>('FRONTEND_URL') ||
       this.configService.get<string>('APP_URL') ||
-      this.configService.get<string>('NEXT_PUBLIC_APP_URL') ||
-      'http://localhost:3000';
+      this.configService.get<string>('NEXT_PUBLIC_APP_URL');
 
-    if (forwardedHost && !forwardedHost.startsWith('127.0.0.1') && !forwardedHost.startsWith('localhost')) {
-      const cleanHost = forwardedHost.replace(/:3001$/, ':3000');
-      appUrl = `${forwardedProto}://${cleanHost}`;
+    if (!appUrl) {
+      const forwardedHost = (req.headers['x-forwarded-host'] as string) || (req.headers['host'] as string);
+      const forwardedProto = (req.headers['x-forwarded-proto'] as string) || 'https';
+      if (
+        forwardedHost &&
+        (forwardedHost.startsWith('127.0.0.1') ||
+          forwardedHost.startsWith('localhost') ||
+          forwardedHost.startsWith('192.168.'))
+      ) {
+        const cleanHost = forwardedHost.replace(/:3001$/, ':3000');
+        appUrl = `${forwardedProto}://${cleanHost}`;
+      } else {
+        appUrl = 'https://onelink-saas.vercel.app';
+      }
     }
+    appUrl = appUrl.replace(/\/+$/, '');
 
     if (error || !code) {
       const errorMsg = encodeURIComponent(error || 'Google authentication was cancelled');
