@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import QRCode from "qrcode";
 import {
   Smartphone,
   Monitor,
   Check,
   QrCode,
+  Download,
   Sparkles,
   ChevronRight,
   Wifi,
@@ -71,6 +73,27 @@ export function AppearancePreview({
 
   const [device, setDevice] = useState<"mobile" | "desktop">("mobile");
   const [copied, setCopied] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  const fullProfileUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/${username}`
+      : `https://onelink.bio/${username}`;
+
+  useEffect(() => {
+    if (!showQrModal) return;
+    QRCode.toDataURL(fullProfileUrl, {
+      width: 320,
+      margin: 1,
+      color: {
+        dark: "#000000",
+        light: "#ffffff",
+      },
+    })
+      .then((url) => setQrDataUrl(url))
+      .catch((err) => console.error("QR generation error:", err));
+  }, [showQrModal, fullProfileUrl]);
 
   const handleCopy = async () => {
     try {
@@ -163,9 +186,13 @@ export function AppearancePreview({
             </span>
             <span>{copied ? "Copied!" : `onelink.bio/${username}`}</span>
           </button>
-          <div className="w-7 h-7 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-zinc-400">
+          <button
+            onClick={() => setShowQrModal(true)}
+            className="w-7 h-7 rounded-full bg-zinc-900 border border-white/10 hover:border-zinc-500 hover:bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            title="Scan QR Code"
+          >
             <QrCode className="w-3.5 h-3.5" />
-          </div>
+          </button>
         </div>
       </div>
 
@@ -262,6 +289,50 @@ export function AppearancePreview({
           </div>
         </div>
       </div>
+      {/* QR Code Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-xs bg-zinc-900 border border-white/10 rounded-2xl p-6 text-center text-white shadow-2xl">
+            <h3 className="text-sm font-semibold mb-1">QR Code for @{username}</h3>
+            <p className="text-xs text-zinc-400 mb-4 font-mono truncate">
+              {fullProfileUrl}
+            </p>
+            <div className="w-52 h-52 mx-auto bg-white p-3 rounded-2xl flex flex-col items-center justify-center shadow-xl">
+              {qrDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={qrDataUrl}
+                  alt={`Scannable QR Code for @${username}`}
+                  className="w-44 h-44 rounded-lg object-contain"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center space-y-2 text-zinc-500">
+                  <div className="w-6 h-6 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[11px] font-mono">Generating QR...</span>
+                </div>
+              )}
+            </div>
+            <div className="mt-5 flex gap-2">
+              {qrDataUrl && (
+                <a
+                  href={qrDataUrl}
+                  download={`onelink-${username}-qr.png`}
+                  className="flex-1 py-2 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-all border border-white/10"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download</span>
+                </a>
+              )}
+              <button
+                onClick={() => setShowQrModal(false)}
+                className="flex-1 py-2 rounded-xl bg-white text-zinc-950 text-xs font-semibold hover:bg-zinc-200 transition-all cursor-pointer shadow-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
