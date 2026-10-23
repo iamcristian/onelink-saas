@@ -343,7 +343,7 @@ export default function StudioAppearancePage() {
                     id: String(l.id || ""),
                     title: String(l.title || ""),
                     url: String(l.url || "#"),
-                    type: String(l.type || "LINK"),
+                    type: (l.type as StudioLinkItem["type"]) || "LINK",
                     thumbnailUrl: (l.thumbnailUrl as string) || undefined,
                     badge: (l.badge as string) || undefined,
                     isActive: l.isActive !== false,

@@ -23,6 +23,7 @@ import {
   BillingSubscription,
   BillingInvoice,
   TeamMember,
+  WorkspaceCollaboration,
   fetchBillingPlans,
   fetchMySubscription,
   fetchTeamMembers,
@@ -60,7 +61,7 @@ function BillingContent() {
 
   const [plans, setPlans] = useState<BillingPlan[]>([]);
   const [subscription, setSubscription] = useState<BillingSubscription | null>(null);
-  const [activeWorkspace, setActiveWorkspace] = useState<Record<string, unknown> | null>(null);
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceCollaboration | null>(null);
   const [currentTimestamp, setCurrentTimestamp] = useState<number>(0);
 
   useEffect(() => {
