@@ -25,3 +25,13 @@ services:
         value: 7d
       - key: FRONTEND_URL
         sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PRICE_ID_CREATOR_PRO_MONTHLY
+        sync: false
+      - key: STRIPE_PRICE_ID_CREATOR_PRO_YEARLY
+        sync: false
+      - key: STRIPE_PRICE_ID_ENTERPRISE_MONTHLY
+        sync: false
+      - key: STRIPE_PRICE_ID_ENTERPRISE_YEARLY
+        sync: false

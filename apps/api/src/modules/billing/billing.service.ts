@@ -314,7 +314,11 @@ export class BillingService {
       throw new NotFoundException(`Plan with code ${dto.planCode} not found`);
     }
 
-    const appUrl = this.configService.get<string>('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000';
+    const appUrl = (
+      this.configService.get<string>('FRONTEND_URL') ||
+      this.configService.get<string>('NEXT_PUBLIC_APP_URL') ||
+      'https://onelink-saas.vercel.app'
+    ).replace(/\/+$/, '');
     let successUrl = dto.successUrl || `${appUrl}/studio/billing?success=true&plan=${dto.planCode}`;
     if (!successUrl.includes('session_id=')) {
       const sep = successUrl.includes('?') ? '&' : '?';
@@ -425,7 +429,11 @@ export class BillingService {
    * Creates a Customer Billing Portal session or returns simulated redirect.
    */
   async createPortalSession(userId: string, returnUrl?: string) {
-    const appUrl = this.configService.get<string>('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000';
+    const appUrl = (
+      this.configService.get<string>('FRONTEND_URL') ||
+      this.configService.get<string>('NEXT_PUBLIC_APP_URL') ||
+      'https://onelink-saas.vercel.app'
+    ).replace(/\/+$/, '');
     const defaultReturnUrl = returnUrl || `${appUrl}/studio/billing`;
 
     const sub = await this.prisma.subscription.findFirst({
