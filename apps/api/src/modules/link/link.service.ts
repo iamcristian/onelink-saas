@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
@@ -9,7 +10,7 @@ import { SecurityFlagStatus, LinkType } from '@repo/prisma';
 import { RedisService } from '../../infrastructure/cache/redis.service';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { SentinelAiService } from '../sentinel-ai/sentinel-ai.service';
-import { ProfileAccessService } from '../../common/services/profile-access.service';
+import { ProfileAccessService, CollaboratorPermissionLevel } from '../../common/services/profile-access.service';
 import { CreateLinkDto, UpdateLinkDto, ReorderItemDto } from './dto/link.dto';
 import { isValidWebUrl } from '@repo/shared';
 
@@ -36,8 +37,13 @@ export class LinkService {
   /**
    * Verifies that the requesting user owns the targeted profile or is an authorized collaborator/admin.
    */
-  async verifyProfileOwnership(profileId: string, userId: string, role?: string) {
-    return await this.profileAccess.verifyProfileAccess(profileId, userId, role);
+  async verifyProfileOwnership(
+    profileId: string,
+    userId: string,
+    role?: string,
+    requiredLevel: CollaboratorPermissionLevel = 'EDITOR',
+  ) {
+    return await this.profileAccess.verifyProfileAccess(profileId, userId, role, requiredLevel);
   }
 
   /**
@@ -109,9 +115,9 @@ export class LinkService {
     clientIp?: string,
     role?: string,
   ) {
-    const profile = await this.verifyProfileOwnership(profileId, userId, role);
+    const profile = await this.verifyProfileOwnership(profileId, userId, role, 'EDITOR');
 
-    // 1. Evaluate outbound link safety
+    // 1. Sentinel AI URL safety validation
     const isOutbound = dto.type === LinkType.LINK || dto.type === LinkType.DONATION || !dto.type;
     if (isOutbound) {
       if (!dto.url || !dto.url.trim()) {
@@ -120,23 +126,44 @@ export class LinkService {
       await this.validateOutboundUrl(dto.url, userId, clientIp);
     }
 
-    // 2. Enforce subscription benefit quotas (5 links limit on Free Plan)
-    if (this.prisma.subscription && this.prisma.link.count) {
-      const sub = await this.prisma.subscription.findFirst({
-        where: { userId, status: 'ACTIVE' },
-        include: { plan: true },
-        orderBy: { createdAt: 'desc' },
+    // 2. Enforce subscription benefit quotas & feature gates (using workspace owner's subscription)
+    const ownerSubscription = await this.prisma.subscription.findFirst({
+      where: { userId: profile.userId, status: 'ACTIVE' },
+      include: { plan: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    const features = (ownerSubscription?.plan?.features as Record<string, any>) || {
+      maxLinks: 5,
+      scheduledLinks: false,
+      passwordProtection: false,
+      ageRestriction: false,
+    };
+
+    if ((dto.startsAt || dto.expiresAt) && !features.scheduledLinks) {
+      throw new ForbiddenException(
+        'Link scheduling is only available on Creator Pro and Enterprise Studio plans.',
+      );
+    }
+    if (dto.isPasswordProtected && !features.passwordProtection) {
+      throw new ForbiddenException(
+        'PIN / Password protection is an Enterprise Studio plan feature.',
+      );
+    }
+    if (dto.isAgeRestricted && !features.ageRestriction) {
+      throw new ForbiddenException(
+        'Age verification restriction is an Enterprise Studio plan feature.',
+      );
+    }
+
+    const maxLinks = features.maxLinks ?? 5;
+    if (dto.type === LinkType.LINK || !dto.type) {
+      const currentCount = await this.prisma.link.count({
+        where: { profileId, type: LinkType.LINK },
       });
-      const maxLinks = (sub?.plan?.features as Record<string, any>)?.maxLinks ?? 5;
-      if (dto.type === LinkType.LINK || !dto.type) {
-        const currentCount = await this.prisma.link.count({
-          where: { profileId, type: LinkType.LINK },
-        });
-        if (currentCount >= maxLinks) {
-          throw new BadRequestException(
-            `Free Plan limit reached (${currentCount}/${maxLinks} links). Upgrade to Creator Pro for unlimited links, custom themes, and analytics.`,
-          );
-        }
+      if (currentCount >= maxLinks) {
+        throw new BadRequestException(
+          `Plan limit reached (${currentCount}/${maxLinks} links). Upgrade to Creator Pro for unlimited links.`,
+        );
       }
     }
 
@@ -160,6 +187,7 @@ export class LinkService {
         profileId,
         title: dto.title,
         url: dto.url,
+        content: dto.content,
         type: dto.type || LinkType.LINK,
         thumbnailUrl: dto.thumbnailUrl,
         isActive: dto.isActive !== undefined ? dto.isActive : true,
@@ -170,6 +198,25 @@ export class LinkService {
         password: hashedPassword,
         isAgeRestricted: Boolean(dto.isAgeRestricted),
         badge: dto.badge || null,
+      },
+      select: {
+        id: true,
+        profileId: true,
+        title: true,
+        url: true,
+        content: true,
+        type: true,
+        position: true,
+        thumbnailUrl: true,
+        isActive: true,
+        clickCount: true,
+        startsAt: true,
+        expiresAt: true,
+        isPasswordProtected: true,
+        isAgeRestricted: true,
+        badge: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -182,12 +229,35 @@ export class LinkService {
 
   /**
    * Retrieves all links for a profile sorted by ascending position.
+   * Requires authenticated viewer/collaborator access and strips password hashes.
    */
-  async getLinksByProfile(profileId: string) {
+  async getLinksByProfile(profileId: string, userId: string, role?: string) {
+    await this.verifyProfileOwnership(profileId, userId, role, 'VIEWER');
+
     const links = await this.prisma.link.findMany({
       where: { profileId },
       orderBy: { position: 'asc' },
+      select: {
+        id: true,
+        profileId: true,
+        title: true,
+        url: true,
+        content: true,
+        type: true,
+        position: true,
+        thumbnailUrl: true,
+        isActive: true,
+        clickCount: true,
+        startsAt: true,
+        expiresAt: true,
+        isPasswordProtected: true,
+        isAgeRestricted: true,
+        badge: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
+
     return links.map((l) => ({ ...l, clickCount: Number(l.clickCount) }));
   }
 
@@ -202,7 +272,7 @@ export class LinkService {
     clientIp?: string,
     role?: string,
   ) {
-    const profile = await this.verifyProfileOwnership(profileId, userId, role);
+    const profile = await this.verifyProfileOwnership(profileId, userId, role, 'EDITOR');
 
     const existing = await this.prisma.link.findFirst({
       where: { id: linkId, profileId },
@@ -210,6 +280,39 @@ export class LinkService {
 
     if (!existing) {
       throw new NotFoundException(`Link with ID ${linkId} not found in profile ${profileId}`);
+    }
+
+    // Feature gates check on update
+    const ownerSubscription = await this.prisma.subscription.findFirst({
+      where: { userId: profile.userId, status: 'ACTIVE' },
+      include: { plan: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    const features = (ownerSubscription?.plan?.features as Record<string, any>) || {
+      maxLinks: 5,
+      scheduledLinks: false,
+      passwordProtection: false,
+      ageRestriction: false,
+    };
+
+    if (
+      (dto.startsAt !== undefined || dto.expiresAt !== undefined) &&
+      (dto.startsAt || dto.expiresAt) &&
+      !features.scheduledLinks
+    ) {
+      throw new ForbiddenException(
+        'Link scheduling is only available on Creator Pro and Enterprise Studio plans.',
+      );
+    }
+    if (dto.isPasswordProtected && !features.passwordProtection) {
+      throw new ForbiddenException(
+        'PIN / Password protection is an Enterprise Studio plan feature.',
+      );
+    }
+    if (dto.isAgeRestricted && !features.ageRestriction) {
+      throw new ForbiddenException(
+        'Age verification restriction is an Enterprise Studio plan feature.',
+      );
     }
 
     // If target URL is being changed, re-evaluate through Sentinel AI
@@ -243,6 +346,7 @@ export class LinkService {
       data: {
         title: dto.title,
         url: dto.url,
+        content: dto.content,
         type: dto.type,
         thumbnailUrl: dto.thumbnailUrl,
         isActive: dto.isActive,
@@ -252,6 +356,25 @@ export class LinkService {
         password: hashedPassword,
         isAgeRestricted: dto.isAgeRestricted,
         badge: dto.badge !== undefined ? dto.badge : undefined,
+      },
+      select: {
+        id: true,
+        profileId: true,
+        title: true,
+        url: true,
+        content: true,
+        type: true,
+        position: true,
+        thumbnailUrl: true,
+        isActive: true,
+        clickCount: true,
+        startsAt: true,
+        expiresAt: true,
+        isPasswordProtected: true,
+        isAgeRestricted: true,
+        badge: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -303,7 +426,7 @@ export class LinkService {
    * Deletes a link and compacts remaining positions.
    */
   async deleteLink(linkId: string, profileId: string, userId: string, role?: string) {
-    const profile = await this.verifyProfileOwnership(profileId, userId, role);
+    const profile = await this.verifyProfileOwnership(profileId, userId, role, 'EDITOR');
 
     const existing = await this.prisma.link.findFirst({
       where: { id: linkId, profileId },
@@ -348,7 +471,7 @@ export class LinkService {
     userId: string,
     role?: string,
   ) {
-    const profile = await this.verifyProfileOwnership(profileId, userId, role);
+    const profile = await this.verifyProfileOwnership(profileId, userId, role, 'EDITOR');
 
     const results = await this.prisma.$transaction(
       items.map((item) =>

@@ -12,6 +12,16 @@ export interface SendInvitationParams {
   actionUrl: string;
 }
 
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 @Injectable()
 export class EmailService implements OnModuleInit {
   private readonly logger = new Logger(EmailService.name);
@@ -41,6 +51,16 @@ export class EmailService implements OnModuleInit {
       this.logger.warn(`Email transporter unavailable. Skipped sending email to ${params.to}`);
       return null;
     }
+
+    const safeTo = escapeHtml(params.to);
+    const safeInviteeName = escapeHtml(params.inviteeName);
+    const safeInviterName = escapeHtml(params.inviterName);
+    const safeInviterUsername = escapeHtml(params.inviterUsername);
+    const safeWorkspacePlan = escapeHtml(params.workspacePlan);
+    const safeRole = escapeHtml(params.role);
+    const safeActionUrl = /^https?:\/\//i.test(params.actionUrl)
+      ? params.actionUrl.replace(/"/g, '%22')
+      : '#';
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -74,22 +94,22 @@ export class EmailService implements OnModuleInit {
             <span class="brand">OneLink Bio Studio</span>
           </div>
           <span class="badge">Team Collaboration Invitation</span>
-          <h1>Join @${params.inviterUsername}'s Workspace</h1>
-          <p>Hello ${params.inviteeName},</p>
-          <p><strong>${params.inviterName}</strong> (@${params.inviterUsername}) has invited you to collaborate on their <strong>${params.workspacePlan}</strong> OneLink profile with full enterprise governance privileges.</p>
+          <h1>Join @${safeInviterUsername}'s Workspace</h1>
+          <p>Hello ${safeInviteeName},</p>
+          <p><strong>${safeInviterName}</strong> (@${safeInviterUsername}) has invited you to collaborate on their <strong>${safeWorkspacePlan}</strong> OneLink profile with full enterprise governance privileges.</p>
           
           <div class="card">
             <div class="card-row">
               <span class="card-label">Workspace: </span>
-              <span class="card-val">@${params.inviterUsername} (${params.workspacePlan})</span>
+              <span class="card-val">@${safeInviterUsername} (${safeWorkspacePlan})</span>
             </div>
             <div class="card-row">
               <span class="card-label">Assigned Role: </span>
-              <span class="card-val">${params.role}</span>
+              <span class="card-val">${safeRole}</span>
             </div>
             <div class="card-row">
               <span class="card-label">Invited Email: </span>
-              <span class="card-val">${params.to}</span>
+              <span class="card-val">${safeTo}</span>
             </div>
             <div class="card-row">
               <span class="card-label">Security &amp; 2FA: </span>
@@ -97,10 +117,10 @@ export class EmailService implements OnModuleInit {
             </div>
           </div>
 
-          <p>To accept this invitation, log into OneLink with this email address (<strong>${params.to}</strong>), where an instant activation banner will greet you in your Studio.</p>
+          <p>To accept this invitation, log into OneLink with this email address (<strong>${safeTo}</strong>), where an instant activation banner will greet you in your Studio.</p>
 
           <div class="btn-container">
-            <a href="${params.actionUrl}" class="btn" target="_blank">Open OneLink Studio &rarr;</a>
+            <a href="${safeActionUrl}" class="btn" target="_blank">Open OneLink Studio &rarr;</a>
           </div>
 
           <div class="footer">

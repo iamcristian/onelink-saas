@@ -716,12 +716,12 @@ export default function StudioLinksPage() {
               </button>
             </div>
           ) : (
-            filteredItems.map((item, idx) => (
+            filteredItems.map((item) => (
               <LinkCard
                 key={item.id}
                 item={item}
-                index={idx}
-                totalItems={filteredItems.length}
+                index={items.findIndex((it) => it.id === item.id)}
+                totalItems={items.length}
                 onToggleActive={handleToggleActive}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

@@ -1,16 +1,24 @@
-import { Injectable, Logger, OnModuleInit, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import * as path from 'path';
 import * as fs from 'fs';
 import { domainToUnicode } from 'url';
 import * as ort from 'onnxruntime-node';
-import { ThreatType, SecurityFlagStatus } from '@repo/prisma';
+import { ThreatType, SecurityFlagStatus, Role } from '@repo/prisma';
+import { isValidWebUrl } from '@repo/shared';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { RedisService } from '../../infrastructure/cache/redis.service';
+import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { scanForHomoglyphs } from './utils/homoglyph.util';
 import { extractUrlFeatures, ExtractedFeatures } from './utils/features.util';
 import { isAuthoritativeDomain } from './utils/allowlist.util';
 import { SentinelEvaluationResult, SecurityFlagCreationParams } from './sentinel-ai.types';
-import { isValidWebUrl } from '@repo/shared';
 
 const HIGH_VALUE_BRANDS = [
   'paypal',
@@ -140,12 +148,21 @@ export class SentinelAiService implements OnModuleInit {
       }
     }
 
-    // Layer 1: Redis Global Blocklist (O(1) fast lookup <1ms)
+    // Layer 1: Redis Global Blocklist (O(1) fast lookup <1ms) with wildcard / subdomain suffix checking
     try {
-      const isGloballyBlocked = await this.redis.sismember(
-        SentinelAiService.REDIS_BLOCKLIST_KEY,
-        hostname,
-      );
+      const parts = hostname.split('.');
+      const candidateDomains: string[] = [];
+      for (let i = 0; i <= parts.length - 2; i++) {
+        candidateDomains.push(parts.slice(i).join('.'));
+      }
+
+      let isGloballyBlocked = false;
+      for (const candidate of candidateDomains) {
+        if (await this.redis.sismember(SentinelAiService.REDIS_BLOCKLIST_KEY, candidate)) {
+          isGloballyBlocked = true;
+          break;
+        }
+      }
 
       if (isGloballyBlocked) {
         signals.push('Matched active Redis domain blocklist');
@@ -236,7 +253,6 @@ export class SentinelAiService implements OnModuleInit {
     }
 
     // 4D: High Shannon Entropy (Algorithmic DGA domain randomness)
-    // Threshold set to >= 3.85 to avoid false positives on natural vocabulary like stackoverflow
     if (features.entropy >= 3.85 && features.primaryLabel.length >= 10) {
       riskScore = Math.max(riskScore, 0.70);
       signals.push(`High Shannon entropy (${features.entropy} bits/char) indicates algorithmic DGA domain`);
@@ -250,7 +266,7 @@ export class SentinelAiService implements OnModuleInit {
       if (!threatType) threatType = ThreatType.SPAM;
     }
 
-    // 4F: Token-Based High-Value Brand Impersonation (Avoids naive substring false positives like pineapple/purchase)
+    // 4F: Token-Based High-Value Brand Impersonation
     const domainTokens = hostname.split(/[.-]/);
     for (const brand of HIGH_VALUE_BRANDS) {
       if (domainTokens.includes(brand)) {
@@ -353,7 +369,16 @@ export class SentinelAiService implements OnModuleInit {
    * Adds a domain pattern to both PostgreSQL and Redis blocklist cache
    */
   async addDomainToBlocklist(domainPattern: string, reason: string, adminUserId?: string) {
-    const pattern = domainPattern.toLowerCase();
+    let pattern = domainPattern.toLowerCase().trim();
+    if (pattern.startsWith('http://') || pattern.startsWith('https://')) {
+      try {
+        pattern = new URL(pattern).hostname.toLowerCase();
+      } catch {
+        // keep pattern as trimmed
+      }
+    }
+    pattern = pattern.replace(/^\*\./, '').replace(/\/.*$/, '');
+
     const entry = await this.prisma.domainBlocklist.upsert({
       where: { domainPattern: pattern },
       update: { reason, addedById: adminUserId },
@@ -417,6 +442,11 @@ export class SentinelAiService implements OnModuleInit {
     notes?: string,
     adminUserId?: string,
   ) {
+    const existing = await this.prisma.securityFlag.findUnique({ where: { id: flagId } });
+    if (!existing) {
+      throw new NotFoundException(`Security flag ${flagId} not found`);
+    }
+
     const flag = await this.prisma.securityFlag.update({
       where: { id: flagId },
       data: {
@@ -434,7 +464,7 @@ export class SentinelAiService implements OnModuleInit {
           targetType: 'SECURITY_FLAG',
           targetId: flagId,
           reason: notes || `Threat marked as ${status}`,
-          metadata: { url: flag.submittedUrl, previousStatus: flag.status },
+          metadata: { url: flag.submittedUrl, previousStatus: existing.status, newStatus: status },
         },
       });
     }
@@ -443,7 +473,8 @@ export class SentinelAiService implements OnModuleInit {
   }
 
   /**
-   * Suspends or reinstates a user account and deactivates links on suspension
+   * Suspends or reinstates a user account, updates Redis session ban set,
+   * evicts public profile cache, and deactivates links on suspension
    */
   async suspendUser(
     userId: string,
@@ -457,13 +488,34 @@ export class SentinelAiService implements OnModuleInit {
       include: { profile: true },
     });
 
-    // If banned, deactivate all published profile links to neutralize threats
-    if (isBanned && user.profile) {
-      await this.prisma.link.updateMany({
-        where: { profileId: user.profile.id },
-        data: { isActive: false },
-      });
-      this.logger.warn(`User ${user.email} banned. Deactivated all profile links.`);
+    if (isBanned) {
+      // Add to Redis blacklist to immediately block all existing JWTs
+      await this.redis.sadd('auth:banned_users', userId);
+
+      // Deactivate all links in DB
+      if (user.profile) {
+        await this.prisma.link.updateMany({
+          where: { profileId: user.profile.id },
+          data: { isActive: false },
+        });
+      }
+
+      // Evict cached profile in Redis
+      if (user.profile?.username) {
+        await this.redis.del(`profile:username:${user.profile.username.toLowerCase()}`);
+      }
+      if (user.profile?.id) {
+        await this.redis.del(`profile:id:${user.profile.id}`);
+      }
+
+      this.logger.warn(`User ${user.email} suspended. Session invalidated and links deactivated.`);
+    } else {
+      // Reinstated: remove from Redis banned users
+      await this.redis.srem('auth:banned_users', userId);
+      if (user.profile?.username) {
+        await this.redis.del(`profile:username:${user.profile.username.toLowerCase()}`);
+      }
+      this.logger.log(`User ${user.email} reinstated.`);
     }
 
     if (adminUserId) {
@@ -506,5 +558,181 @@ export class SentinelAiService implements OnModuleInit {
         },
       },
     });
+  }
+
+  /**
+   * Returns engine telemetry including flag counts and active layers
+   */
+  async getTelemetry() {
+    const flagCounts = await this.prisma.securityFlag.groupBy({
+      by: ['status'],
+      _count: { id: true },
+    });
+
+    const totalBlocked = flagCounts.reduce((acc, curr) => acc + curr._count.id, 0);
+
+    return {
+      status: 'ONLINE',
+      mode: 'IN_PROCESS_ZERO_TOKEN',
+      latencySlaMs: 18,
+      layersActive: [
+        'REDIS_O1_GLOBAL_BLOCKLIST',
+        'PUNYCODE_HOMOGLYPH_DETECTION',
+        'SHANNON_ENTROPY_ANALYSIS',
+        'BRAND_TYPOSQUATTING_CLASSIFIER',
+        'CRYPTO_DRAINER_HEURISTICS',
+        'HIGH_RISK_TLD_CLASSIFIER',
+      ],
+      totalFlagsRecorded: totalBlocked,
+      breakdown: flagCounts,
+    };
+  }
+
+  /**
+   * Lists recent threats detected by Sentinel AI
+   */
+  async listThreats(limit = 50) {
+    const take = Math.min(100, Math.max(1, limit));
+    return await this.prisma.securityFlag.findMany({
+      take,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            isBanned: true,
+            profile: {
+              select: {
+                username: true,
+                title: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Lists domain blocklists
+   */
+  async listBlocklist() {
+    return await this.prisma.domainBlocklist.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        addedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Lists all platform users with profile, threat count and ban status
+   */
+  async listUsers(search?: string) {
+    const where: any = {};
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      where.OR = [
+        { email: { contains: q, mode: 'insensitive' } },
+        { name: { contains: q, mode: 'insensitive' } },
+        { profile: { username: { contains: q, mode: 'insensitive' } } },
+      ];
+    }
+
+    const users = await this.prisma.user.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isBanned: true,
+        createdAt: true,
+        profile: {
+          select: {
+            id: true,
+            username: true,
+            title: true,
+            avatarUrl: true,
+            isPublished: true,
+            _count: {
+              select: { links: true },
+            },
+          },
+        },
+        _count: {
+          select: {
+            securityFlags: true,
+          },
+        },
+      },
+    });
+
+    return users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      isBanned: u.isBanned,
+      createdAt: u.createdAt,
+      username: u.profile?.username || null,
+      title: u.profile?.title || null,
+      avatarUrl: u.profile?.avatarUrl || null,
+      isPublished: u.profile?.isPublished ?? false,
+      linksCount: u.profile?._count?.links ?? 0,
+      threatCount: u._count?.securityFlags ?? 0,
+    }));
+  }
+
+  /**
+   * Updates user platform role with strict privilege checks and audit log
+   */
+  async updateUserRole(targetUserId: string, newRole: Role, admin: AuthenticatedUser) {
+    const targetUser = await this.prisma.user.findUnique({ where: { id: targetUserId } });
+    if (!targetUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Only OWNER can modify an OWNER account
+    if (targetUser.role === Role.OWNER && admin.role !== Role.OWNER) {
+      throw new ForbiddenException('Only platform owners can modify an OWNER account');
+    }
+    // Only OWNER can promote a user to OWNER
+    if (newRole === Role.OWNER && admin.role !== Role.OWNER) {
+      throw new ForbiddenException('Only platform owners can promote a user to OWNER');
+    }
+    // Only OWNER can change the role of a SUPER_ADMIN
+    if (targetUser.role === Role.SUPER_ADMIN && admin.role !== Role.OWNER) {
+      throw new ForbiddenException('Only platform owners can change a SUPER_ADMIN account role');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: targetUserId },
+      data: { role: newRole },
+      select: { id: true, email: true, name: true, role: true },
+    });
+
+    await this.prisma.adminAuditLog.create({
+      data: {
+        adminUserId: admin.id,
+        action: 'USER_ROLE_UPDATE',
+        targetType: 'USER',
+        targetId: targetUserId,
+        reason: `Role changed to ${newRole} by ${admin.email} (${admin.role})`,
+        metadata: { newRole, email: updated.email },
+      },
+    });
+
+    return updated;
   }
 }

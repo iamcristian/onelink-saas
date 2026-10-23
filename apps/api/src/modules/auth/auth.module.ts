@@ -12,12 +12,19 @@ import { RolesGuard } from './guards/roles.guard';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET') || 'onelink-super-secret-jwt-key-2026',
-        signOptions: {
-          expiresIn: (config.get<string>('JWT_EXPIRES_IN') || '30d') as any,
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const secret = config.get<string>('JWT_SECRET');
+        const nodeEnv = config.get<string>('NODE_ENV') || 'development';
+        if (!secret && nodeEnv === 'production') {
+          throw new Error('FATAL: JWT_SECRET environment variable must be configured in production mode');
+        }
+        return {
+          secret: secret || 'onelink-super-secret-jwt-key-2026',
+          signOptions: {
+            expiresIn: (config.get<string>('JWT_EXPIRES_IN') || '30d') as any,
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

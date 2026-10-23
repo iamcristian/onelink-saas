@@ -2,11 +2,14 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { RedisService } from '../../infrastructure/cache/redis.service';
-import { ProfileAccessService } from '../../common/services/profile-access.service';
+import { ProfileAccessService, CollaboratorPermissionLevel } from '../../common/services/profile-access.service';
+import { SentinelAiService } from '../sentinel-ai/sentinel-ai.service';
 import {
   UpdateProfileDto,
   UpdateCustomThemeDto,
@@ -14,6 +17,8 @@ import {
   UpdateSocialLinkDto,
   ReorderSocialItemDto,
 } from './dto/profile.dto';
+import { RESERVED_USERNAMES, isValidWebUrl } from '@repo/shared';
+import { SecurityFlagStatus } from '@repo/prisma';
 
 @Injectable()
 export class ProfileService {
@@ -23,13 +28,19 @@ export class ProfileService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly profileAccess: ProfileAccessService,
+    private readonly sentinelAi: SentinelAiService,
   ) {}
 
   /**
    * Helper to verify profile ownership or collaborator/admin authority
    */
-  async verifyOwnership(profileId: string, userId: string, role?: string) {
-    return await this.profileAccess.verifyProfileAccess(profileId, userId, role);
+  async verifyOwnership(
+    profileId: string,
+    userId: string,
+    role?: string,
+    level: CollaboratorPermissionLevel = 'EDITOR',
+  ) {
+    return await this.profileAccess.verifyProfileAccess(profileId, userId, role, level);
   }
 
   /**
@@ -41,17 +52,35 @@ export class ProfileService {
   }
 
   /**
+   * Filters out links whose scheduled active time-window has not yet started or has passed.
+   */
+  private filterActiveWindowLinks<T extends { startsAt?: Date | string | null; expiresAt?: Date | string | null }>(
+    links: T[],
+  ): T[] {
+    const now = Date.now();
+    return (links || []).filter((l) => {
+      if (l.startsAt && new Date(l.startsAt).getTime() > now) return false;
+      if (l.expiresAt && new Date(l.expiresAt).getTime() < now) return false;
+      return true;
+    });
+  }
+
+  /**
    * Public Hot Path: Resolves profile by vanity username.
    * Utilizes Redis Cache-Aside for sub-15ms response times.
+   * Redacts secret destination URLs for PIN-protected links to prevent client disclosure.
    */
-  async getPublicProfile(username: string) {
+  async getPublicProfile(username: string): Promise<any> {
     const cleanUsername = username.toLowerCase().trim();
     const cacheKey = `profile:${cleanUsername}`;
 
     // 1. Check Redis cache
-    const cached = await this.redis.get<Record<string, unknown>>(cacheKey);
+    const cached = await this.redis.get<Record<string, any>>(cacheKey);
     if (cached) {
-      return cached;
+      return {
+        ...cached,
+        links: this.filterActiveWindowLinks(cached.links || []),
+      };
     }
 
     // 2. Query PostgreSQL with active links & theme
@@ -63,24 +92,19 @@ export class ProfileService {
         links: {
           where: {
             isActive: true,
-            AND: [
-              {
-                OR: [{ startsAt: null }, { startsAt: { lte: new Date() } }],
-              },
-              {
-                OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }],
-              },
-            ],
           },
           orderBy: { position: 'asc' },
           select: {
             id: true,
             title: true,
             url: true,
+            content: true,
             type: true,
             position: true,
             thumbnailUrl: true,
             badge: true,
+            startsAt: true,
+            expiresAt: true,
             isPasswordProtected: true,
             isAgeRestricted: true,
           },
@@ -124,6 +148,12 @@ export class ProfileService {
       planCode === 'ENTERPRISE' ||
       Boolean((activeSub?.plan?.features as any)?.removeBranding);
 
+    // Redact URLs of password-protected links
+    const sanitizedLinks = profile.links.map((link) => ({
+      ...link,
+      url: link.isPasswordProtected ? null : link.url,
+    }));
+
     const payload = {
       id: profile.id,
       username: profile.username,
@@ -135,7 +165,7 @@ export class ProfileService {
       ogImageUrl: profile.ogImageUrl,
       theme: profile.theme,
       customTheme: profile.customTheme,
-      links: profile.links,
+      links: sanitizedLinks,
       socialLinks: profile.socialLinks,
       removeBranding,
       planCode,
@@ -144,11 +174,14 @@ export class ProfileService {
     // 3. Cache in Redis (TTL: 3600 seconds)
     await this.redis.set(cacheKey, payload, 3600);
 
-    return payload;
+    return {
+      ...payload,
+      links: this.filterActiveWindowLinks(sanitizedLinks),
+    };
   }
 
   /**
-   * Authenticated Creator: Get the profile owned by current user (includes draft/inactive links)
+   * Fetches profile by user ID for the authenticated user session.
    */
   async getProfileByUserId(userId: string) {
     const profile = await this.prisma.profile.findUnique({
@@ -166,7 +199,53 @@ export class ProfileService {
     });
 
     if (!profile) {
-      throw new NotFoundException('Creator profile not found for this user');
+      throw new NotFoundException('Profile not found for this user');
+    }
+
+    return profile;
+  }
+
+  /**
+   * Fetches full profile entity with custom themes and links for studio dashboard.
+   */
+  async getProfileById(profileId: string, userId: string, role?: string) {
+    await this.verifyOwnership(profileId, userId, role, 'VIEWER');
+
+    const profile = await this.prisma.profile.findUnique({
+      where: { id: profileId },
+      include: {
+        theme: true,
+        customTheme: true,
+        socialLinks: {
+          orderBy: { position: 'asc' },
+        },
+        links: {
+          orderBy: { position: 'asc' },
+          select: {
+            id: true,
+            profileId: true,
+            title: true,
+            url: true,
+            content: true,
+            type: true,
+            position: true,
+            thumbnailUrl: true,
+            isActive: true,
+            clickCount: true,
+            startsAt: true,
+            expiresAt: true,
+            isPasswordProtected: true,
+            isAgeRestricted: true,
+            badge: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
+
+    if (!profile) {
+      throw new NotFoundException(`Profile not found`);
     }
 
     return profile;
@@ -177,27 +256,6 @@ export class ProfileService {
    */
   async checkUsernameAvailability(rawUsername: string) {
     const username = (rawUsername || '').replace(/^@/, '').toLowerCase().trim();
-    const RESERVED_USERNAMES = new Set([
-      'admin',
-      'api',
-      'studio',
-      'auth',
-      'login',
-      'register',
-      'signup',
-      'billing',
-      'analytics',
-      'appearance',
-      'settings',
-      'help',
-      'support',
-      'terms',
-      'privacy',
-      'about',
-      'pricing',
-      'onelink',
-      'user',
-    ]);
 
     if (!username || username.length < 3) {
       return { available: false, username, reason: 'Username must be at least 3 characters' };
@@ -212,7 +270,7 @@ export class ProfileService {
         reason: 'Username can only contain lowercase letters, numbers, hyphens, and underscores',
       };
     }
-    if (RESERVED_USERNAMES.has(username)) {
+    if (RESERVED_USERNAMES.includes(username as any)) {
       return { available: false, username, reason: 'This username is reserved by the platform' };
     }
 
@@ -237,7 +295,7 @@ export class ProfileService {
     dto: UpdateProfileDto,
     role?: string,
   ) {
-    const existing = await this.verifyOwnership(profileId, userId, role);
+    const existing = await this.verifyOwnership(profileId, userId, role, 'EDITOR');
 
     let newUsername = existing.username;
     if (dto.username) {
@@ -285,7 +343,20 @@ export class ProfileService {
     dto: UpdateCustomThemeDto,
     role?: string,
   ) {
-    const existing = await this.verifyOwnership(profileId, userId, role);
+    const existing = await this.verifyOwnership(profileId, userId, role, 'EDITOR');
+
+    // Enforce custom theme feature entitlement
+    const sub = await this.prisma.subscription.findFirst({
+      where: { userId: existing.userId, status: 'ACTIVE' },
+      include: { plan: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    const features = (sub?.plan?.features as Record<string, any>) || {};
+    if (!features.customThemes && sub?.plan?.code === 'FREE') {
+      throw new ForbiddenException(
+        'Custom theme engine is only available on Creator Pro and Enterprise Studio plans.',
+      );
+    }
 
     const customTheme = await this.prisma.customTheme.upsert({
       where: { profileId },
@@ -320,7 +391,7 @@ export class ProfileService {
    * Deletes custom theme for the profile, reverting to preset theme
    */
   async deleteCustomTheme(profileId: string, userId: string, role?: string) {
-    const existing = await this.verifyOwnership(profileId, userId, role);
+    const existing = await this.verifyOwnership(profileId, userId, role, 'EDITOR');
 
     await this.prisma.customTheme.deleteMany({
       where: { profileId },
@@ -345,15 +416,87 @@ export class ProfileService {
   }
 
   /**
-   * Adds a new social link with automatic position indexing
+   * Normalizes and inspects social URLs against Sentinel AI
+   */
+  private async validateAndNormalizeSocialUrl(
+    platform: string,
+    rawUrl: string,
+    userId: string,
+    clientIp?: string,
+  ): Promise<string> {
+    let clean = rawUrl.trim();
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      const handle = clean.replace(/^@/, '');
+      switch (platform.toUpperCase()) {
+        case 'INSTAGRAM':
+          clean = `https://instagram.com/${handle}`;
+          break;
+        case 'TIKTOK':
+          clean = `https://tiktok.com/@${handle}`;
+          break;
+        case 'TWITTER':
+          clean = `https://x.com/${handle}`;
+          break;
+        case 'YOUTUBE':
+          clean = `https://youtube.com/@${handle}`;
+          break;
+        case 'GITHUB':
+          clean = `https://github.com/${handle}`;
+          break;
+        case 'LINKEDIN':
+          clean = `https://linkedin.com/in/${handle}`;
+          break;
+        case 'TWITCH':
+          clean = `https://twitch.tv/${handle}`;
+          break;
+        case 'EMAIL':
+          clean = clean.startsWith('mailto:') ? clean : `mailto:${clean}`;
+          return clean;
+        default:
+          clean = `https://${clean}`;
+      }
+    }
+
+    if (!isValidWebUrl(clean)) {
+      throw new BadRequestException('Invalid social destination URL');
+    }
+
+    // Inspect with Sentinel AI
+    const evaluation = await this.sentinelAi.evaluateUrl(clean);
+    if (evaluation.action === 'BLOCK_IMMEDIATE') {
+      await this.sentinelAi.recordSecurityFlag({
+        userId,
+        submittedUrl: clean,
+        riskScore: evaluation.riskScore,
+        threatType: evaluation.threatType!,
+        aiConfidence: evaluation.aiConfidence,
+        ipAddress: clientIp,
+        status: SecurityFlagStatus.BLOCKED_AUTO,
+        resolutionNotes: `Auto-blocked social link by Sentinel AI: ${evaluation.signals.join('; ')}`,
+      });
+      throw new BadRequestException('Social link was flagged and blocked by Sentinel AI threat inspection.');
+    }
+
+    return clean;
+  }
+
+  /**
+   * Creates a new social link icon with URL validation and Sentinel AI inspection
    */
   async createSocialLink(
     profileId: string,
     userId: string,
     dto: CreateSocialLinkDto,
     role?: string,
+    clientIp?: string,
   ) {
-    const existing = await this.verifyOwnership(profileId, userId, role);
+    const existing = await this.verifyOwnership(profileId, userId, role, 'EDITOR');
+    const normalizedUrl = await this.validateAndNormalizeSocialUrl(
+      dto.platform,
+      dto.url,
+      userId,
+      clientIp,
+    );
 
     const lastItem = await this.prisma.socialLink.findFirst({
       where: { profileId },
@@ -366,7 +509,7 @@ export class ProfileService {
       data: {
         profileId,
         platform: dto.platform,
-        url: dto.url,
+        url: normalizedUrl,
         position,
         isActive: dto.isActive !== undefined ? dto.isActive : true,
       },
@@ -385,8 +528,9 @@ export class ProfileService {
     userId: string,
     dto: UpdateSocialLinkDto,
     role?: string,
+    clientIp?: string,
   ) {
-    const existing = await this.verifyOwnership(profileId, userId, role);
+    const existing = await this.verifyOwnership(profileId, userId, role, 'EDITOR');
 
     const link = await this.prisma.socialLink.findFirst({
       where: { id: linkId, profileId },
@@ -395,11 +539,21 @@ export class ProfileService {
       throw new NotFoundException(`Social link with ID ${linkId} not found`);
     }
 
+    let normalizedUrl = link.url;
+    if (dto.url !== undefined) {
+      normalizedUrl = await this.validateAndNormalizeSocialUrl(
+        dto.platform || link.platform,
+        dto.url,
+        userId,
+        clientIp,
+      );
+    }
+
     const updated = await this.prisma.socialLink.update({
       where: { id: linkId },
       data: {
         platform: dto.platform,
-        url: dto.url,
+        url: normalizedUrl,
         isActive: dto.isActive,
       },
     });
@@ -417,7 +571,7 @@ export class ProfileService {
     userId: string,
     role?: string,
   ) {
-    const existing = await this.verifyOwnership(profileId, userId, role);
+    const existing = await this.verifyOwnership(profileId, userId, role, 'EDITOR');
 
     const link = await this.prisma.socialLink.findFirst({
       where: { id: linkId, profileId },
@@ -460,7 +614,7 @@ export class ProfileService {
     userId: string,
     role?: string,
   ) {
-    const existing = await this.verifyOwnership(profileId, userId, role);
+    const existing = await this.verifyOwnership(profileId, userId, role, 'EDITOR');
 
     const results = await this.prisma.$transaction(
       items.map((item) =>

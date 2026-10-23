@@ -4,7 +4,6 @@ import { EvaluateUrlSchema } from '@repo/shared';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { SentinelAiService } from './sentinel-ai.service';
 import { SentinelEvaluationResult } from './sentinel-ai.types';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
 
 export class EvaluateUrlDto {
   url!: string;
@@ -13,10 +12,7 @@ export class EvaluateUrlDto {
 @ApiTags('Sentinel AI Security')
 @Controller('sentinel')
 export class SentinelAiController {
-  constructor(
-    private readonly sentinelAi: SentinelAiService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly sentinelAi: SentinelAiService) {}
 
   @Post('evaluate')
   @UsePipes(new ZodValidationPipe(EvaluateUrlSchema))
@@ -33,27 +29,6 @@ export class SentinelAiController {
   @Get('telemetry')
   @ApiOperation({ summary: 'Get Sentinel AI Engine Telemetry' })
   async getTelemetry() {
-    const flagCounts = await this.prisma.securityFlag.groupBy({
-      by: ['status'],
-      _count: { id: true },
-    });
-
-    const totalBlocked = flagCounts.reduce((acc, curr) => acc + curr._count.id, 0);
-
-    return {
-      status: 'ONLINE',
-      mode: 'IN_PROCESS_ZERO_TOKEN',
-      latencySlaMs: 18,
-      layersActive: [
-        'REDIS_O1_GLOBAL_BLOCKLIST',
-        'PUNYCODE_HOMOGLYPH_DETECTION',
-        'SHANNON_ENTROPY_ANALYSIS',
-        'BRAND_TYPOSQUATTING_CLASSIFIER',
-        'CRYPTO_DRAINER_HEURISTICS',
-        'HIGH_RISK_TLD_CLASSIFIER',
-      ],
-      totalFlagsRecorded: totalBlocked,
-      breakdown: flagCounts,
-    };
+    return await this.sentinelAi.getTelemetry();
   }
 }

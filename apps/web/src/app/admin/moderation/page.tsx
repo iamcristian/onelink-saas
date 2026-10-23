@@ -180,6 +180,7 @@ export default function AdminModerationPage() {
   const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [currentUser, setCurrentUser] = useState<CurrentUserSession | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const handleLogout = () => {
     clearAuthToken();
@@ -190,14 +191,25 @@ export default function AdminModerationPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
-      const [tData, thData, bData, aData, uData, meData] = await Promise.all([
+      const meData = await fetchCurrentUser().catch(() => null);
+      if (!meData) {
+        window.location.href = "/login";
+        return;
+      }
+      if (meData.role !== "SUPER_ADMIN" && meData.role !== "OWNER") {
+        window.location.href = "/studio/links";
+        return;
+      }
+      setCurrentUser(meData);
+
+      const [tData, thData, bData, aData, uData] = await Promise.all([
         fetchSentinelTelemetry(),
         fetchSecurityThreats(50),
         fetchDomainBlocklist(),
         fetchAdminAuditLogs(30),
         fetchAdminUsers(),
-        fetchCurrentUser().catch(() => null),
       ]);
 
       if (tData) setTelemetry(tData);
@@ -205,11 +217,9 @@ export default function AdminModerationPage() {
       if (bData) setBlocklist(bData);
       if (aData) setAuditLogs(aData);
       if (uData) setUsers(uData);
-      if (meData) setCurrentUser(meData);
-    } catch {
-      // Use fallback dataset if backend is completely unavailable
-      setThreats(INITIAL_FALLBACK_THREATS);
-      setBlocklist(INITIAL_FALLBACK_BLOCKLIST);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to load moderation feeds";
+      setFetchError(msg);
     } finally {
       setLoading(false);
       setLastUpdated(new Date());
@@ -233,17 +243,28 @@ export default function AdminModerationPage() {
     (t) => Number(t.riskScore) >= 0.85
   ).length;
 
+  const escapeCsvCell = (val: string) => {
+    let s = String(val ?? "");
+    if (/^[=+\-@]/.test(s)) {
+      s = `'${s}`;
+    }
+    if (s.includes('"') || s.includes(',') || s.includes('\n')) {
+      s = `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  };
+
   const handleExportAudit = () => {
     try {
       const rows = [
         ["ID", "Submitted URL", "Risk Score", "Threat Type", "Status", "Created At"],
         ...threats.map((t) => [
-          t.id,
-          t.submittedUrl,
-          Number(t.riskScore).toString(),
-          t.threatType,
-          t.status,
-          t.createdAt,
+          escapeCsvCell(t.id),
+          escapeCsvCell(t.submittedUrl),
+          escapeCsvCell(Number(t.riskScore).toString()),
+          escapeCsvCell(t.threatType),
+          escapeCsvCell(t.status),
+          escapeCsvCell(t.createdAt),
         ]),
       ];
       const csvContent =

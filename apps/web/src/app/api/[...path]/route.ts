@@ -1,15 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BACKEND = (process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3001").replace(/\/api\/?$/, "").replace(/\/+$/, "");
+const API_BACKEND = (
+  process.env.API_INTERNAL_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:3001"
+)
+  .replace(/\/api\/?$/, "")
+  .replace(/\/+$/, "");
 
-async function proxyRequest(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+const ALLOWED_ORIGINS = new Set([
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "https://onelink-saas.vercel.app",
+  "https://onelink.bio",
+]);
+
+function getValidatedOrigin(req: NextRequest, proto: string, host: string): string | null {
+  const origin = req.headers.get("origin");
+  if (!origin) {
+    return `${proto}://${host}`;
+  }
+  if (ALLOWED_ORIGINS.has(origin)) {
+    return origin;
+  }
+  if (
+    process.env.NODE_ENV !== "production" &&
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+  ) {
+    return origin;
+  }
+  return null;
+}
+
+async function proxyRequest(
+  req: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
   const { path } = await params;
   const pathString = path.join("/");
   const search = req.nextUrl.search;
 
   const host = req.headers.get("host") || "localhost:3000";
-  const proto = req.headers.get("x-forwarded-proto") || (req.nextUrl.protocol ? req.nextUrl.protocol.replace(":", "") : "http");
-  const isLanClient = !host.startsWith("localhost") && !host.startsWith("127.0.0.1");
+  const proto =
+    req.headers.get("x-forwarded-proto") ||
+    (req.nextUrl.protocol ? req.nextUrl.protocol.replace(":", "") : "http");
 
   const targetUrl = `${API_BACKEND}/api/${pathString}${search}`;
 
@@ -23,7 +57,7 @@ async function proxyRequest(req: NextRequest, { params }: { params: Promise<{ pa
     }
   });
 
-  // Ensure origin is set to localhost:3000 so the backend CORS check always passes
+  // Ensure origin is set so backend CORS check validates properly
   forwardHeaders.set("origin", "http://localhost:3000");
   forwardHeaders.set("x-forwarded-host", host);
   forwardHeaders.set("x-forwarded-proto", proto);
@@ -55,13 +89,14 @@ async function proxyRequest(req: NextRequest, { params }: { params: Promise<{ pa
       }
     });
 
-    // Provide strict, valid CORS headers matching the caller origin.
-    // NEVER use wildcard "*" when Access-Control-Allow-Credentials is true (Fetch spec violation -> "Failed to fetch")
-    const clientOrigin = req.headers.get("origin") || `${proto}://${host}`;
-    resHeaders.set("Access-Control-Allow-Origin", clientOrigin);
-    resHeaders.set("Access-Control-Allow-Credentials", "true");
-    resHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    resHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept");
+    // Provide strict, validated CORS headers
+    const validOrigin = getValidatedOrigin(req, proto, host);
+    if (validOrigin) {
+      resHeaders.set("Access-Control-Allow-Origin", validOrigin);
+      resHeaders.set("Access-Control-Allow-Credentials", "true");
+      resHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+      resHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept");
+    }
 
     // Rewrite redirects from backend so they never point to localhost on a mobile phone
     const location = resHeaders.get("location");
@@ -110,17 +145,24 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ path: st
 
 export async function OPTIONS(req: NextRequest) {
   const host = req.headers.get("host") || "localhost:3000";
-  const proto = req.headers.get("x-forwarded-proto") || (req.nextUrl.protocol ? req.nextUrl.protocol.replace(":", "") : "http");
-  const origin = req.headers.get("origin") || `${proto}://${host}`;
+  const proto =
+    req.headers.get("x-forwarded-proto") ||
+    (req.nextUrl.protocol ? req.nextUrl.protocol.replace(":", "") : "http");
+  const origin = getValidatedOrigin(req, proto, host);
+
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Accept",
+    "Access-Control-Max-Age": "86400",
+  };
+
+  if (origin) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Credentials"] = "true";
+  }
 
   return new NextResponse(null, {
     status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Accept",
-      "Access-Control-Allow-Credentials": "true",
-      "Access-Control-Max-Age": "86400",
-    },
+    headers,
   });
 }

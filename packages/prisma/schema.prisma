@@ -133,6 +133,7 @@ model Link {
   profileId     String       @map("profile_id") @db.Uuid
   title         String       @db.VarChar(200)
   url           String?
+  content       String?      @db.Text
   type          LinkType     @default(LINK)
   position      Int          @default(0)
   thumbnailUrl  String?      @map("thumbnail_url")

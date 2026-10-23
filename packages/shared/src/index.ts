@@ -7,33 +7,66 @@ import { z } from 'zod';
 export const RESERVED_USERNAMES = [
   'admin',
   'administrator',
+  'analytics',
   'api',
   'app',
+  'appearance',
   'auth',
+  'billing',
+  'control',
   'dashboard',
   'dev',
   'docs',
+  'explore',
+  'graphql',
+  'health',
   'help',
   'home',
+  'legal',
+  'links',
   'login',
+  'logout',
   'mail',
+  'moderation',
   'oauth',
+  'onboarding',
+  'pricing',
   'privacy',
   'profile',
   'register',
   'root',
+  'security',
+  'sentinel',
   'settings',
+  'share',
   'signin',
   'signout',
   'signup',
   'status',
+  'studio',
   'support',
+  'system',
   'terms',
+  'themes',
+  'user',
   'webhook',
+  'webhooks',
   'www',
 ] as const;
 
-export const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,30}$/;
+export const USERNAME_REGEX = /^[a-z0-9_-]{3,30}$/;
+
+export const UsernameFieldSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, 'Username must be at least 3 characters')
+  .max(30, 'Username cannot exceed 30 characters')
+  .regex(USERNAME_REGEX, 'Username can only contain lowercase letters, numbers, hyphens, and underscores')
+  .refine(
+    (val) => !RESERVED_USERNAMES.includes(val as (typeof RESERVED_USERNAMES)[number]),
+    { message: 'This username is reserved by the platform' }
+  );
 
 // ============================================================================
 // Auth Schemas
@@ -45,18 +78,7 @@ export const RegisterSchema = z.object({
     .string()
     .min(8, 'Password must be at least 8 characters')
     .max(100, 'Password is too long'),
-  username: z
-    .string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(30, 'Username must be at most 30 characters')
-    .regex(
-      USERNAME_REGEX,
-      'Username can only contain letters, numbers, underscores and hyphens'
-    )
-    .refine(
-      (val) => !RESERVED_USERNAMES.includes(val.toLowerCase() as (typeof RESERVED_USERNAMES)[number]),
-      { message: 'This username is reserved' }
-    ),
+  username: UsernameFieldSchema,
   name: z.string().min(1).max(100).optional(),
 });
 
@@ -73,12 +95,7 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 // ============================================================================
 
 export const UpdateProfileSchema = z.object({
-  username: z
-    .string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(30, 'Username cannot exceed 30 characters')
-    .regex(/^[a-z0-9_-]+$/, 'Username can only contain lowercase letters, numbers, hyphens, and underscores')
-    .optional(),
+  username: UsernameFieldSchema.optional(),
   title: z.string().max(100, 'Title is too long').nullable().optional(),
   bio: z.string().max(500, 'Bio is too long').nullable().optional(),
   avatarUrl: z.string().max(2000, 'Avatar URL too long').nullable().optional(),
@@ -206,6 +223,7 @@ export const CreateLinkSchema = z
   .object({
     title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
     url: z.string().max(2048).nullable().optional(),
+    content: z.string().max(5000).nullable().optional(),
     type: LinkTypeEnum.default('LINK'),
     thumbnailUrl: z.string().max(2048).nullable().optional(),
     isActive: z.boolean().default(true),
@@ -236,6 +254,7 @@ export const UpdateLinkSchema = z
   .object({
     title: z.string().min(1, 'Title is required').max(200, 'Title is too long').optional(),
     url: z.string().max(2048).nullable().optional(),
+    content: z.string().max(5000).nullable().optional(),
     type: LinkTypeEnum.optional(),
     thumbnailUrl: z.string().max(2048).nullable().optional(),
     isActive: z.boolean().optional(),
@@ -247,8 +266,8 @@ export const UpdateLinkSchema = z
   })
   .refine(
     (data) => {
-      if (data.url && (data.type === 'LINK' || data.type === 'DONATION' || !data.type)) {
-        return isValidWebUrl(data.url);
+      if (data.url !== undefined && (data.type === 'LINK' || data.type === 'DONATION' || !data.type)) {
+        return Boolean(data.url && isValidWebUrl(data.url));
       }
       return true;
     },
@@ -258,6 +277,11 @@ export const UpdateLinkSchema = z
       path: ['url'],
     }
   );
+
+export const UnlockLinkSchema = z.object({
+  password: z.string().min(1, 'PIN or password is required').max(100),
+});
+export type UnlockLinkInput = z.infer<typeof UnlockLinkSchema>;
 
 export const ReorderLinksSchema = z.object({
   items: z.array(
@@ -307,6 +331,23 @@ export const SecurityFlagStatusEnum = z.enum([
   'BANNED',
 ]);
 export type SecurityFlagStatus = z.infer<typeof SecurityFlagStatusEnum>;
+
+export const UpdateThreatStatusSchema = z.object({
+  status: SecurityFlagStatusEnum,
+  notes: z.string().max(1000).optional(),
+});
+export type UpdateThreatStatusInput = z.infer<typeof UpdateThreatStatusSchema>;
+
+export const SuspendUserSchema = z.object({
+  isBanned: z.boolean(),
+  reason: z.string().max(500).optional(),
+});
+export type SuspendUserInput = z.infer<typeof SuspendUserSchema>;
+
+export const UpdateUserRoleSchema = z.object({
+  role: RoleEnum,
+});
+export type UpdateUserRoleInput = z.infer<typeof UpdateUserRoleSchema>;
 
 export const EvaluateUrlSchema = z.object({
   url: z
@@ -447,4 +488,122 @@ export const CANONICAL_PLANS: Record<'FREE' | 'PRO' | 'ENTERPRISE', CanonicalPla
     },
   },
 };
+
+// ============================================================================
+// Canonical Theme Presets
+// ============================================================================
+
+export interface CanonicalThemePreset {
+  id: string;
+  name: string;
+  bgType: 'SOLID' | 'GRADIENT';
+  bgValue: string;
+  btnStyle: 'FILLED' | 'OUTLINE' | 'SHADOW' | 'ROUNDED';
+  btnColor: string;
+  btnTextColor: string;
+  textColor: string;
+  btnRadius: number;
+  fontFamily: string;
+  isDefault?: boolean;
+}
+
+export const CANONICAL_THEME_PRESETS: CanonicalThemePreset[] = [
+  {
+    id: 'obsidian-carbon',
+    name: 'Obsidian Carbon',
+    bgType: 'SOLID',
+    bgValue: '#09090b',
+    btnStyle: 'FILLED',
+    btnColor: '#18181b',
+    btnTextColor: '#fafafa',
+    textColor: '#fafafa',
+    btnRadius: 9999,
+    fontFamily: 'Geist',
+    isDefault: true,
+  },
+  {
+    id: 'minimalist-paper',
+    name: 'Alpine Snow',
+    bgType: 'SOLID',
+    bgValue: '#f8fafc',
+    btnStyle: 'FILLED',
+    btnColor: '#ffffff',
+    btnTextColor: '#0f172a',
+    textColor: '#0f172a',
+    btnRadius: 12,
+    fontFamily: 'Inter',
+  },
+  {
+    id: 'sunset-aurora',
+    name: 'Sunset Aurora',
+    bgType: 'GRADIENT',
+    bgValue: 'linear-gradient(135deg, #180d24 0%, #2e0854 50%, #4a154b 100%)',
+    btnStyle: 'FILLED',
+    btnColor: '#ffffff',
+    btnTextColor: '#1a0933',
+    textColor: '#ffffff',
+    btnRadius: 9999,
+    fontFamily: 'Inter',
+  },
+  {
+    id: 'emerald-forest',
+    name: 'Forest Emerald',
+    bgType: 'GRADIENT',
+    bgValue: 'linear-gradient(135deg, #022018 0%, #064e3b 100%)',
+    btnStyle: 'FILLED',
+    btnColor: '#ffffff',
+    btnTextColor: '#064e3b',
+    textColor: '#ecfdf5',
+    btnRadius: 12,
+    fontFamily: 'Inter',
+  },
+  {
+    id: 'midnight-ocean',
+    name: 'Midnight Ocean',
+    bgType: 'GRADIENT',
+    bgValue: 'linear-gradient(135deg, #090d16 0%, #0f172a 100%)',
+    btnStyle: 'FILLED',
+    btnColor: '#1e293b',
+    btnTextColor: '#38bdf8',
+    textColor: '#f8fafc',
+    btnRadius: 12,
+    fontFamily: 'Inter',
+  },
+  {
+    id: 'cyberpunk-neon',
+    name: 'Cyberpunk Neon',
+    bgType: 'GRADIENT',
+    bgValue: 'linear-gradient(135deg, #09090b 0%, #020617 100%)',
+    btnStyle: 'OUTLINE',
+    btnColor: '#06b6d4',
+    btnTextColor: '#22d3ee',
+    textColor: '#f8fafc',
+    btnRadius: 8,
+    fontFamily: 'Space Grotesk',
+  },
+  {
+    id: 'bento-linen',
+    name: 'Bento Linen',
+    bgType: 'SOLID',
+    bgValue: '#faf8f5',
+    btnStyle: 'FILLED',
+    btnColor: '#1c1917',
+    btnTextColor: '#faf8f5',
+    textColor: '#1c1917',
+    btnRadius: 16,
+    fontFamily: 'Inter',
+  },
+  {
+    id: 'solar-gold',
+    name: 'Solar Gold',
+    bgType: 'SOLID',
+    bgValue: '#0c0a09',
+    btnStyle: 'FILLED',
+    btnColor: '#eab308',
+    btnTextColor: '#000000',
+    textColor: '#fef08a',
+    btnRadius: 9999,
+    fontFamily: 'Space Grotesk',
+  },
+];
 

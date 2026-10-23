@@ -191,12 +191,27 @@ function BillingContent() {
       return;
     }
 
+    const escapeHtml = (str: unknown) => {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    };
+
+    const safeNumber = escapeHtml(inv.number);
+    const safePlan = escapeHtml(inv.planName || subscription?.plan?.name || "OneLink Creator Subscription");
+    const safeUserId = escapeHtml(subscription?.userId || "OneLink Creator");
+    const safeCurrency = escapeHtml(inv.currency);
+
     // Generate printable receipt window for instant PDF export
     const receiptHtml = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Receipt - ${inv.number}</title>
+        <title>Receipt - ${safeNumber}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #111; max-width: 600px; margin: 0 auto; line-height: 1.5; }
           .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 24px; }
@@ -224,14 +239,14 @@ function BillingContent() {
           </div>
           <div style="text-align: right;">
             <div class="badge">Paid Tax Invoice</div>
-            <div style="font-weight: bold; margin-top: 6px;">${inv.number}</div>
+            <div style="font-weight: bold; margin-top: 6px;">${safeNumber}</div>
             <div style="font-size: 12px; color: #666;">${new Date(inv.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</div>
           </div>
         </div>
 
         <div class="details">
           <strong>Billed To:</strong><br/>
-          ${subscription?.userId || "OneLink Creator"}<br/>
+          ${safeUserId}<br/>
           Payment Method: Credit Card / Stripe Checkout (Auto-Renew)
         </div>
 
@@ -244,14 +259,14 @@ function BillingContent() {
           </thead>
           <tbody>
             <tr>
-              <td>${inv.planName || subscription?.plan?.name || "OneLink Creator Subscription"} (1 Month)</td>
-              <td style="text-align: right; font-weight: 600;">$${(inv.amountCents / 100).toFixed(2)} ${inv.currency}</td>
+              <td>${safePlan} (1 Month)</td>
+              <td style="text-align: right; font-weight: 600;">${(inv.amountCents / 100).toFixed(2)} ${safeCurrency}</td>
             </tr>
           </tbody>
         </table>
 
         <div class="total">
-          Total Paid: $${(inv.amountCents / 100).toFixed(2)} ${inv.currency}
+          Total Paid: ${(inv.amountCents / 100).toFixed(2)} ${safeCurrency}
         </div>
 
         <div class="footer">

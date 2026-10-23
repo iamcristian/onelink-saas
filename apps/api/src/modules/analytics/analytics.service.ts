@@ -260,7 +260,7 @@ export class AnalyticsService {
 
     const topLinks: LinkPerformanceMetric[] = outboundLinks
       .map((l) => {
-        const clicks = clickMap.get(l.id) || Number(l.clickCount);
+        const clicks = clickMap.get(l.id) ?? 0;
         const linkCtr = currentViews > 0 ? Number(((clicks / currentViews) * 100).toFixed(1)) : 0;
         return {
           id: l.id,

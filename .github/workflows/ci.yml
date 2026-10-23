@@ -41,8 +41,19 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Database Types & Shared Packages
+        run: |
+          pnpm --filter @repo/prisma build
+          pnpm --filter @repo/shared build
+
+      - name: Build All Workspaces
+        run: pnpm turbo run build
+
       - name: Typecheck
         run: pnpm turbo run typecheck
 
-      - name: Build
-        run: pnpm turbo run build
+      - name: Lint
+        run: pnpm turbo run lint
+
+      - name: Test
+        run: pnpm turbo run test

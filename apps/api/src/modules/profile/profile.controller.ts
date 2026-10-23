@@ -7,11 +7,13 @@ import {
   Post,
   Param,
   Body,
+  Req,
   UseGuards,
   UsePipes,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import type { Request } from 'express';
 import {
   UpdateProfileSchema,
   UpdateCustomThemeSchema,
@@ -123,8 +125,10 @@ export class ProfileController {
     @Param('profileId', ParseUUIDPipe) profileId: string,
     @Body() dto: CreateSocialLinkDto,
     @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
   ) {
-    return await this.profileService.createSocialLink(profileId, user.id, dto, user.role);
+    const clientIp = req.ip || req.socket.remoteAddress;
+    return await this.profileService.createSocialLink(profileId, user.id, dto, user.role, clientIp);
   }
 
   @Patch(':profileId/social-links/:linkId')
@@ -138,8 +142,10 @@ export class ProfileController {
     @Param('linkId', ParseUUIDPipe) linkId: string,
     @Body() dto: UpdateSocialLinkDto,
     @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
   ) {
-    return await this.profileService.updateSocialLink(linkId, profileId, user.id, dto, user.role);
+    const clientIp = req.ip || req.socket.remoteAddress;
+    return await this.profileService.updateSocialLink(linkId, profileId, user.id, dto, user.role, clientIp);
   }
 
   @Delete(':profileId/social-links/:linkId')

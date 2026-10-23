@@ -8,13 +8,29 @@ import {
   Param,
   Headers,
   UseGuards,
+  UsePipes,
   Req,
 } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Role } from '@repo/prisma';
+import {
+  CreateCheckoutSessionSchema,
+  InviteCollaboratorSchema,
+  UpdateTeamMemberRoleSchema,
+} from '@repo/shared';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser, AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { BillingService } from './billing.service';
-import { CreateCheckoutSessionDto, InviteCollaboratorDto, UpdateTeamMemberRoleDto, InvoiceRecordDto } from './dto/billing.dto';
+import {
+  CreateCheckoutSessionDto,
+  InviteCollaboratorDto,
+  UpdateTeamMemberRoleDto,
+  InvoiceRecordDto,
+} from './dto/billing.dto';
 
 @ApiTags('SaaS Owner Billing & Subscriptions')
 @Controller('billing')
@@ -38,6 +54,9 @@ export class BillingController {
   }
 
   @Get('metrics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.OWNER)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get SaaS Founder financial KPIs & ARR/MRR metrics' })
   @ApiResponse({ status: 200, description: 'Financial metrics returned' })
   async getFinancialMetrics() {
@@ -46,6 +65,7 @@ export class BillingController {
 
   @Post('create-checkout-session')
   @UseGuards(JwtAuthGuard)
+  @UsePipes(new ZodValidationPipe(CreateCheckoutSessionSchema))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create Stripe Checkout Session or execute simulated upgrade' })
   @ApiResponse({ status: 200, description: 'Checkout session URL returned' })
@@ -81,12 +101,11 @@ export class BillingController {
   @ApiOperation({ summary: 'Stripe Webhook event ingestion endpoint' })
   @ApiResponse({ status: 200, description: 'Event acknowledged' })
   async handleWebhook(
-    @Req() req: Record<string, any>,
+    @Req() req: any,
     @Headers('stripe-signature') signature?: string,
   ) {
-    // Pass request body or rawBody
-    const body = req.body;
-    return await this.billingService.handleWebhook(body, signature);
+    const rawBody = (req as RawBodyRequest<any>).rawBody ?? req.body;
+    return await this.billingService.handleWebhook(rawBody, signature);
   }
 
   @Post('confirm-session')
@@ -102,6 +121,9 @@ export class BillingController {
   }
 
   @Get('events')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.OWNER)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get real-time Stripe invoicing & webhook events feed' })
   @ApiResponse({ status: 200, description: 'Events ledger returned' })
   async getEventsLedger() {
@@ -119,6 +141,7 @@ export class BillingController {
 
   @Post('team/invite')
   @UseGuards(JwtAuthGuard)
+  @UsePipes(new ZodValidationPipe(InviteCollaboratorSchema))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Invite a new team collaborator to workspace' })
   @ApiResponse({ status: 201, description: 'Collaborator invited' })
@@ -143,6 +166,7 @@ export class BillingController {
 
   @Patch('team/:id/role')
   @UseGuards(JwtAuthGuard)
+  @UsePipes(new ZodValidationPipe(UpdateTeamMemberRoleSchema))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a team collaborator role with hierarchy validation' })
   @ApiResponse({ status: 200, description: 'Collaborator role updated' })

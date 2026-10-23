@@ -7,26 +7,7 @@ import { ProfileAccessService } from '../../common/services/profile-access.servi
 
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
-  let prismaService: {
-    profile: {
-      findUnique: jest.Mock;
-    };
-    link: {
-      findMany: jest.Mock;
-      update: jest.Mock;
-    };
-    pageView: {
-      create: jest.Mock;
-      count: jest.Mock;
-      findMany: jest.Mock;
-    };
-    clickEvent: {
-      create: jest.Mock;
-      count: jest.Mock;
-      findMany: jest.Mock;
-    };
-    $transaction: jest.Mock;
-  };
+  let prismaService: any;
 
   const mockProfileId = '22222222-2222-2222-2222-222222222222';
   const mockUserId = '11111111-1111-1111-1111-111111111111';
@@ -74,6 +55,12 @@ describe('AnalyticsService', () => {
             linkId: mockLinkId,
           },
         ]),
+      },
+      user: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+      teamMember: {
+        findFirst: jest.fn().mockResolvedValue(null),
       },
       $transaction: jest.fn().mockImplementation((promises) => Promise.all(promises)),
     };

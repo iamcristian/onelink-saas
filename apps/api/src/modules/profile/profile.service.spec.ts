@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { SentinelAiService } from '../sentinel-ai/sentinel-ai.service';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
@@ -7,31 +8,7 @@ import { ProfileAccessService } from '../../common/services/profile-access.servi
 
 describe('ProfileService', () => {
   let service: ProfileService;
-  let prisma: {
-    profile: {
-      findUnique: jest.Mock;
-      update: jest.Mock;
-    };
-    customTheme: {
-      upsert: jest.Mock;
-      deleteMany: jest.Mock;
-    };
-    socialLink: {
-      findMany: jest.Mock;
-      findFirst: jest.Mock;
-      create: jest.Mock;
-      update: jest.Mock;
-      delete: jest.Mock;
-      updateMany: jest.Mock;
-    };
-    user: {
-      findUnique: jest.Mock;
-    };
-    teamMember: {
-      findFirst: jest.Mock;
-    };
-    $transaction: jest.Mock;
-  };
+  let prisma: any;
   let redis: {
     get: jest.Mock;
     set: jest.Mock;
@@ -104,6 +81,11 @@ describe('ProfileService', () => {
       teamMember: {
         findFirst: jest.fn().mockResolvedValue(null),
       },
+      subscription: {
+        findFirst: jest.fn().mockResolvedValue({
+          plan: { code: 'PRO', features: { customThemes: true } },
+        }),
+      },
       $transaction: jest.fn((promises) => Promise.all(promises)),
     };
 
@@ -119,6 +101,13 @@ describe('ProfileService', () => {
         ProfileAccessService,
         { provide: PrismaService, useValue: prisma },
         { provide: RedisService, useValue: redis },
+        {
+          provide: SentinelAiService,
+          useValue: {
+            evaluateUrl: jest.fn().mockResolvedValue({ isSafe: true, riskScore: 0 }),
+            recordSecurityFlag: jest.fn().mockResolvedValue(null),
+          },
+        },
       ],
     }).compile();
 
@@ -131,7 +120,7 @@ describe('ProfileService', () => {
 
   describe('getPublicProfile (Cache-Aside)', () => {
     it('should return cached profile from Redis if present (fast path)', async () => {
-      const cachedPayload = { username: 'alexrivera', title: 'Alex Rivera' };
+      const cachedPayload = { username: 'alexrivera', title: 'Alex Rivera', links: [] };
       redis.get.mockResolvedValue(cachedPayload);
 
       const result = await service.getPublicProfile('alexrivera');

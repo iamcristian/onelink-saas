@@ -14,6 +14,7 @@ describe('SentinelAiService (Zero-Token AI Threat Detection)', () => {
       sismember: jest.fn().mockResolvedValue(false),
       sadd: jest.fn().mockResolvedValue(1),
       srem: jest.fn().mockResolvedValue(1),
+      del: jest.fn().mockResolvedValue(1),
     };
 
     prismaService = {
@@ -25,6 +26,7 @@ describe('SentinelAiService (Zero-Token AI Threat Detection)', () => {
       } as any,
       securityFlag: {
         create: jest.fn().mockResolvedValue({ id: 'flag-uuid' }),
+        findUnique: jest.fn().mockResolvedValue({ id: 'flag-uuid', submittedUrl: 'http://evil.com', status: 'PENDING_REVIEW' }),
         update: jest.fn().mockResolvedValue({ id: 'flag-uuid', submittedUrl: 'http://evil.com', status: 'RESOLVED_BENIGN' }),
       } as any,
       user: {

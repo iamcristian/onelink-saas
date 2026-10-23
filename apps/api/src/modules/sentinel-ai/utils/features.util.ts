@@ -84,7 +84,8 @@ export function extractUrlFeatures(urlStr: string): ExtractedFeatures {
     hostname = hostname.slice(4);
   }
   const pathname = parsed.pathname.toLowerCase();
-  const query = parsed.search.toLowerCase();
+  // Strip leading '?' to match Python's parsed.query
+  const query = parsed.search ? parsed.search.replace(/^\?/, '').toLowerCase() : '';
 
   const parts = hostname.split('.');
   const hasIp = IPV4_REGEX.test(hostname);

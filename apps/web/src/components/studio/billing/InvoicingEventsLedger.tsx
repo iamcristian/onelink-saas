@@ -46,15 +46,26 @@ export const InvoicingEventsLedger: React.FC<InvoicingEventsLedgerProps> = ({
     }
   };
 
+  const escapeCsvCell = (val: string) => {
+    let s = String(val ?? "");
+    if (/^[=+\-@]/.test(s)) {
+      s = `'${s}`;
+    }
+    if (s.includes('"') || s.includes(',') || s.includes('\n')) {
+      s = `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  };
+
   const handleExportCSV = () => {
     const headers = ["Event ID", "Type", "Tier", "Handle", "Timestamp", "Status"];
     const rows = filteredEvents.map((e) => [
-      e.id,
-      e.type,
-      e.tier,
-      e.handle,
-      e.timestamp,
-      e.status,
+      escapeCsvCell(e.id),
+      escapeCsvCell(e.type),
+      escapeCsvCell(e.tier),
+      escapeCsvCell(e.handle),
+      escapeCsvCell(e.timestamp),
+      escapeCsvCell(e.status),
     ]);
     const csvContent =
       "data:text/csv;charset=utf-8," +

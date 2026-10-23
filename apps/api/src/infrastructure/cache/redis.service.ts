@@ -109,6 +109,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async smembers(key: string): Promise<string[]> {
+    if (!this.client || !this.isConnected) return [];
+    try {
+      return await this.client.smembers(key);
+    } catch (error) {
+      this.logger.warn(`Set smembers error for key ${key}: ${error}`);
+      return [];
+    }
+  }
+
   getClient(): Redis | null {
     return this.client;
   }

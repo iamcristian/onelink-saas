@@ -293,15 +293,16 @@ export class AuthService {
   /**
    * Exchanges authorization code for Google profile and authenticates user.
    */
-  async handleGoogleCallback(code: string) {
+  async handleGoogleCallback(code: string, state?: string) {
     const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
     const clientSecret = this.configService.get<string>('GOOGLE_CLIENT_SECRET');
     const callbackUrl =
       this.configService.get<string>('GOOGLE_CALLBACK_URL') ||
       'http://localhost:3001/api/auth/google/callback';
+    const isDev = this.configService.get<string>('NODE_ENV') !== 'production';
 
-    // 1. Automated Simulation Flow
-    if (code.startsWith('mock_google_dev_code_') || !clientId || !clientSecret) {
+    // 1. Automated Simulation Flow (strictly restricted to development)
+    if (isDev && (code.startsWith('mock_google_dev_code_') || !clientId || !clientSecret)) {
       this.logger.log('Processing Google authentication via dev simulation.');
       return await this.validateGoogleUser({
         googleId: 'google_dev_user_1092837465',
@@ -310,6 +311,10 @@ export class AuthService {
         avatarUrl:
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
       });
+    }
+
+    if (!clientId || !clientSecret) {
+      throw new UnauthorizedException('Google OAuth credentials not configured on server.');
     }
 
     // 2. Real Google OAuth Token Exchange

@@ -9,27 +9,7 @@ import { ProfileAccessService } from '../../common/services/profile-access.servi
 
 describe('LinkService (with Sentinel AI Interception)', () => {
   let service: LinkService;
-  let prismaService: {
-    profile: {
-      findUnique: jest.Mock;
-    };
-    link: {
-      findFirst: jest.Mock;
-      findMany: jest.Mock;
-      findUnique: jest.Mock;
-      create: jest.Mock;
-      update: jest.Mock;
-      updateMany: jest.Mock;
-      delete: jest.Mock;
-    };
-    user: {
-      findUnique: jest.Mock;
-    };
-    teamMember: {
-      findFirst: jest.Mock;
-    };
-    $transaction: jest.Mock;
-  };
+  let prismaService: any;
   let sentinelAiService: {
     evaluateUrl: jest.Mock;
     recordSecurityFlag: jest.Mock;
@@ -58,12 +38,25 @@ describe('LinkService (with Sentinel AI Interception)', () => {
         updateMany: jest.fn(),
         delete: jest.fn(),
         findUnique: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
       },
       user: {
         findUnique: jest.fn().mockResolvedValue(null),
       },
       teamMember: {
         findFirst: jest.fn().mockResolvedValue(null),
+      },
+      subscription: {
+        findFirst: jest.fn().mockResolvedValue({
+          plan: {
+            features: {
+              maxLinks: 100,
+              scheduledLinks: true,
+              passwordProtection: true,
+              ageRestriction: true,
+            },
+          },
+        }),
       },
       $transaction: jest.fn((promises) => Promise.all(promises)),
     };

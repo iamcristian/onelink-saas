@@ -6,13 +6,16 @@ export class CreateLinkDto {
   title!: string;
 
   @ApiPropertyOptional({ example: 'https://youtube.com/@alexrivera', description: 'Destination URL' })
-  url?: string;
+  url?: string | null;
+
+  @ApiPropertyOptional({ example: 'Free developer guide and tips', description: 'Body text or note content' })
+  content?: string | null;
 
   @ApiPropertyOptional({ enum: LinkType, default: LinkType.LINK })
   type?: LinkType;
 
   @ApiPropertyOptional({ example: 'https://cdn.onelink.bio/icons/yt.png' })
-  thumbnailUrl?: string;
+  thumbnailUrl?: string | null;
 
   @ApiPropertyOptional({ default: true })
   isActive?: boolean;
@@ -33,7 +36,7 @@ export class CreateLinkDto {
   isAgeRestricted?: boolean;
 
   @ApiPropertyOptional({ example: 'NEW', description: 'Badge pill text' })
-  badge?: string;
+  badge?: string | null;
 }
 
 export class UpdateLinkDto {
@@ -41,13 +44,16 @@ export class UpdateLinkDto {
   title?: string;
 
   @ApiPropertyOptional()
-  url?: string;
+  url?: string | null;
+
+  @ApiPropertyOptional()
+  content?: string | null;
 
   @ApiPropertyOptional({ enum: LinkType })
   type?: LinkType;
 
   @ApiPropertyOptional()
-  thumbnailUrl?: string;
+  thumbnailUrl?: string | null;
 
   @ApiPropertyOptional()
   isActive?: boolean;
@@ -68,7 +74,7 @@ export class UpdateLinkDto {
   isAgeRestricted?: boolean;
 
   @ApiPropertyOptional({ example: 'NEW', description: 'Badge pill text' })
-  badge?: string;
+  badge?: string | null;
 }
 
 export class ReorderItemDto {

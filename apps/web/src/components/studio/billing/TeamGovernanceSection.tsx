@@ -437,7 +437,7 @@ export const TeamGovernanceSection: React.FC<TeamGovernanceSectionProps> = ({
                   >
                     <option value="Safety Admin">Safety Admin (Moderate links & flags)</option>
                     <option value="Content Editor">Content Editor (Edit links & theme)</option>
-                    <option value="Viewer / Auditor">Viewer / Auditor (Read-only)</option>
+                    <option value="Viewer">Viewer (Read-only)</option>
                   </select>
                 </div>
 

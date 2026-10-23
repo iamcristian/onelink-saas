@@ -18,6 +18,7 @@ import { RegisterSchema, LoginSchema, RegisterInput, LoginInput } from '@repo/sh
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RateLimitGuard, RateLimit } from '../../common/guards/rate-limit.guard';
 import { CurrentUser, AuthenticatedUser } from './decorators/current-user.decorator';
 
 export class RegisterDto implements RegisterInput {
@@ -50,9 +51,11 @@ export class AuthController {
   @Get('google/callback')
   @ApiOperation({ summary: 'Handle Google OAuth 2.0 redirect callback' })
   @ApiQuery({ name: 'code', required: false, type: String })
+  @ApiQuery({ name: 'state', required: false, type: String })
   @ApiQuery({ name: 'error', required: false, type: String })
   async googleCallback(
     @Query('code') code: string | undefined,
+    @Query('state') state: string | undefined,
     @Query('error') error: string | undefined,
     @Req() req: Request,
     @Res() res: Response,
@@ -64,17 +67,19 @@ export class AuthController {
 
     if (!appUrl) {
       const forwardedHost = (req.headers['x-forwarded-host'] as string) || (req.headers['host'] as string);
-      const forwardedProto = (req.headers['x-forwarded-proto'] as string) || 'https';
+      const forwardedProto = (req.headers['x-forwarded-proto'] as string) || 'http';
       if (
         forwardedHost &&
-        (forwardedHost.startsWith('127.0.0.1') ||
-          forwardedHost.startsWith('localhost') ||
-          forwardedHost.startsWith('192.168.'))
+        (forwardedHost === 'localhost' ||
+          forwardedHost === '127.0.0.1' ||
+          forwardedHost.startsWith('localhost:') ||
+          forwardedHost.startsWith('127.0.0.1:') ||
+          /^192\.168\.\d+\.\d+(:\d+)?$/.test(forwardedHost))
       ) {
         const cleanHost = forwardedHost.replace(/:3001$/, ':3000');
         appUrl = `${forwardedProto}://${cleanHost}`;
       } else {
-        appUrl = 'https://onelink-saas.vercel.app';
+        appUrl = 'https://onelink.bio';
       }
     }
     appUrl = appUrl.replace(/\/+$/, '');
@@ -85,7 +90,7 @@ export class AuthController {
     }
 
     try {
-      const result = await this.authService.handleGoogleCallback(code);
+      const result = await this.authService.handleGoogleCallback(code, state);
       return res.redirect(`${appUrl}/auth/callback?token=${result.accessToken}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to authenticate with Google';
@@ -94,6 +99,8 @@ export class AuthController {
   }
 
   @Post('register')
+  @UseGuards(RateLimitGuard)
+  @RateLimit(15, 60)
   @UsePipes(new ZodValidationPipe(RegisterSchema))
   @ApiOperation({ summary: 'Register a new creator account and reserve username' })
   @ApiResponse({ status: 201, description: 'User registered successfully with initial profile' })
@@ -103,6 +110,8 @@ export class AuthController {
   }
 
   @Post('login')
+  @UseGuards(RateLimitGuard)
+  @RateLimit(20, 60)
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ZodValidationPipe(LoginSchema))
   @ApiOperation({ summary: 'Log in with email and password' })

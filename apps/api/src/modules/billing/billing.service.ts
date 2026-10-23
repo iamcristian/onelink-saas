@@ -371,8 +371,16 @@ export class BillingService {
         };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        this.logger.warn(`Stripe checkout creation failed: ${msg}. Falling back to simulation.`);
+        this.logger.error(`Stripe checkout creation failed: ${msg}`);
+        if (process.env.NODE_ENV === 'production' || this.stripe) {
+          throw new BadRequestException(`Stripe checkout session creation failed: ${msg}`);
+        }
+        this.logger.warn(`Falling back to simulation in local/test mode.`);
       }
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new BadRequestException('Payment gateway is not configured');
     }
 
     // 2. Automated Simulation Flow (Zero Friction)
@@ -528,6 +536,12 @@ export class BillingService {
     if (this.stripe) {
       try {
         const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+        if (session.metadata?.userId && session.metadata.userId !== userId) {
+          throw new ForbiddenException('Checkout session does not belong to the authenticated user');
+        }
+        if (session.payment_status !== 'paid' && session.status !== 'complete') {
+          throw new BadRequestException('Payment for checkout session is not completed or paid');
+        }
         if (session.payment_status === 'paid' || session.status === 'complete') {
           const planCode = (session.metadata?.planCode as string) || 'PRO';
           const plan = await this.prisma.plan.findUnique({
@@ -593,8 +607,12 @@ export class BillingService {
           }
         }
       } catch (err: unknown) {
+        if (err instanceof ForbiddenException || err instanceof BadRequestException) {
+          throw err;
+        }
         const msg = err instanceof Error ? err.message : String(err);
         this.logger.error(`Error verifying checkout session ${sessionId}: ${msg}`);
+        throw new BadRequestException(`Could not confirm checkout session: ${msg}`);
       }
     }
 
@@ -606,17 +624,32 @@ export class BillingService {
    */
   async handleWebhook(rawBody: string | Buffer, signature?: string) {
     const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+    const isProd = process.env.NODE_ENV === 'production';
     let event: Stripe.Event | null = null;
 
-    if (this.stripe && webhookSecret && signature) {
-      try {
-        event = this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        this.logger.error(`Webhook signature verification failed: ${msg}`);
-        throw new BadRequestException(`Webhook signature verification failed`);
+    if (this.stripe) {
+      if (!signature) {
+        throw new BadRequestException('Missing stripe-signature header');
       }
-    } else {
+      if (!webhookSecret) {
+        if (isProd) {
+          throw new BadRequestException('STRIPE_WEBHOOK_SECRET is not configured in production');
+        }
+      } else {
+        try {
+          event = this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.error(`Webhook signature verification failed: ${msg}`);
+          throw new BadRequestException(`Webhook signature verification failed`);
+        }
+      }
+    }
+
+    if (!event) {
+      if (isProd) {
+        throw new BadRequestException('Unverified webhook payload rejected in production');
+      }
       try {
         event = typeof rawBody === 'string' ? JSON.parse(rawBody) : JSON.parse(rawBody.toString('utf8'));
       } catch {
@@ -997,7 +1030,50 @@ export class BillingService {
       select: { email: true },
     });
     if (!user?.email) return [];
-    const userInvitesKey = `billing:user_invites:${user.email.toLowerCase().trim()}`;
+    const userEmail = user.email.toLowerCase().trim();
+
+    if (this.prisma.teamMember?.findMany) {
+      const dbMembers = await this.prisma.teamMember.findMany({
+        where: {
+          OR: [
+            { email: userEmail },
+            { userId: userId },
+          ],
+        },
+        include: {
+          owner: {
+            include: {
+              profile: true,
+              subscriptions: {
+                where: { status: 'ACTIVE' },
+                include: { plan: true },
+                take: 1,
+              },
+            },
+          },
+        },
+      });
+
+      if (dbMembers.length > 0) {
+        return dbMembers.map((m) => ({
+          id: m.id,
+          ownerUserId: m.ownerId,
+          ownerName: m.owner?.name || m.owner?.email?.split('@')[0] || 'Workspace Owner',
+          ownerUsername: m.owner?.profile?.username || 'owner',
+          ownerProfileId: m.owner?.profile?.id || null,
+          ownerAvatarUrl: m.owner?.profile?.avatarUrl || null,
+          ownerPlan: m.owner?.subscriptions?.[0]?.plan?.code || 'ENTERPRISE',
+          role: m.role,
+          email: m.email,
+          name: m.name,
+          status: m.status,
+          statusDetail: m.status === 'Active' ? 'Active Collaborator' : 'Pending (Invitation received)',
+          createdAt: m.createdAt ? new Date(m.createdAt).toISOString() : new Date().toISOString(),
+        }));
+      }
+    }
+
+    const userInvitesKey = `billing:user_invites:${userEmail}`;
     const invites = (await this.redisService.get<any[]>(userInvitesKey)) || [];
     return invites;
   }
