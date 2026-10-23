@@ -50,7 +50,7 @@ async function proxyRequest(req: NextRequest, { params }: { params: Promise<{ pa
     const resHeaders = new Headers();
     backendRes.headers.forEach((value, key) => {
       const lowerKey = key.toLowerCase();
-      if (!["content-encoding", "transfer-encoding"].includes(lowerKey)) {
+      if (!["content-encoding", "transfer-encoding", "content-length"].includes(lowerKey)) {
         resHeaders.set(key, value);
       }
     });
