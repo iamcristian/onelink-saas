@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { BigIntSerializerInterceptor } from './common/interceptors/bigint-serializer.interceptor';
@@ -60,21 +59,10 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  // Global validation pipe for non-Zod endpoints
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
-  );
-
   const port = process.env.PORT || 3001;
-  await app.listen(port);
-  console.log(`🚀 Application is running on: http://localhost:${port}/api`);
-  console.log(`📚 Swagger documentation available at: http://localhost:${port}/api/docs`);
+  // Bind to 0.0.0.0 so container orchestrators (Render, Docker, Kubernetes) detect the open port
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 Application is running on: http://0.0.0.0:${port}/api`);
+  console.log(`📚 Swagger documentation available at: http://0.0.0.0:${port}/api/docs`);
 }
 bootstrap();
