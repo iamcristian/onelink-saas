@@ -230,7 +230,7 @@ export default function StudioLinksPage() {
       clearTimeout(timer);
       window.removeEventListener("workspace_changed", handleWorkspaceChanged);
     };
-  }, []);
+  }, [router]);
 
   // Save to localStorage whenever items change
   const updateItems = (newItems: StudioLinkItem[]) => {
@@ -438,7 +438,7 @@ export default function StudioLinksPage() {
         id: created.id,
         title: created.title || data.title,
         url: created.url || data.url,
-        type: (created.type as any) || data.type,
+        type: (created.type as StudioLinkItem["type"]) || data.type,
         thumbnailUrl: created.thumbnailUrl || data.thumbnailUrl,
         isActive: created.isActive ?? data.isActive ?? true,
         badge: data.badge,

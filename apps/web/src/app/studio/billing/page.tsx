@@ -60,7 +60,12 @@ function BillingContent() {
 
   const [plans, setPlans] = useState<BillingPlan[]>([]);
   const [subscription, setSubscription] = useState<BillingSubscription | null>(null);
-  const [activeWorkspace, setActiveWorkspace] = useState<any | null>(null);
+  const [activeWorkspace, setActiveWorkspace] = useState<Record<string, unknown> | null>(null);
+  const [currentTimestamp, setCurrentTimestamp] = useState<number>(0);
+
+  useEffect(() => {
+    setCurrentTimestamp(Date.now());
+  }, []);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
   const [maxSeats, setMaxSeats] = useState(5);
@@ -287,7 +292,7 @@ function BillingContent() {
   const isPaid = activePlanCode === "PRO" || activePlanCode === "ENTERPRISE";
   const periodEndDate = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
   const daysRemaining = periodEndDate
-    ? Math.max(0, Math.ceil((periodEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(0, Math.ceil((periodEndDate.getTime() - currentTimestamp) / (1000 * 60 * 60 * 24)))
     : null;
 
   const proPlan = plans.find((p) => p.code === "PRO");

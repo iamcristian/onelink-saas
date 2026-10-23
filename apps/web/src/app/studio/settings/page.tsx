@@ -98,7 +98,7 @@ export default function StudioSettingsPage() {
       clearTimeout(timer);
       window.removeEventListener("workspace_changed", handleWorkspaceChanged);
     };
-  }, []);
+  }, [router]);
 
   const handleToggleDeactivation = async () => {
     const nextPublishedState = !isPublished;

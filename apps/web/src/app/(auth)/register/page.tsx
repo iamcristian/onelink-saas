@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowRight, Lock, Mail, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { apiCheckUsername } from "@/lib/api-client";
 
 function RegisterForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
   const initialUsername = searchParams.get("username") || "";
@@ -75,7 +76,7 @@ function RegisterForm() {
       if (data.accessToken) {
         localStorage.setItem("onelink_token", data.accessToken);
       }
-      window.location.href = "/studio/links";
+      router.push("/studio/links");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error creating account.";
       setError(msg);

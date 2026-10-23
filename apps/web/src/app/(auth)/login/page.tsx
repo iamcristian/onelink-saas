@@ -2,10 +2,11 @@
 
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowRight, Lock, Mail, AlertCircle } from "lucide-react";
 
 function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
 
@@ -36,9 +37,9 @@ function LoginForm() {
         localStorage.setItem("onelink_token", data.accessToken);
       }
       if (data.user?.role === "SUPER_ADMIN") {
-        window.location.href = "/admin/moderation";
+        router.push("/admin/moderation");
       } else {
-        window.location.href = "/studio/links";
+        router.push("/studio/links");
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Authentication error.";

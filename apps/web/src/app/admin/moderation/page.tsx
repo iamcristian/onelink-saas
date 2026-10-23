@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ShieldAlert,
   Shield,
@@ -44,133 +45,8 @@ const NAV_TABS = [
   { id: "audit", name: "Audit Ledgers", icon: History },
 ];
 
-const INITIAL_FALLBACK_THREATS: SecurityThreatItem[] = [
-  {
-    id: "flag-1",
-    userId: "user-1",
-    submittedUrl: "http://metamask-security-auth.xyz/drain",
-    riskScore: 0.94,
-    threatType: "CRYPTO_DRAINER",
-    aiConfidence: 0.984,
-    ipAddress: "185.220.101.4",
-    status: "BLOCKED_AUTO",
-    resolutionNotes: "Detected: Punycode Spoofing + Crypto Drainer heuristics",
-    createdAt: "2026-10-16T10:20:00Z",
-    user: {
-      id: "user-1",
-      email: "crypto@promo.xyz",
-      role: "CREATOR",
-      isBanned: true,
-      profile: {
-        username: "cryptopromos",
-        title: "Claim $10,000 Free Airdrop",
-        avatarUrl: null,
-      },
-    },
-  },
-  {
-    id: "flag-2",
-    userId: "user-2",
-    submittedUrl: "https://paypal-account-verify-login.top/account",
-    riskScore: 0.88,
-    threatType: "PHISHING",
-    aiConfidence: 0.912,
-    ipAddress: "194.26.29.112",
-    status: "BLOCKED_AUTO",
-    resolutionNotes: "Detected: Brand Keyword Hijack (PayPal)",
-    createdAt: "2026-10-16T11:45:00Z",
-    user: {
-      id: "user-2",
-      email: "deals@daily-promos.top",
-      role: "CREATOR",
-      isBanned: false,
-      profile: {
-        username: "deals_daily",
-        title: "Daily Promo Deals",
-        avatarUrl: null,
-      },
-    },
-  },
-  {
-    id: "flag-3",
-    userId: "user-3",
-    submittedUrl: "http://free-steam-wallet-nitro.ru/gift?id=8271",
-    riskScore: 0.92,
-    threatType: "MALWARE",
-    aiConfidence: 0.965,
-    ipAddress: "45.142.214.88",
-    status: "PENDING_REVIEW",
-    resolutionNotes: "Detected: Free nitro discord gift credential stealer",
-    createdAt: "2026-10-16T12:10:00Z",
-    user: {
-      id: "user-3",
-      email: "nitro@giftbot.ru",
-      role: "CREATOR",
-      isBanned: false,
-      profile: {
-        username: "nitro_gifts",
-        title: "Free Discord Nitro",
-        avatarUrl: null,
-      },
-    },
-  },
-  {
-    id: "flag-4",
-    userId: "user-4",
-    submittedUrl: "https://binance-airdrop-claim-rewards.cc/connect",
-    riskScore: 0.96,
-    threatType: "CRYPTO_DRAINER",
-    aiConfidence: 0.978,
-    ipAddress: "103.152.220.14",
-    status: "BANNED",
-    resolutionNotes: "Wallet drainer contract detected",
-    createdAt: "2026-10-16T12:30:00Z",
-    user: {
-      id: "user-4",
-      email: "binance@claim-airdrop.cc",
-      role: "CREATOR",
-      isBanned: true,
-      profile: {
-        username: "binance_airdrop",
-        title: "Binance Official Claim",
-        avatarUrl: null,
-      },
-    },
-  },
-];
-
-const INITIAL_FALLBACK_BLOCKLIST: DomainBlocklistItem[] = [
-  {
-    id: "b-1",
-    domainPattern: "*.xyz",
-    reason: "High concentration of malicious Web3 drainer contracts",
-    createdAt: "2026-10-16T08:00:00Z",
-    addedBy: { id: "admin-1", name: "Cris Super Admin", email: "admin@onelink.bio" },
-  },
-  {
-    id: "b-2",
-    domainPattern: "*.top",
-    reason: "Rampant brand credential phishing",
-    createdAt: "2026-10-16T08:00:00Z",
-    addedBy: { id: "admin-1", name: "Cris Super Admin", email: "admin@onelink.bio" },
-  },
-  {
-    id: "b-3",
-    domainPattern: "*.ru/gift*",
-    reason: "Nitro gift spam bots and credential stealers",
-    createdAt: "2026-10-16T08:00:00Z",
-    addedBy: { id: "admin-1", name: "Cris Super Admin", email: "admin@onelink.bio" },
-  },
-  {
-    id: "b-4",
-    domainPattern: "drainer-*.cc",
-    reason: "Known crypto wallet drainer templates",
-    createdAt: "2026-10-16T08:00:00Z",
-    addedBy: { id: "admin-1", name: "Cris Super Admin", email: "admin@onelink.bio" },
-  },
-];
-
 export default function AdminModerationPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("threats");
   const [loading, setLoading] = useState<boolean>(true);
   const [telemetry, setTelemetry] = useState<SentinelTelemetry | null>(null);
@@ -186,7 +62,7 @@ export default function AdminModerationPage() {
     clearAuthToken();
     localStorage.removeItem("onelink_token");
     localStorage.removeItem("onelink_active_workspace");
-    window.location.href = "/login";
+    router.push("/login");
   };
 
   const loadData = useCallback(async () => {
@@ -195,11 +71,11 @@ export default function AdminModerationPage() {
     try {
       const meData = await fetchCurrentUser().catch(() => null);
       if (!meData) {
-        window.location.href = "/login";
+        router.push("/login");
         return;
       }
       if (meData.role !== "SUPER_ADMIN" && meData.role !== "OWNER") {
-        window.location.href = "/studio/links";
+        router.push("/studio/links");
         return;
       }
       setCurrentUser(meData);
@@ -224,7 +100,7 @@ export default function AdminModerationPage() {
       setLoading(false);
       setLastUpdated(new Date());
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     let active = true;
@@ -393,6 +269,11 @@ export default function AdminModerationPage() {
 
       {/* Main Workspace Container */}
       <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 py-8 flex-1 space-y-8">
+        {fetchError && (
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+            {fetchError}
+          </div>
+        )}
         {/* Section 1: Command Header & Navigation Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/5 gap-4">
           <div>

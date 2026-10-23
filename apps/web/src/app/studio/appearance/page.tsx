@@ -339,20 +339,20 @@ export default function StudioAppearancePage() {
               const linksRes = await fetchProfileLinks(p.id);
               if (Array.isArray(linksRes) && isMounted) {
                 setStudioLinks(
-                  linksRes.map((l: any, idx: number) => ({
-                    id: l.id,
-                    title: l.title,
-                    url: l.url || "#",
-                    type: l.type,
-                    thumbnailUrl: l.thumbnailUrl,
-                    badge: l.badge,
+                  linksRes.map((l: Record<string, unknown>, idx: number) => ({
+                    id: String(l.id || ""),
+                    title: String(l.title || ""),
+                    url: String(l.url || "#"),
+                    type: String(l.type || "LINK"),
+                    thumbnailUrl: (l.thumbnailUrl as string) || undefined,
+                    badge: (l.badge as string) || undefined,
                     isActive: l.isActive !== false,
-                    clicks: l.clickCount || 0,
+                    clicks: Number(l.clickCount || 0),
                     position: typeof l.position === "number" ? l.position : idx,
-                    startsAt: l.startsAt,
-                    expiresAt: l.expiresAt,
-                    isPasswordProtected: l.isPasswordProtected,
-                    isAgeRestricted: l.isAgeRestricted,
+                    startsAt: (l.startsAt as string) || undefined,
+                    expiresAt: (l.expiresAt as string) || undefined,
+                    isPasswordProtected: Boolean(l.isPasswordProtected),
+                    isAgeRestricted: Boolean(l.isAgeRestricted),
                   }))
                 );
               }
@@ -376,7 +376,7 @@ export default function StudioAppearancePage() {
             setBgType(activeThemeData.bgType || "SOLID");
             setBgValue(activeThemeData.bgValue || "#09090b");
             setBtnRadius(typeof activeThemeData.btnRadius === "number" ? activeThemeData.btnRadius : 9999);
-            setBtnStyle((activeThemeData.btnStyle || "FILLED") as any);
+            setBtnStyle((activeThemeData.btnStyle || "FILLED") as "FILLED" | "OUTLINE" | "SHADOW" | "ROUNDED");
             setBtnColor(activeThemeData.btnColor || "#18181b");
             setBtnTextColor(activeThemeData.btnTextColor || "#fafafa");
             setTextColor(activeThemeData.textColor || "#fafafa");
@@ -443,7 +443,7 @@ export default function StudioAppearancePage() {
       clearTimeout(timer);
       window.removeEventListener("workspace_changed", handleWorkspaceChanged);
     };
-  }, []);
+  }, [router]);
 
   const handleSelectPreset = (preset: ThemePreset) => {
     setSelectedThemeId(preset.id);

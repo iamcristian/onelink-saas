@@ -87,7 +87,7 @@ export const SubscriptionTiersCatalog: React.FC<SubscriptionTiersCatalogProps> =
         }
       } else if (res.url) {
         // Redirect to live Stripe Checkout
-        window.location.href = res.url;
+        window.location.assign(res.url);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to initiate checkout.";
@@ -108,7 +108,7 @@ export const SubscriptionTiersCatalog: React.FC<SubscriptionTiersCatalogProps> =
           type: "success",
         });
       } else if (res.url) {
-        window.location.href = res.url;
+        window.location.assign(res.url);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to open customer portal.";

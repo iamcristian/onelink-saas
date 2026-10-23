@@ -159,7 +159,7 @@ export default function StudioAnalyticsPage() {
       mounted = false;
       window.removeEventListener("workspace_changed", handleWorkspaceChanged);
     };
-  }, [days, loadAnalytics]);
+  }, [days, loadAnalytics, router]);
 
   const handleSelectDays = (targetDays: number) => {
     const planCode = subscription?.plan?.code || "FREE";
