@@ -86,7 +86,7 @@ export function LinkCard({
         </div>
 
         <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
-          <div className="hidden sm:flex items-center space-x-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center space-x-0.5 opacity-70 hover:opacity-100 sm:opacity-50 sm:group-hover:opacity-100 transition-opacity">
             <button
               onClick={() => onMoveUp(index)}
               disabled={index === 0}
@@ -140,10 +140,28 @@ export function LinkCard({
           <div className="h-px bg-zinc-700/80 w-full" />
         </div>
 
-        <div className="flex items-center space-x-1 shrink-0">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+          <div className="flex items-center space-x-0.5 opacity-70 hover:opacity-100 sm:opacity-50 sm:group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onMoveUp(index)}
+              disabled={index === 0}
+              className="p-1 hover:text-white disabled:opacity-20 text-zinc-400 cursor-pointer"
+              title="Move up"
+            >
+              <ChevronUp className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => onMoveDown(index)}
+              disabled={index === totalItems - 1}
+              className="p-1 hover:text-white disabled:opacity-20 text-zinc-400 cursor-pointer"
+              title="Move down"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
           <button
             onClick={() => onDelete(item.id)}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
             title="Delete Divider"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -184,12 +202,12 @@ export function LinkCard({
           <GripVertical className="w-4 h-4" />
         </div>
 
-        {/* Up/Down quick keyboard/accessible sorting (desktop only to preserve mobile touch targets) */}
-        <div className={`hidden sm:flex flex-col space-y-0.5 mr-2 transition-opacity ${isHovered ? "opacity-100" : "opacity-0"}`}>
+        {/* Up/Down quick keyboard/accessible sorting */}
+        <div className={`flex flex-col space-y-0.5 mr-2 transition-opacity ${isHovered ? "opacity-100" : "opacity-60 sm:opacity-0"}`}>
           <button
             onClick={() => onMoveUp(index)}
             disabled={index === 0}
-            className="text-zinc-500 hover:text-white disabled:opacity-20 transition-colors p-0.5"
+            className="text-zinc-500 hover:text-white disabled:opacity-20 transition-colors p-0.5 cursor-pointer"
             title="Move up"
           >
             <ChevronUp className="w-3 h-3" />
@@ -197,7 +215,7 @@ export function LinkCard({
           <button
             onClick={() => onMoveDown(index)}
             disabled={index === totalItems - 1}
-            className="text-zinc-500 hover:text-white disabled:opacity-20 transition-colors p-0.5"
+            className="text-zinc-500 hover:text-white disabled:opacity-20 transition-colors p-0.5 cursor-pointer"
             title="Move down"
           >
             <ChevronDown className="w-3 h-3" />

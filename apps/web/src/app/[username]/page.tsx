@@ -431,7 +431,9 @@ async function ProfileContent({
           className="w-full flex flex-col gap-3.5 mb-8"
         >
           {profile.links && profile.links.length > 0 ? (
-            profile.links.map((link) => (
+            [...profile.links]
+              .sort((a, b) => a.position - b.position)
+              .map((link) => (
               <LinkPill
                 key={link.id}
                 id={link.id}

@@ -194,7 +194,13 @@ export default function StudioLinksPage() {
             isPasswordProtected: l.isPasswordProtected,
             isAgeRestricted: l.isAgeRestricted,
           }));
+          mapped.sort((a, b) => a.position - b.position);
           setItems(mapped);
+          try {
+            localStorage.setItem("onelink_studio_items", JSON.stringify(mapped));
+          } catch {
+            // Ignore
+          }
           return;
         }
       } catch {
@@ -248,6 +254,21 @@ export default function StudioLinksPage() {
     } catch {
       // Ignore
     }
+  };
+
+  // Helper to reliably retrieve profileId
+  const getActiveProfileId = async (): Promise<string> => {
+    if (profileId && profileId.trim()) return profileId;
+    try {
+      const userSession = await fetchCurrentUser();
+      if (userSession?.profile?.id) {
+        setProfileId(userSession.profile.id);
+        return userSession.profile.id;
+      }
+    } catch {
+      // Ignore
+    }
+    return "";
   };
 
   // Run auto-archive scan immediately on active destination links
@@ -322,15 +343,19 @@ export default function StudioLinksPage() {
     );
     updateItems(updated);
 
-    try {
-      await apiUpdateLink(id, profileId, { isActive: newActiveState });
-    } catch {
-      // Optimistic update retained
+    const activeProfileId = await getActiveProfileId();
+    if (activeProfileId) {
+      try {
+        await apiUpdateLink(id, activeProfileId, { isActive: newActiveState });
+      } catch {
+        // Optimistic update retained
+      }
     }
   };
 
   // Duplicate item
   const handleDuplicate = async (item: StudioLinkItem) => {
+    const activeProfileId = await getActiveProfileId();
     const tempId = `temp-${Date.now()}`;
     const newItem: StudioLinkItem = {
       ...item,
@@ -345,19 +370,28 @@ export default function StudioLinksPage() {
     const reindexed = updated.map((it, idx) => ({ ...it, position: idx }));
     updateItems(reindexed);
 
-    try {
-      const created = await apiCreateLink(profileId, {
-        title: newItem.title,
-        url: newItem.url,
-        type: newItem.type,
-      });
-      if (created?.id) {
-        setItems((prev) =>
-          prev.map((it) => (it.id === tempId ? { ...it, id: created.id } : it))
-        );
+    if (activeProfileId) {
+      try {
+        const created = await apiCreateLink(activeProfileId, {
+          title: newItem.title,
+          url: newItem.url,
+          type: newItem.type,
+          thumbnailUrl: newItem.thumbnailUrl,
+          badge: newItem.badge,
+          startsAt: newItem.startsAt,
+          expiresAt: newItem.expiresAt,
+          isPasswordProtected: newItem.isPasswordProtected,
+          password: newItem.password,
+          isAgeRestricted: newItem.isAgeRestricted,
+        });
+        if (created?.id) {
+          const finalItems = reindexed.map((it) => (it.id === tempId ? { ...it, id: created.id } : it));
+          updateItems(finalItems);
+          await apiReorderLinks(activeProfileId, finalItems.map((it) => it.id)).catch(() => {});
+        }
+      } catch {
+        // Retain optimistic
       }
-    } catch {
-      // Retain optimistic
     }
   };
 
@@ -367,10 +401,14 @@ export default function StudioLinksPage() {
     const reindexed = updated.map((it, idx) => ({ ...it, position: idx }));
     updateItems(reindexed);
 
-    try {
-      await apiDeleteLink(id, profileId);
-    } catch {
-      // Retain optimistic
+    const activeProfileId = await getActiveProfileId();
+    if (activeProfileId) {
+      try {
+        await apiDeleteLink(id, activeProfileId);
+        await apiReorderLinks(activeProfileId, reindexed.map((it) => it.id)).catch(() => {});
+      } catch {
+        // Retain optimistic
+      }
     }
   };
 
@@ -469,7 +507,7 @@ export default function StudioLinksPage() {
         isActive: created.isActive ?? data.isActive ?? true,
         badge: data.badge,
         clicks: Number(created.clickCount || 0),
-        position: 0,
+        position: items.length,
         startsAt: data.startsAt,
         expiresAt: data.expiresAt,
         isPasswordProtected: data.isPasswordProtected,
@@ -477,13 +515,18 @@ export default function StudioLinksPage() {
         isAgeRestricted: data.isAgeRestricted,
       };
 
-      const updated = [newItem, ...items].map((it, idx) => ({ ...it, position: idx }));
+      const updated = [...items, newItem].map((it, idx) => ({ ...it, position: idx }));
       updateItems(updated);
+
+      await apiReorderLinks(
+        activeProfileId,
+        updated.map((it) => it.id)
+      ).catch(() => {});
     }
   };
 
   // Move up/down
-  const handleMoveUp = (index: number) => {
+  const handleMoveUp = async (index: number) => {
     if (index <= 0) return;
     const updated = [...items];
     const temp = updated[index - 1];
@@ -491,13 +534,16 @@ export default function StudioLinksPage() {
     updated[index] = temp;
     const reordered = updated.map((it, idx) => ({ ...it, position: idx }));
     updateItems(reordered);
-    apiReorderLinks(
-      profileId,
-      reordered.map((it) => it.id)
-    ).catch(() => {});
+    const activeProfileId = await getActiveProfileId();
+    if (activeProfileId) {
+      await apiReorderLinks(
+        activeProfileId,
+        reordered.map((it) => it.id)
+      ).catch(() => {});
+    }
   };
 
-  const handleMoveDown = (index: number) => {
+  const handleMoveDown = async (index: number) => {
     if (index >= items.length - 1) return;
     const updated = [...items];
     const temp = updated[index + 1];
@@ -505,38 +551,49 @@ export default function StudioLinksPage() {
     updated[index] = temp;
     const reordered = updated.map((it, idx) => ({ ...it, position: idx }));
     updateItems(reordered);
-    apiReorderLinks(
-      profileId,
-      reordered.map((it) => it.id)
-    ).catch(() => {});
+    const activeProfileId = await getActiveProfileId();
+    if (activeProfileId) {
+      await apiReorderLinks(
+        activeProfileId,
+        reordered.map((it) => it.id)
+      ).catch(() => {});
+    }
   };
 
   // Native HTML5 Drag and Drop handlers
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
-
-    const newItems = [...items];
-    const draggedItem = newItems[draggedIndex];
-    newItems.splice(draggedIndex, 1);
-    newItems.splice(index, 0, draggedItem);
-    setDraggedIndex(index);
-    setItems(newItems.map((it, idx) => ({ ...it, position: idx })));
+    e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+    const sourceIndex = draggedIndex;
     setDraggedIndex(null);
-    updateItems(items);
-    apiReorderLinks(
-      profileId,
-      items.map((it) => it.id)
-    ).catch(() => {});
+
+    const updated = [...items];
+    const [draggedItem] = updated.splice(sourceIndex, 1);
+    updated.splice(dropIndex, 0, draggedItem);
+    const reordered = updated.map((it, idx) => ({ ...it, position: idx }));
+    updateItems(reordered);
+
+    const activeProfileId = await getActiveProfileId();
+    if (activeProfileId) {
+      await apiReorderLinks(
+        activeProfileId,
+        reordered.map((it) => it.id)
+      ).catch(() => {});
+    }
   };
 
   // Filter items

@@ -74,13 +74,15 @@ export function PhonePreview({
     getServerTime
   );
 
-  const activeItems = items.filter((item) => {
-    if (!item.isActive) return false;
-    if (now === null) return true;
-    if (item.startsAt && new Date(item.startsAt).getTime() > now) return false;
-    if (item.expiresAt && new Date(item.expiresAt).getTime() < now) return false;
-    return true;
-  });
+  const activeItems = [...items]
+    .sort((a, b) => a.position - b.position)
+    .filter((item) => {
+      if (!item.isActive) return false;
+      if (now === null) return true;
+      if (item.startsAt && new Date(item.startsAt).getTime() > now) return false;
+      if (item.expiresAt && new Date(item.expiresAt).getTime() < now) return false;
+      return true;
+    });
 
   const fullProfileUrl =
     typeof window !== "undefined"
