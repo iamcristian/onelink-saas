@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient } from '@repo/prisma';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { CANONICAL_THEME_PRESETS } from '@repo/shared';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -54,6 +55,58 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         await this.$executeRawUnsafe(sql);
       } catch {
         // Enums may already have the value or type might not exist yet
+      }
+    }
+
+    // Ensure all 8 canonical preset themes exist in the Theme table
+    for (const theme of CANONICAL_THEME_PRESETS) {
+      try {
+        const existing = await this.theme.findFirst({ where: { name: theme.name } });
+        if (!existing) {
+          await this.theme.create({
+            data: {
+              name: theme.name,
+              bgType: theme.bgType as any,
+              bgValue: theme.bgValue,
+              btnStyle: theme.btnStyle as any,
+              btnColor: theme.btnColor,
+              btnTextColor: theme.btnTextColor,
+              fontFamily: theme.fontFamily,
+              textColor: theme.textColor,
+              isDefault: Boolean(theme.isDefault),
+            },
+          });
+        }
+      } catch (err: unknown) {
+        this.logger.debug(`Theme sync notice for ${theme.name}: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+
+    // Ensure founder accounts have OWNER role and active ENTERPRISE subscription
+    const founderEmails = [
+      'cris@onelink.bio',
+      'crisarando10@gmail.com',
+      'crisarandosyse@gmail.com',
+    ];
+    for (const email of founderEmails) {
+      try {
+        const u = await this.user.findUnique({ where: { email } });
+        if (u) {
+          if (u.role !== 'OWNER') {
+            await this.user.update({ where: { id: u.id }, data: { role: 'OWNER' } });
+          }
+          const enterprisePlan = await this.plan.findUnique({ where: { code: 'ENTERPRISE' } });
+          if (enterprisePlan) {
+            const sub = await this.subscription.findFirst({ where: { userId: u.id, status: 'ACTIVE' } });
+            if (!sub) {
+              await this.subscription.create({ data: { userId: u.id, planId: enterprisePlan.id, status: 'ACTIVE' } });
+            } else if (sub.planId !== enterprisePlan.id) {
+              await this.subscription.update({ where: { id: sub.id }, data: { planId: enterprisePlan.id } });
+            }
+          }
+        }
+      } catch (err: unknown) {
+        this.logger.debug(`Founder sync notice for ${email}: ${err instanceof Error ? err.message : err}`);
       }
     }
 

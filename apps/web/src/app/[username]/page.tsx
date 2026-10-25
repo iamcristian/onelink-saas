@@ -6,6 +6,7 @@ import { SocialIcon } from "@/components/profile/SocialIcon";
 import { LinkPill } from "@/components/profile/LinkPill";
 import { ShareButton } from "@/components/profile/ShareButton";
 import { PageViewTracker } from "@/components/profile/PageViewTracker";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 interface ProfileData {
   id: string;
@@ -122,14 +123,11 @@ const CRISTIAN_ARANDO_DEMO: ProfileData = {
 
 async function getProfile(username: string): Promise<ProfileData | null> {
   const cleanUsername = username.replace(/^%40|^@/, "").toLowerCase();
-  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/+$/, "").replace(/\/api\/?$/, "");
+  const apiUrl = getApiBaseUrl();
 
   try {
     const res = await fetch(`${apiUrl}/api/profiles/${cleanUsername}`, {
-      next: {
-        revalidate: 30,
-        tags: [`profile-${cleanUsername}`],
-      },
+      cache: "no-store",
     });
 
     if (res.ok) {
@@ -162,7 +160,7 @@ async function getProfile(username: string): Promise<ProfileData | null> {
     // API not reachable, fallback to demo if username matches
   }
 
-  if (cleanUsername === "user" || cleanUsername === "crisarando" || cleanUsername === "alexrivera") {
+  if (cleanUsername === "user" || cleanUsername === "alexrivera") {
     return CRISTIAN_ARANDO_DEMO;
   }
 

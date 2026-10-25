@@ -565,25 +565,16 @@ export default function StudioAppearancePage() {
         avatarUrl,
       });
 
-      try {
-        await apiSaveCustomTheme(activeProfileId, {
-          bgType,
-          bgValue,
-          btnStyle,
-          btnColor,
-          btnTextColor,
-          textColor,
-          btnRadius,
-          fontFamily,
-        });
-      } catch (themeErr: unknown) {
-        const themeMsg = themeErr instanceof Error ? themeErr.message : "";
-        if (themeMsg.includes("Creator Pro") || themeMsg.includes("Custom theme engine")) {
-          console.warn("Custom theme engine restricted on current plan:", themeMsg);
-        } else {
-          throw themeErr;
-        }
-      }
+      await apiSaveCustomTheme(activeProfileId, {
+        bgType,
+        bgValue,
+        btnStyle,
+        btnColor,
+        btnTextColor,
+        textColor,
+        btnRadius,
+        fontFamily,
+      });
       setInitialUsername(cleanUser);
       setSaved(true);
       if (typeof window !== "undefined") {

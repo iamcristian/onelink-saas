@@ -17,7 +17,7 @@ import {
   UpdateSocialLinkDto,
   ReorderSocialItemDto,
 } from './dto/profile.dto';
-import { RESERVED_USERNAMES, isValidWebUrl } from '@repo/shared';
+import { RESERVED_USERNAMES, isValidWebUrl, CANONICAL_THEME_PRESETS } from '@repo/shared';
 import { SecurityFlagStatus } from '@repo/prisma';
 
 @Injectable()
@@ -345,9 +345,27 @@ export class ProfileService {
   ) {
     const existing = await this.verifyOwnership(profileId, userId, role, 'EDITOR');
 
-    // Enforce custom theme feature entitlement (bypassed for OWNER and ADMIN)
-    const isPrivileged = role === 'OWNER' || role === 'ADMIN';
-    if (!isPrivileged) {
+    // Check if user is a platform founder or has administrative privileges
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, role: true },
+    });
+    const isFounder =
+      user?.email &&
+      ['cris@onelink.bio', 'crisarando10@gmail.com', 'crisarandosyse@gmail.com'].includes(
+        user.email.toLowerCase(),
+      );
+    const isPrivileged = role === 'OWNER' || role === 'ADMIN' || user?.role === 'OWNER' || isFounder;
+
+    // Check if the theme matches any of the canonical platform presets (free for all users)
+    const matchingPreset = CANONICAL_THEME_PRESETS.find(
+      (p) =>
+        p.bgValue.trim().toLowerCase() === dto.bgValue.trim().toLowerCase() ||
+        (p.bgType === dto.bgType && p.btnColor.toLowerCase() === dto.btnColor.toLowerCase()),
+    );
+    const isStandardPreset = Boolean(matchingPreset);
+
+    if (!isPrivileged && !isStandardPreset) {
       const sub = await this.prisma.subscription.findFirst({
         where: { userId: existing.userId, status: 'ACTIVE' },
         include: { plan: true },
@@ -358,6 +376,18 @@ export class ProfileService {
         throw new ForbiddenException(
           'Custom theme engine is only available on Creator Pro and Enterprise Studio plans.',
         );
+      }
+    }
+
+    if (matchingPreset && this.prisma.theme) {
+      const dbTheme = await this.prisma.theme.findFirst({
+        where: { name: matchingPreset.name },
+      });
+      if (dbTheme) {
+        await this.prisma.profile.update({
+          where: { id: profileId },
+          data: { themeId: dbTheme.id },
+        });
       }
     }
 

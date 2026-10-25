@@ -86,6 +86,9 @@ describe('ProfileService', () => {
           plan: { code: 'PRO', features: { customThemes: true } },
         }),
       },
+      theme: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
       $transaction: jest.fn((promises) => Promise.all(promises)),
     };
 
