@@ -345,17 +345,20 @@ export class ProfileService {
   ) {
     const existing = await this.verifyOwnership(profileId, userId, role, 'EDITOR');
 
-    // Enforce custom theme feature entitlement
-    const sub = await this.prisma.subscription.findFirst({
-      where: { userId: existing.userId, status: 'ACTIVE' },
-      include: { plan: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    const features = (sub?.plan?.features as Record<string, any>) || {};
-    if (!features.customThemes && sub?.plan?.code === 'FREE') {
-      throw new ForbiddenException(
-        'Custom theme engine is only available on Creator Pro and Enterprise Studio plans.',
-      );
+    // Enforce custom theme feature entitlement (bypassed for OWNER and ADMIN)
+    const isPrivileged = role === 'OWNER' || role === 'ADMIN';
+    if (!isPrivileged) {
+      const sub = await this.prisma.subscription.findFirst({
+        where: { userId: existing.userId, status: 'ACTIVE' },
+        include: { plan: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      const features = (sub?.plan?.features as Record<string, any>) || {};
+      if (!features.customThemes && sub?.plan?.code === 'FREE') {
+        throw new ForbiddenException(
+          'Custom theme engine is only available on Creator Pro and Enterprise Studio plans.',
+        );
+      }
     }
 
     const customTheme = await this.prisma.customTheme.upsert({

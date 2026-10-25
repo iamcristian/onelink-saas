@@ -127,8 +127,31 @@ export async function fetchProfile(username: string) {
  * Fetch all links for a profile (both active and inactive) for Creator Studio
  */
 export async function fetchProfileLinks(profileId: string) {
+  if (!profileId || !profileId.trim()) return [];
+  const token = await getAuthToken();
   try {
     const res = await fetch(`${API_BASE_URL}/api/links/profile/${profileId}`, {
+      headers: authHeaders(token),
+      cache: "no-store",
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // Return null on failure
+  }
+  return null;
+}
+
+/**
+ * Fetch current authenticated user's profile and links via /api/profiles/me
+ */
+export async function fetchMyProfile() {
+  const token = await getAuthToken();
+  if (!token) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/profiles/me`, {
+      headers: authHeaders(token),
       cache: "no-store",
     });
     if (res.ok) {
@@ -158,6 +181,9 @@ export async function apiCreateLink(
     isAgeRestricted?: boolean;
   }
 ) {
+  if (!profileId || !profileId.trim()) {
+    throw new Error("Profile ID is required to create a link.");
+  }
   const token = await getAuthToken();
   const res = await fetch(`${API_BASE_URL}/api/links/profile/${profileId}`, {
     method: "POST",
@@ -200,6 +226,9 @@ export async function apiUpdateLink(
     isAgeRestricted?: boolean;
   }
 ) {
+  if (!profileId || !profileId.trim()) {
+    throw new Error("Profile ID is required to update link.");
+  }
   const token = await getAuthToken();
   const res = await fetch(
     `${API_BASE_URL}/api/links/${linkId}/profile/${profileId}`,
@@ -303,6 +332,9 @@ export async function apiSaveCustomTheme(
     fontFamily: string;
   }
 ) {
+  if (!profileId || !profileId.trim()) {
+    throw new Error("Profile ID is required to save theme.");
+  }
   const token = await getAuthToken();
   const res = await fetch(
     `${API_BASE_URL}/api/profiles/${profileId}/custom-theme`,
@@ -363,6 +395,9 @@ export async function apiUpdateProfile(
   profileId: string,
   data: UpdateProfilePayload
 ) {
+  if (!profileId || !profileId.trim()) {
+    throw new Error("Profile ID is required to update profile.");
+  }
   const token = await getAuthToken();
   const res = await fetch(`${API_BASE_URL}/api/profiles/${profileId}`, {
     method: "PATCH",

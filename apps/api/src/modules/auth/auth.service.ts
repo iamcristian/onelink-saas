@@ -468,6 +468,7 @@ export class AuthService {
       (await this.prisma.theme.findFirst());
 
     const freePlan = await this.prisma.plan.findUnique({ where: { code: 'FREE' } });
+    const enterprisePlan = await this.prisma.plan.findUnique({ where: { code: 'ENTERPRISE' } });
 
     const { newUser, newProfile } = await this.prisma.$transaction(async (tx) => {
       const isFounder =
@@ -498,11 +499,12 @@ export class AuthService {
         },
       });
 
-      if (freePlan) {
+      const assignedPlan = isFounder && enterprisePlan ? enterprisePlan : freePlan;
+      if (assignedPlan) {
         await tx.subscription.create({
           data: {
             userId: createdUser.id,
-            planId: freePlan.id,
+            planId: assignedPlan.id,
             status: 'ACTIVE',
           },
         });

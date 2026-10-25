@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import {
   fetchProfile,
+  fetchMyProfile,
   fetchCurrentUser,
   apiUpdateProfile,
   type UpdateProfilePayload,
@@ -48,6 +49,7 @@ export default function StudioSettingsPage() {
       try {
         const userSession = await fetchCurrentUser();
         let usernameToLoad = userSession?.profile?.username || "";
+        let profileIdToLoad = userSession?.profile?.id || "";
 
         // Check if user selected an active workspace
         const storedWs =
@@ -59,6 +61,9 @@ export default function StudioSettingsPage() {
             const parsedWs = JSON.parse(storedWs);
             if (parsedWs.ownerUsername) {
               usernameToLoad = parsedWs.ownerUsername;
+            }
+            if (parsedWs.ownerProfileId) {
+              profileIdToLoad = parsedWs.ownerProfileId;
             }
           } catch {
             // Ignore parse error
@@ -72,7 +77,16 @@ export default function StudioSettingsPage() {
           return;
         }
 
-        const p = await fetchProfile(usernameToLoad);
+        if (profileIdToLoad && mounted) {
+          setProfileId(profileIdToLoad);
+        }
+        if (usernameToLoad && mounted) {
+          setUsername(usernameToLoad);
+        }
+
+        const p =
+          (!storedWs ? await fetchMyProfile() : null) ||
+          (await fetchProfile(usernameToLoad));
         if (p && mounted) {
           if (p.id) setProfileId(p.id);
           if (p.username) setUsername(p.username);
@@ -145,6 +159,26 @@ export default function StudioSettingsPage() {
   const handleSaveSettings = async () => {
     setSaving(true);
     setErrorMessage(null);
+
+    let activeProfileId = profileId;
+    if (!activeProfileId) {
+      try {
+        const userSession = await fetchCurrentUser();
+        if (userSession?.profile?.id) {
+          activeProfileId = userSession.profile.id;
+          setProfileId(activeProfileId);
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
+    if (!activeProfileId) {
+      setErrorMessage("Profile ID not found. Please reload or log in again.");
+      setSaving(false);
+      return;
+    }
+
     try {
       const payload: UpdateProfilePayload = {
         title,
@@ -153,7 +187,7 @@ export default function StudioSettingsPage() {
         seoDesc,
         isPublished,
       };
-      const ok = await apiUpdateProfile(profileId, payload);
+      const ok = await apiUpdateProfile(activeProfileId, payload);
       if (ok) {
         setSavedSuccess(true);
         setTimeout(() => setSavedSuccess(false), 3000);

@@ -139,31 +139,35 @@ export class LinkService {
       ageRestriction: false,
     };
 
-    if ((dto.startsAt || dto.expiresAt) && !features.scheduledLinks) {
-      throw new ForbiddenException(
-        'Link scheduling is only available on Creator Pro and Enterprise Studio plans.',
-      );
-    }
-    if (dto.isPasswordProtected && !features.passwordProtection) {
-      throw new ForbiddenException(
-        'PIN / Password protection is an Enterprise Studio plan feature.',
-      );
-    }
-    if (dto.isAgeRestricted && !features.ageRestriction) {
-      throw new ForbiddenException(
-        'Age verification restriction is an Enterprise Studio plan feature.',
-      );
-    }
+    const isPrivileged = role === 'OWNER' || role === 'ADMIN';
 
-    const maxLinks = features.maxLinks ?? 5;
-    if (dto.type === LinkType.LINK || !dto.type) {
-      const currentCount = await this.prisma.link.count({
-        where: { profileId, type: LinkType.LINK },
-      });
-      if (currentCount >= maxLinks) {
-        throw new BadRequestException(
-          `Plan limit reached (${currentCount}/${maxLinks} links). Upgrade to Creator Pro for unlimited links.`,
+    if (!isPrivileged) {
+      if ((dto.startsAt || dto.expiresAt) && !features.scheduledLinks) {
+        throw new ForbiddenException(
+          'Link scheduling is only available on Creator Pro and Enterprise Studio plans.',
         );
+      }
+      if (dto.isPasswordProtected && !features.passwordProtection) {
+        throw new ForbiddenException(
+          'PIN / Password protection is an Enterprise Studio plan feature.',
+        );
+      }
+      if (dto.isAgeRestricted && !features.ageRestriction) {
+        throw new ForbiddenException(
+          'Age verification restriction is an Enterprise Studio plan feature.',
+        );
+      }
+
+      const maxLinks = features.maxLinks ?? 5;
+      if (dto.type === LinkType.LINK || !dto.type) {
+        const currentCount = await this.prisma.link.count({
+          where: { profileId, type: LinkType.LINK },
+        });
+        if (currentCount >= maxLinks) {
+          throw new BadRequestException(
+            `Plan limit reached (${currentCount}/${maxLinks} links). Upgrade to Creator Pro for unlimited links.`,
+          );
+        }
       }
     }
 
@@ -295,24 +299,28 @@ export class LinkService {
       ageRestriction: false,
     };
 
-    if (
-      (dto.startsAt !== undefined || dto.expiresAt !== undefined) &&
-      (dto.startsAt || dto.expiresAt) &&
-      !features.scheduledLinks
-    ) {
-      throw new ForbiddenException(
-        'Link scheduling is only available on Creator Pro and Enterprise Studio plans.',
-      );
-    }
-    if (dto.isPasswordProtected && !features.passwordProtection) {
-      throw new ForbiddenException(
-        'PIN / Password protection is an Enterprise Studio plan feature.',
-      );
-    }
-    if (dto.isAgeRestricted && !features.ageRestriction) {
-      throw new ForbiddenException(
-        'Age verification restriction is an Enterprise Studio plan feature.',
-      );
+    const isPrivileged = role === 'OWNER' || role === 'ADMIN';
+
+    if (!isPrivileged) {
+      if (
+        (dto.startsAt !== undefined || dto.expiresAt !== undefined) &&
+        (dto.startsAt || dto.expiresAt) &&
+        !features.scheduledLinks
+      ) {
+        throw new ForbiddenException(
+          'Link scheduling is only available on Creator Pro and Enterprise Studio plans.',
+        );
+      }
+      if (dto.isPasswordProtected && !features.passwordProtection) {
+        throw new ForbiddenException(
+          'PIN / Password protection is an Enterprise Studio plan feature.',
+        );
+      }
+      if (dto.isAgeRestricted && !features.ageRestriction) {
+        throw new ForbiddenException(
+          'Age verification restriction is an Enterprise Studio plan feature.',
+        );
+      }
     }
 
     // If target URL is being changed, re-evaluate through Sentinel AI

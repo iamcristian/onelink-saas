@@ -23,6 +23,7 @@ import { StudioLinkItem } from "@/components/studio/LinkCard";
 import {
   fetchProfile,
   fetchCurrentUser,
+  fetchMyProfile,
   fetchProfileLinks,
   apiSaveCustomTheme,
   apiUpdateProfile,
@@ -329,8 +330,18 @@ export default function StudioAppearancePage() {
         return;
       }
 
+      if (targetProfileId && isMounted) {
+        setProfileId(targetProfileId);
+      }
+      if (targetUsername && isMounted) {
+        setUsername(targetUsername);
+        setInitialUsername(targetUsername);
+      }
+
       try {
-        const p = await fetchProfile(targetUsername);
+        const p =
+          (!activeWs ? await fetchMyProfile() : null) ||
+          (await fetchProfile(targetUsername));
 
         if (p && isMounted) {
           if (p.id) {
@@ -527,9 +538,35 @@ export default function StudioAppearancePage() {
       // Ignore
     }
 
+    let activeProfileId = profileId;
+    if (!activeProfileId) {
+      try {
+        const userSession = await fetchCurrentUser();
+        if (userSession?.profile?.id) {
+          activeProfileId = userSession.profile.id;
+          setProfileId(activeProfileId);
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
+    if (!activeProfileId) {
+      setSaveError("Profile ID not found. Please reload or log in again.");
+      setIsSaving(false);
+      return;
+    }
+
     try {
-      await Promise.all([
-        apiSaveCustomTheme(profileId, {
+      await apiUpdateProfile(activeProfileId, {
+        username: cleanUser,
+        title: displayName,
+        bio,
+        avatarUrl,
+      });
+
+      try {
+        await apiSaveCustomTheme(activeProfileId, {
           bgType,
           bgValue,
           btnStyle,
@@ -538,14 +575,15 @@ export default function StudioAppearancePage() {
           textColor,
           btnRadius,
           fontFamily,
-        }),
-        apiUpdateProfile(profileId, {
-          username: cleanUser,
-          title: displayName,
-          bio,
-          avatarUrl,
-        }),
-      ]);
+        });
+      } catch (themeErr: unknown) {
+        const themeMsg = themeErr instanceof Error ? themeErr.message : "";
+        if (themeMsg.includes("Creator Pro") || themeMsg.includes("Custom theme engine")) {
+          console.warn("Custom theme engine restricted on current plan:", themeMsg);
+        } else {
+          throw themeErr;
+        }
+      }
       setInitialUsername(cleanUser);
       setSaved(true);
       if (typeof window !== "undefined") {

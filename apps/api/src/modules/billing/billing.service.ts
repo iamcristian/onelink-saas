@@ -372,14 +372,20 @@ export class BillingService {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         this.logger.error(`Stripe checkout creation failed: ${msg}`);
-        if (process.env.NODE_ENV === 'production' || this.stripe) {
+        if (
+          process.env.NODE_ENV === 'production' &&
+          process.env.ALLOW_STRIPE_SIMULATION !== 'true'
+        ) {
           throw new BadRequestException(`Stripe checkout session creation failed: ${msg}`);
         }
-        this.logger.warn(`Falling back to simulation in local/test mode.`);
+        this.logger.warn(`Falling back to simulation mode (${msg}).`);
       }
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      process.env.ALLOW_STRIPE_SIMULATION !== 'true'
+    ) {
       throw new BadRequestException('Payment gateway is not configured');
     }
 

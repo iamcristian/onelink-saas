@@ -15,12 +15,22 @@ const ALLOWED_ORIGINS = new Set([
   "https://onelink.bio",
 ]);
 
+const extraOrigins = [
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.FRONTEND_URL,
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+  process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : null,
+].filter(Boolean) as string[];
+
+extraOrigins.forEach((o) => ALLOWED_ORIGINS.add(o.replace(/\/+$/, "")));
+
 function getValidatedOrigin(req: NextRequest, proto: string, host: string): string | null {
   const origin = req.headers.get("origin");
-  if (!origin) {
-    return `${proto}://${host}`;
+  const hostOrigin = `${proto}://${host}`;
+  if (!origin || origin === hostOrigin) {
+    return origin || hostOrigin;
   }
-  if (ALLOWED_ORIGINS.has(origin)) {
+  if (ALLOWED_ORIGINS.has(origin) || origin.endsWith(".vercel.app")) {
     return origin;
   }
   if (

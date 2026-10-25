@@ -11,6 +11,7 @@ import { PhonePreview, PhonePreviewTheme } from "@/components/studio/PhonePrevie
 import {
   fetchProfile,
   fetchCurrentUser,
+  fetchMyProfile,
   fetchProfileLinks,
   fetchMySubscription,
   BillingSubscription,
@@ -104,10 +105,17 @@ export default function StudioLinksPage() {
           return;
         }
 
+        if (isMounted) {
+          setProfileId(targetProfileId);
+          setProfileUsername(targetUsername);
+        }
+
         // Fetch full profile to retrieve active/custom theme and metadata
-        const fullProfile = await fetchProfile(targetUsername);
+        const fullProfile =
+          (!activeWs ? await fetchMyProfile() : null) ||
+          (await fetchProfile(targetUsername));
         if (fullProfile && isMounted) {
-          setProfileId(fullProfile.id);
+          if (fullProfile.id) setProfileId(fullProfile.id);
           setProfileUsername(fullProfile.username);
           setProfileDisplayName(
             fullProfile.title || fullProfile.username
@@ -384,9 +392,27 @@ export default function StudioLinksPage() {
   const handleSaveModal = async (
     data: Omit<StudioLinkItem, "position" | "clicks" | "id"> & { id?: string }
   ) => {
+    let activeProfileId = profileId;
+    if (!activeProfileId) {
+      try {
+        const userSession = await fetchCurrentUser();
+        if (userSession?.profile?.id) {
+          activeProfileId = userSession.profile.id;
+          setProfileId(activeProfileId);
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
+    if (!activeProfileId) {
+      alert("Profile ID not found. Please reload or log in again.");
+      return;
+    }
+
     if (data.id) {
       // Edit existing link
-      await apiUpdateLink(data.id, profileId, {
+      await apiUpdateLink(data.id, activeProfileId, {
         title: data.title,
         url: data.url,
         type: data.type,
@@ -421,7 +447,7 @@ export default function StudioLinksPage() {
       updateItems(updated);
     } else {
       // Create new link
-      const created = await apiCreateLink(profileId, {
+      const created = await apiCreateLink(activeProfileId, {
         title: data.title,
         url: data.url,
         type: data.type,

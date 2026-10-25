@@ -41,7 +41,7 @@ interface ProfileData {
     id: string;
     title: string;
     url: string | null;
-    type: "LINK" | "HEADER" | "DIVIDER" | "DONATION";
+    type: "LINK" | "HEADER" | "DIVIDER" | "DONATION" | "NOTE";
     position: number;
     thumbnailUrl: string | null;
     badge?: string | null;
