@@ -20,6 +20,44 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   async onModuleInit() {
     await this.$connect();
     this.logger.log('Successfully connected to PostgreSQL (TimescaleDB)');
+    await this.ensureSchemaSync();
+  }
+
+  private async ensureSchemaSync() {
+    const migrations = [
+      'ALTER TABLE "links" ADD COLUMN IF NOT EXISTS "content" TEXT',
+      'ALTER TABLE "links" ADD COLUMN IF NOT EXISTS "starts_at" TIMESTAMP(3)',
+      'ALTER TABLE "links" ADD COLUMN IF NOT EXISTS "expires_at" TIMESTAMP(3)',
+      'ALTER TABLE "links" ADD COLUMN IF NOT EXISTS "is_password_protected" BOOLEAN DEFAULT false',
+      'ALTER TABLE "links" ADD COLUMN IF NOT EXISTS "password" VARCHAR(100)',
+      'ALTER TABLE "links" ADD COLUMN IF NOT EXISTS "is_age_restricted" BOOLEAN DEFAULT false',
+      'ALTER TABLE "links" ADD COLUMN IF NOT EXISTS "badge" VARCHAR(50)',
+      'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "is_banned" BOOLEAN DEFAULT false',
+      'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "ban_reason" TEXT',
+    ];
+
+    for (const sql of migrations) {
+      try {
+        await this.$executeRawUnsafe(sql);
+      } catch (err: unknown) {
+        this.logger.debug(`Schema sync notice: ${sql} -> ${err instanceof Error ? err.message : err}`);
+      }
+    }
+
+    const enums = [
+      "ALTER TYPE \"LinkType\" ADD VALUE IF NOT EXISTS 'DONATION'",
+      "ALTER TYPE \"LinkType\" ADD VALUE IF NOT EXISTS 'NOTE'",
+    ];
+
+    for (const sql of enums) {
+      try {
+        await this.$executeRawUnsafe(sql);
+      } catch {
+        // Enums may already have the value or type might not exist yet
+      }
+    }
+
+    this.logger.log('Database schema synchronization completed.');
   }
 
   async onModuleDestroy() {
