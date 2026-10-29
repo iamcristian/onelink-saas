@@ -2,6 +2,9 @@
 
 > High-performance, mobile-first **Link-in-Bio platform** (Linktree alternative) engineered with modern distributed system design, clean hexagonal architecture, TimescaleDB time-series analytics, and enterprise SDLC rigor.
 
+<img width="1698" height="993" alt="{1F1ED40A-A4D2-4932-8581-A440B4196653}" src="https://github.com/user-attachments/assets/0c696dec-4655-42ce-9ef1-2559f3e39315" />
+<img width="1858" height="994" alt="{C62E3677-2F51-467F-9917-528A184D86F3}" src="https://github.com/user-attachments/assets/f07e1cc3-8200-4040-bc2b-b0c5de2da32f" />
+
 ---
 
 ## ⚡ Tech Stack
