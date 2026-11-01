@@ -336,15 +336,17 @@ export function LinkCard({
             <Copy className="w-3.5 h-3.5" />
           </button>
 
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 active:scale-90 transition-all cursor-pointer"
-            title="Open Destination URL"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          {(item.type === "LINK" || item.type === "DONATION" || !item.type) && item.url && (
+            <a
+              href={item.url.startsWith("http") ? item.url : "https://" + item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 active:scale-90 transition-all cursor-pointer"
+              title="Open Destination URL"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
 
           <button
             onClick={() => onEdit(item)}

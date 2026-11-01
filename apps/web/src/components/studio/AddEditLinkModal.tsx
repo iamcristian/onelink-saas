@@ -493,6 +493,26 @@ function AddEditLinkForm({
           </div>
         )}
 
+        {type === "NOTE" && (
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-mono uppercase text-zinc-400">
+                Note Message &amp; Announcement Content
+              </label>
+              <span className="text-[10px] font-mono text-zinc-500">
+                {url.split(/\s+/).filter(Boolean).length} words
+              </span>
+            </div>
+            <textarea
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              rows={4}
+              placeholder="Write a message, announcement, discount code, or schedule update for your visitors..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-zinc-400 transition-colors resize-y leading-relaxed"
+            />
+          </div>
+        )}
+
         {(type === "LINK" || type === "DONATION") && (
           <>
             <div>
