@@ -155,6 +155,10 @@ export class SentinelAiService implements OnModuleInit {
       for (let i = 0; i <= parts.length - 2; i++) {
         candidateDomains.push(parts.slice(i).join('.'));
       }
+      // Top-level domain check (e.g., 'xyz', 'top', 'ru')
+      if (parts.length > 0) {
+        candidateDomains.push(parts[parts.length - 1]);
+      }
 
       let isGloballyBlocked = false;
       for (const candidate of candidateDomains) {
@@ -214,6 +218,8 @@ export class SentinelAiService implements OnModuleInit {
     riskScore = mlRiskScore;
 
     // Layer 4: Deterministic Security Safety Net
+    let hasDeterministicThreat = false;
+
     // 4A: Homoglyph spoofing detection (Cyrillic, Greek, or mixed scripts mimicking protected ASCII)
     const rawHostMatch = rawUrl.match(/^[a-zA-Z]+:\/\/([^/?#:]+)/);
     const rawHost = rawHostMatch ? rawHostMatch[1].toLowerCase() : hostname;
@@ -223,6 +229,7 @@ export class SentinelAiService implements OnModuleInit {
 
     if (homoglyphResult.hasHomoglyphs) {
       riskScore = Math.max(riskScore, 0.95);
+      hasDeterministicThreat = true;
       if (!threatType) threatType = ThreatType.PHISHING;
       if (homoglyphResult.detectedChars.length > 0) {
         signals.push(
@@ -234,6 +241,7 @@ export class SentinelAiService implements OnModuleInit {
       }
     } else if (features.isPunycode && features.hasSuspiciousTld) {
       riskScore = Math.max(riskScore, 0.85);
+      hasDeterministicThreat = true;
       if (!threatType) threatType = ThreatType.PHISHING;
       signals.push('Punycode internationalized domain on high-risk TLD detected');
     }
@@ -241,6 +249,7 @@ export class SentinelAiService implements OnModuleInit {
     // 4B: Raw IP Address Host
     if (features.hasIp) {
       riskScore = Math.max(riskScore, 0.85);
+      hasDeterministicThreat = true;
       if (!threatType) threatType = ThreatType.PHISHING;
       signals.push(`Host is a raw IP address (${hostname}) instead of a qualified domain`);
     }
@@ -248,6 +257,7 @@ export class SentinelAiService implements OnModuleInit {
     // 4C: Crypto Drainer and Wallet Phishing Keywords
     if (features.hasCryptoKeywords) {
       riskScore = Math.max(riskScore, 0.85);
+      hasDeterministicThreat = true;
       threatType = ThreatType.CRYPTO_DRAINER;
       signals.push(`Crypto drainer / wallet-theft keyword pattern found in URL`);
     }
@@ -255,6 +265,7 @@ export class SentinelAiService implements OnModuleInit {
     // 4D: High Shannon Entropy (Algorithmic DGA domain randomness)
     if (features.entropy >= 3.85 && features.primaryLabel.length >= 10) {
       riskScore = Math.max(riskScore, 0.70);
+      hasDeterministicThreat = true;
       signals.push(`High Shannon entropy (${features.entropy} bits/char) indicates algorithmic DGA domain`);
       if (!threatType) threatType = ThreatType.MALWARE;
     }
@@ -282,12 +293,26 @@ export class SentinelAiService implements OnModuleInit {
 
         if (!isOfficial) {
           riskScore = Math.max(riskScore, 0.85);
+          hasDeterministicThreat = true;
           if (!threatType || threatType === ThreatType.PHISHING) {
             threatType = ThreatType.PHISHING;
           }
           signals.push(`Impersonation of protected brand "${brand}" in non-official domain`);
           break;
         }
+      }
+    }
+
+    // Layer 5: Mitigate ML False Positives on Non-Allowlisted Legitimate Domains
+    if (!hasDeterministicThreat && mlRiskScore >= 0.45) {
+      if (features.hasSuspiciousTld || features.hasAuthPathKeywords || features.isShortener) {
+        // Structural indicators present without confirmed exploit -> Flag for review instead of hard block
+        riskScore = Math.min(riskScore, 0.55);
+        if (!threatType) threatType = ThreatType.SPAM;
+      } else {
+        // Clean custom domain without any malicious indicators -> Cap at 0.30 (ALLOW)
+        riskScore = Math.min(riskScore, 0.30);
+        threatType = undefined;
       }
     }
 
@@ -352,10 +377,20 @@ export class SentinelAiService implements OnModuleInit {
       });
 
       if (activeBlocks.length > 0) {
-        const patterns = activeBlocks.map((b) => b.domainPattern.toLowerCase());
-        await this.redis.sadd(SentinelAiService.REDIS_BLOCKLIST_KEY, ...patterns);
-        this.logger.log(`Synchronized ${patterns.length} domain blocklists to Redis`);
-        return patterns.length;
+        const patterns = new Set<string>();
+        for (const b of activeBlocks) {
+          const raw = b.domainPattern.toLowerCase().trim();
+          if (raw) {
+            patterns.add(raw);
+            const normalized = raw.replace(/^\*+\.?/, '').replace(/\/.*$/, '').trim();
+            if (normalized) {
+              patterns.add(normalized);
+            }
+          }
+        }
+        await this.redis.sadd(SentinelAiService.REDIS_BLOCKLIST_KEY, ...Array.from(patterns));
+        this.logger.log(`Synchronized ${patterns.size} domain blocklists to Redis`);
+        return patterns.size;
       }
       return 0;
     } catch (err: unknown) {

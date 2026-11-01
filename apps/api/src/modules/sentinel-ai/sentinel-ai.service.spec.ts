@@ -100,6 +100,14 @@ describe('SentinelAiService (Zero-Token AI Threat Detection)', () => {
       expect(result.isSafe).toBe(true);
       expect(result.action).toBe('ALLOW');
     });
+
+    it('should allow custom creator portfolio domains without ML false positives', async () => {
+      const result = await service.evaluateUrl('https://myportfolio.example.com/projects');
+
+      expect(result.isSafe).toBe(true);
+      expect(result.action).toBe('ALLOW');
+      expect(result.riskScore).toBeLessThanOrEqual(0.3);
+    });
   });
 
   describe('evaluateUrl - Phishing & IP Address Attacks', () => {
@@ -185,6 +193,21 @@ describe('SentinelAiService (Zero-Token AI Threat Detection)', () => {
       (redisService.sismember as jest.Mock).mockResolvedValueOnce(true);
 
       const result = await service.evaluateUrl('https://known-fraudulent-malware.com/payload');
+
+      expect(result.isSafe).toBe(false);
+      expect(result.action).toBe('BLOCK_IMMEDIATE');
+      expect(result.riskScore).toBe(1.0);
+      expect(result.signals).toEqual(
+        expect.arrayContaining([expect.stringContaining('Matched active Redis domain blocklist')]),
+      );
+    });
+
+    it('should immediately block domain if its TLD matches Redis blocklist (e.g. xyz)', async () => {
+      (redisService.sismember as jest.Mock).mockImplementation(async (_key, member) => {
+        return member === 'xyz';
+      });
+
+      const result = await service.evaluateUrl('https://drainer-phishing-scam.xyz/connect');
 
       expect(result.isSafe).toBe(false);
       expect(result.action).toBe('BLOCK_IMMEDIATE');

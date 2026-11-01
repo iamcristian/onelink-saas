@@ -577,34 +577,38 @@ async function main() {
   }
 
   // 4. Global Domain Blocklist
-  const existingBlocklistCount = await prisma.domainBlocklist.count();
-  if (existingBlocklistCount === 0) {
-    await prisma.domainBlocklist.createMany({
-      data: [
-        {
-          domainPattern: '*.xyz',
-          reason: 'High concentration of malicious Web3 drainer contracts',
-          addedById: adminUser.id,
-        },
-        {
-          domainPattern: '*.top',
-          reason: 'Rampant brand credential phishing',
-          addedById: adminUser.id,
-        },
-        {
-          domainPattern: '*.ru/gift*',
-          reason: 'Nitro gift spam bots and credential stealers',
-          addedById: adminUser.id,
-        },
-        {
-          domainPattern: 'drainer-*.cc',
-          reason: 'Known crypto wallet drainer templates',
-          addedById: adminUser.id,
-        },
-      ],
+  const defaultBlocklist = [
+    {
+      domainPattern: 'xyz',
+      reason: 'High concentration of malicious Web3 drainer contracts',
+      addedById: adminUser.id,
+    },
+    {
+      domainPattern: 'top',
+      reason: 'Rampant brand credential phishing',
+      addedById: adminUser.id,
+    },
+    {
+      domainPattern: 'ru',
+      reason: 'Nitro gift spam bots and credential stealers',
+      addedById: adminUser.id,
+    },
+    {
+      domainPattern: 'drainer.cc',
+      reason: 'Known crypto wallet drainer templates',
+      addedById: adminUser.id,
+    },
+  ];
+
+  for (const item of defaultBlocklist) {
+    const existing = await prisma.domainBlocklist.findFirst({
+      where: { domainPattern: item.domainPattern },
     });
-    console.log('  ✓ Seeded 4 global domain blocklist patterns.');
+    if (!existing) {
+      await prisma.domainBlocklist.create({ data: item });
+    }
   }
+  console.log('  ✓ Seeded / verified global domain blocklist patterns.');
 
   console.log('✅ Seeding completed.');
 }
