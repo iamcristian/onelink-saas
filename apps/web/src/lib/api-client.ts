@@ -992,8 +992,12 @@ export async function fetchMySubscription(): Promise<BillingSubscription | null>
  * Fetch founder financial KPIs
  */
 export async function fetchBillingMetrics(): Promise<BillingMetrics> {
+  const token = await getAuthToken();
   try {
-    const res = await fetch(`${API_BASE_URL}/api/billing/metrics`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE_URL}/api/billing/metrics`, {
+      headers: authHeaders(token),
+      cache: "no-store",
+    });
     if (res.ok) return await res.json();
   } catch {
     // Return fallback
@@ -1083,8 +1087,12 @@ export async function fetchInvoices(): Promise<BillingInvoice[]> {
  * Fetch live Stripe event ledger
  */
 export async function fetchBillingEvents(): Promise<BillingEvent[]> {
+  const token = await getAuthToken();
   try {
-    const res = await fetch(`${API_BASE_URL}/api/billing/events`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE_URL}/api/billing/events`, {
+      headers: authHeaders(token),
+      cache: "no-store",
+    });
     if (res.ok) return await res.json();
   } catch {
     // Return empty
