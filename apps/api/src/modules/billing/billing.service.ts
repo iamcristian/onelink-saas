@@ -1387,4 +1387,43 @@ export class BillingService {
       maxSeats,
     };
   }
+
+
+  /**
+   * Resends invitation email with action link to a pending collaborator.
+   */
+  async resendInvitation(userId: string, memberId: string) {
+    const { members } = await this.getTeamMembers(userId);
+    const member = members.find((m) => m.id === memberId);
+    if (!member) {
+      throw new NotFoundException('Collaborator not found');
+    }
+
+    const ownerUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        profile: true,
+        subscriptions: { where: { status: 'ACTIVE' }, include: { plan: true }, take: 1 },
+      },
+    });
+
+    const ownerName = ownerUser?.name || ownerUser?.email.split('@')[0] || 'Workspace Owner';
+    const ownerUsername = ownerUser?.profile?.username || 'owner';
+    const ownerPlan = ownerUser?.subscriptions?.[0]?.plan?.code || 'ENTERPRISE';
+
+    const appUrl = (process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
+    const actionUrl = `${appUrl}/studio/billing?accept=${member.id}`;
+
+    await this.emailService.sendTeamInvitation({
+      to: member.email,
+      inviteeName: member.name,
+      inviterName: ownerName,
+      inviterUsername: ownerUsername,
+      workspacePlan: ownerPlan,
+      role: member.role,
+      actionUrl,
+    });
+
+    return { success: true, message: `Invitation email resent to ${member.email}` };
+  }
 }

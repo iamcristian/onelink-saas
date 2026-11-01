@@ -178,6 +178,17 @@ export class BillingController {
     return await this.billingService.updateTeamMemberRole(user.id, memberId, dto.role);
   }
 
+  @Post('team/:id/resend')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Resend invitation email to a pending collaborator' })
+  async resendInvite(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') memberId: string,
+  ) {
+    return await this.billingService.resendInvitation(user.id, memberId);
+  }
+
   @Get('collaborations')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

@@ -1166,6 +1166,24 @@ export async function apiRevokeTeamMember(memberId: string): Promise<TeamRespons
 }
 
 /**
+ * Resend workspace collaboration invite email
+ */
+export async function apiResendTeamInvitation(memberId: string): Promise<{ success: boolean; message: string }> {
+  const token = await getAuthToken();
+  const res = await fetch(`${API_BASE_URL}/api/billing/team/${memberId}/resend`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.message || "Failed to resend invitation email");
+  }
+
+  return await res.json();
+}
+
+/**
  * Update a collaborator's role with hierarchy enforcement
  */
 export async function apiUpdateTeamMemberRole(memberId: string, role: string): Promise<TeamResponse> {

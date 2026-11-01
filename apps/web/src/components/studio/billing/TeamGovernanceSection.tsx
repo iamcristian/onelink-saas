@@ -6,6 +6,7 @@ import {
   TeamMember,
   apiInviteTeamMember,
   apiRevokeTeamMember,
+  apiResendTeamInvitation,
   apiUpdateTeamMemberRole,
 } from "@/lib/api-client";
 
@@ -288,7 +289,7 @@ export const TeamGovernanceSection: React.FC<TeamGovernanceSectionProps> = ({
                       <div className="flex items-center justify-end space-x-2">
                         {member.status === "Pending" && (
                           <button
-                            onClick={() => handleResend(member.email)}
+                            onClick={() => handleResend(member.id, member.email)}
                             className="px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-white/10 text-[11px] font-mono transition-colors"
                           >
                             Resend Invite
