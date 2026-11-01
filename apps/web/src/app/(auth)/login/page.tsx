@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowRight, Lock, Mail, AlertCircle } from "lucide-react";
+import { fetchCurrentUser, clearAuthToken } from "@/lib/api-client";
 
 function LoginForm() {
   const router = useRouter();
@@ -14,6 +15,32 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(urlError);
+
+  // If already authenticated, redirect immediately to Studio
+  useEffect(() => {
+    let active = true;
+    const token = typeof window !== "undefined" ? localStorage.getItem("onelink_token") : null;
+    if (!token) return;
+
+    fetchCurrentUser()
+      .then((user) => {
+        if (!active) return;
+        if (user) {
+          if (user.role === "SUPER_ADMIN") {
+            router.replace("/admin/moderation");
+          } else {
+            router.replace("/studio/links");
+          }
+        } else {
+          clearAuthToken();
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

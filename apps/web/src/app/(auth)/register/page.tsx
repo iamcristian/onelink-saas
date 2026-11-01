@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowRight, Lock, Mail, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { apiCheckUsername } from "@/lib/api-client";
+import { apiCheckUsername, fetchCurrentUser, clearAuthToken } from "@/lib/api-client";
 
 function RegisterForm() {
   const router = useRouter();
@@ -17,6 +17,32 @@ function RegisterForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(urlError);
+
+  // If already authenticated, redirect immediately to Studio
+  useEffect(() => {
+    let active = true;
+    const token = typeof window !== "undefined" ? localStorage.getItem("onelink_token") : null;
+    if (!token) return;
+
+    fetchCurrentUser()
+      .then((user) => {
+        if (!active) return;
+        if (user) {
+          if (user.role === "SUPER_ADMIN") {
+            router.replace("/admin/moderation");
+          } else {
+            router.replace("/studio/links");
+          }
+        } else {
+          clearAuthToken();
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<{

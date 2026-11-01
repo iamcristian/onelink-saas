@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -21,13 +22,47 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { apiCheckUsername } from "@/lib/api-client";
+import { apiCheckUsername, fetchCurrentUser, clearAuthToken } from "@/lib/api-client";
 
 export default function Home() {
+  const router = useRouter();
   const [claimSlug, setClaimSlug] = useState("");
   const [checkingSlug, setCheckingSlug] = useState(false);
   const [slugStatus, setSlugStatus] = useState<{ available: boolean; reason?: string } | null>(null);
   const [pricingInterval, setPricingInterval] = useState<"MONTHLY" | "YEARLY">("MONTHLY");
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Auto-redirect authenticated creators directly to Studio (Facebook/Notion UX pattern)
+  useEffect(() => {
+    let active = true;
+    const token = typeof window !== "undefined" ? localStorage.getItem("onelink_token") : null;
+    if (!token) {
+      setIsCheckingAuth(false);
+      return;
+    }
+
+    fetchCurrentUser()
+      .then((user) => {
+        if (!active) return;
+        if (user) {
+          if (user.role === "SUPER_ADMIN") {
+            router.replace("/admin/moderation");
+          } else {
+            router.replace("/studio/links");
+          }
+        } else {
+          clearAuthToken();
+          setIsCheckingAuth(false);
+        }
+      })
+      .catch(() => {
+        if (active) setIsCheckingAuth(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   // Check username availability in real time
   useEffect(() => {
@@ -55,6 +90,20 @@ export default function Home() {
       clearTimeout(timer);
     };
   }, [claimSlug]);
+
+  if (isCheckingAuth && typeof window !== "undefined" && localStorage.getItem("onelink_token")) {
+    return (
+      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center text-white selection:bg-white/20">
+        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center animate-pulse shadow-xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon.svg" alt="OneLink" className="w-7 h-7" />
+        </div>
+        <p className="text-xs font-mono text-zinc-400 mt-4 animate-pulse">
+          Redirecting to your creator studio...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#09090b] text-[#fafafa] flex flex-col justify-between selection:bg-white/20 selection:text-white font-sans">

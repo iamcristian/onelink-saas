@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { SocialIcon } from "@/components/profile/SocialIcon";
 import { LinkPill } from "@/components/profile/LinkPill";
 import { ShareButton } from "@/components/profile/ShareButton";
+import { ProfileHeaderActions } from "@/components/profile/ProfileHeaderActions";
 import { PageViewTracker } from "@/components/profile/PageViewTracker";
 import { getApiBaseUrl } from "@/lib/api-config";
 
@@ -363,14 +364,7 @@ async function ProfileContent({
           <span className="text-sm font-semibold tracking-tight text-white/90">
             @{cleanUsername}
           </span>
-          <Link
-            href="/register"
-            className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-all flex items-center gap-1 active:scale-95 shadow-xs"
-            title="Create your own OneLink page"
-          >
-            <span>Create your OneLink</span>
-            <span className="text-[10px] opacity-75">→</span>
-          </Link>
+          <ProfileHeaderActions username={cleanUsername} />
         </div>
       </header>
 
