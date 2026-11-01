@@ -32,7 +32,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      if (!origin || allowedOrigins.includes(origin) || /^https:\/\/onelink(-[a-z0-9-]+)?\.vercel\.app$/.test(origin)) {
         callback(null, true);
       } else if (
         process.env.NODE_ENV !== 'production' &&

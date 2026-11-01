@@ -30,7 +30,10 @@ function getValidatedOrigin(req: NextRequest, proto: string, host: string): stri
   if (!origin || origin === hostOrigin) {
     return origin || hostOrigin;
   }
-  if (ALLOWED_ORIGINS.has(origin) || origin.endsWith(".vercel.app")) {
+  if (
+    ALLOWED_ORIGINS.has(origin) ||
+    /^https:\/\/onelink(-[a-z0-9-]+)?\.vercel\.app$/.test(origin)
+  ) {
     return origin;
   }
   if (
@@ -67,8 +70,9 @@ async function proxyRequest(
     }
   });
 
-  // Ensure origin is set so backend CORS check validates properly
-  forwardHeaders.set("origin", "http://localhost:3000");
+  // Forward client's validated origin or current host origin
+  const clientOrigin = getValidatedOrigin(req, proto, host) || `${proto}://${host}`;
+  forwardHeaders.set("origin", clientOrigin);
   forwardHeaders.set("x-forwarded-host", host);
   forwardHeaders.set("x-forwarded-proto", proto);
 
