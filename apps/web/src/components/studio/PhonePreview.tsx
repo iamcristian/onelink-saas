@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { StudioLinkItem } from "./LinkCard";
 import { renderLinkIcon } from "./IconHelper";
+import { SocialIcon } from "@/components/profile/SocialIcon";
 import { isLightColor } from "@/lib/theme-contrast";
 
 export interface PhonePreviewTheme {
@@ -40,6 +41,7 @@ export interface PhonePreviewProps {
   avatarUrl?: string;
   theme?: PhonePreviewTheme | null;
   className?: string;
+  socialLinks?: Array<{ id: string; platform: string; url: string; isActive?: boolean }>;
 }
 
 const emptySubscribe = () => () => {};
@@ -60,6 +62,7 @@ export function PhonePreview({
   avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
   theme,
   className = "",
+  socialLinks = [],
 }: PhonePreviewProps) {
   const [device, setDevice] = useState<"mobile" | "desktop">("mobile");
   const [copied, setCopied] = useState(false);
@@ -199,6 +202,17 @@ export function PhonePreview({
         <p className="text-xs max-w-65 mt-1.5 leading-relaxed opacity-75" style={{ color: previewTextColor }}>
           {bio}
         </p>
+
+        {/* Social Icons Strip in Phone Preview */}
+        {socialLinks && socialLinks.filter((s) => s.isActive !== false).length > 0 && (
+          <div className="flex items-center justify-center flex-wrap gap-2 mt-3.5 w-full">
+            {socialLinks
+              .filter((s) => s.isActive !== false)
+              .map((s) => (
+                <SocialIcon key={s.id} platform={s.platform} url={s.url} />
+              ))}
+          </div>
+        )}
       </div>
 
       {/* Links Render Stack */}

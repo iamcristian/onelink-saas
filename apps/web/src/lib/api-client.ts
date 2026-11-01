@@ -1300,3 +1300,160 @@ export async function apiLeaveCollaboration(
   return await res.json();
 }
 
+
+// ============================================================================
+// Social Links Management APIs
+// ============================================================================
+
+export interface SocialLinkItem {
+  id: string;
+  profileId: string;
+  platform:
+    | "INSTAGRAM"
+    | "TIKTOK"
+    | "YOUTUBE"
+    | "TWITTER"
+    | "FACEBOOK"
+    | "LINKEDIN"
+    | "GITHUB"
+    | "TWITCH"
+    | "DISCORD"
+    | "SPOTIFY"
+    | "APPLEMUSIC"
+    | "WEBSITE"
+    | "EMAIL";
+  url: string;
+  position: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Fetch all social links for a given profile
+ */
+export async function fetchSocialLinks(
+  profileId: string
+): Promise<SocialLinkItem[]> {
+  if (!profileId) return [];
+  const token = await getAuthToken();
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/profiles/${profileId}/social-links`, {
+      headers: authHeaders(token),
+      cache: "no-store",
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // API unreachable
+  }
+  return [];
+}
+
+/**
+ * Add a new social link icon to a profile
+ */
+export async function apiCreateSocialLink(
+  profileId: string,
+  data: {
+    platform: string;
+    url: string;
+    position?: number;
+    isActive?: boolean;
+  }
+): Promise<SocialLinkItem> {
+  const token = await getAuthToken();
+  const res = await fetch(`${API_BASE_URL}/api/profiles/${profileId}/social-links`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.message || "Failed to create social link");
+  }
+
+  return await res.json();
+}
+
+/**
+ * Update an existing social link
+ */
+export async function apiUpdateSocialLink(
+  profileId: string,
+  linkId: string,
+  data: {
+    platform?: string;
+    url?: string;
+    position?: number;
+    isActive?: boolean;
+  }
+): Promise<SocialLinkItem> {
+  const token = await getAuthToken();
+  const res = await fetch(
+    `${API_BASE_URL}/api/profiles/${profileId}/social-links/${linkId}`,
+    {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.message || "Failed to update social link");
+  }
+
+  return await res.json();
+}
+
+/**
+ * Delete a social link
+ */
+export async function apiDeleteSocialLink(
+  profileId: string,
+  linkId: string
+): Promise<{ success: boolean }> {
+  const token = await getAuthToken();
+  const res = await fetch(
+    `${API_BASE_URL}/api/profiles/${profileId}/social-links/${linkId}`,
+    {
+      method: "DELETE",
+      headers: authHeaders(token),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.message || "Failed to delete social link");
+  }
+
+  return await res.json();
+}
+
+/**
+ * Atomically reorder social links
+ */
+export async function apiReorderSocialLinks(
+  profileId: string,
+  items: Array<{ id: string; position: number }>
+): Promise<{ success: boolean }> {
+  const token = await getAuthToken();
+  const res = await fetch(
+    `${API_BASE_URL}/api/profiles/${profileId}/social-links/reorder`,
+    {
+      method: "PUT",
+      headers: authHeaders(token),
+      body: JSON.stringify({ items }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.message || "Failed to reorder social links");
+  }
+
+  return await res.json();
+}

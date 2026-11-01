@@ -7,6 +7,7 @@ import { Plus, Heading, Minus, Sparkles, ArrowUpDown, Lock, Coffee, X, CheckCirc
 import { LinkCard, StudioLinkItem } from "@/components/studio/LinkCard";
 import { AddEditLinkModal } from "@/components/studio/AddEditLinkModal";
 import { PhonePreview, PhonePreviewTheme } from "@/components/studio/PhonePreview";
+import { SocialLinksManager } from "@/components/studio/SocialLinksManager";
 
 import {
   fetchProfile,
@@ -19,6 +20,8 @@ import {
   apiUpdateLink,
   apiDeleteLink,
   apiReorderLinks,
+  fetchSocialLinks,
+  SocialLinkItem,
 } from "@/lib/api-client";
 
 export default function StudioLinksPage() {
@@ -39,6 +42,7 @@ export default function StudioLinksPage() {
   const [profileAvatarUrl, setProfileAvatarUrl] = useState("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80");
   const [activeTheme, setActiveTheme] = useState<PhonePreviewTheme | null>(null);
   const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor");
+  const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>([]);
 
   // Auto-archive configuration state
   const [isAutoArchiveModalOpen, setIsAutoArchiveModalOpen] = useState(false);
@@ -160,6 +164,13 @@ export default function StudioLinksPage() {
         } catch {
           // Ignore
         }
+
+        // Fetch social links and content links from backend
+        fetchSocialLinks(targetProfileId)
+          .then((sl) => {
+            if (isMounted) setSocialLinks(sl);
+          })
+          .catch(() => {});
 
         // Fetch all studio links (both active and inactive) directly
         const allLinks = await fetchProfileLinks(targetProfileId);
@@ -702,8 +713,17 @@ export default function StudioLinksPage() {
           </div>
         )}
 
+        {/* Social Icons Strip Manager */}
+        <div className="mt-6">
+          <SocialLinksManager
+            profileId={profileId}
+            socialLinks={socialLinks}
+            onSocialLinksChange={setSocialLinks}
+          />
+        </div>
+
         {/* Action Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-6 pb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 pb-5">
           <div className="flex flex-wrap items-center gap-2">
             {/* Add Link */}
             <button
@@ -854,6 +874,7 @@ export default function StudioLinksPage() {
         bio={profileBio}
         avatarUrl={profileAvatarUrl}
         theme={activeTheme}
+        socialLinks={socialLinks}
         className={mobileTab === "preview" ? "flex" : "hidden lg:flex"}
       />
 

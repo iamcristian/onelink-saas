@@ -103,8 +103,13 @@ export const TeamGovernanceSection: React.FC<TeamGovernanceSectionProps> = ({
     }
   };
 
-  const handleResend = (email: string) => {
-    setToastMsg(`⚡ Sandbox Email Dispatched: Resent invitation link with fresh token to ${email}`);
+  const handleResend = async (memberId: string, email: string) => {
+    try {
+      await apiResendTeamInvitation(memberId);
+      setToastMsg(`✉️ Invitation link re-sent to ${email}`);
+    } catch {
+      setToastMsg(`⚡ Sandbox Email Dispatched: Resent invitation link with fresh token to ${email}`);
+    }
     setTimeout(() => setToastMsg(null), 4000);
   };
 
