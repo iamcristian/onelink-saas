@@ -25,6 +25,7 @@ export class UpdateProfileDto {
 
   @ApiPropertyOptional({ example: 'Find all my latest content, videos and tools.', description: 'Meta description' })
   seoDesc?: string | null;
+  searchIndexing?: boolean;
 }
 
 export class UpdateCustomThemeDto {

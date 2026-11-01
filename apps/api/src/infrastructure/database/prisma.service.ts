@@ -35,6 +35,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       'ALTER TABLE "links" ADD COLUMN IF NOT EXISTS "badge" VARCHAR(50)',
       'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "is_banned" BOOLEAN DEFAULT false',
       'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "ban_reason" TEXT',
+      'ALTER TABLE "profiles" ADD COLUMN IF NOT EXISTS "search_indexing" BOOLEAN DEFAULT true',
     ];
 
     for (const sql of migrations) {

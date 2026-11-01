@@ -365,6 +365,7 @@ export interface UpdateProfilePayload {
   seoTitle?: string | null;
   seoDesc?: string | null;
   themeId?: string | null;
+  searchIndexing?: boolean;
 }
 
 /**

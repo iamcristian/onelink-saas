@@ -103,6 +103,7 @@ export const UpdateProfileSchema = z.object({
   isPublished: z.boolean().optional(),
   seoTitle: z.string().max(60).nullable().optional(),
   seoDesc: z.string().max(160).nullable().optional(),
+  searchIndexing: z.boolean().optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;

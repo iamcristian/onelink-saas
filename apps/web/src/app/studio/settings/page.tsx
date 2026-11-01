@@ -95,6 +95,7 @@ export default function StudioSettingsPage() {
           if (p.seoTitle) setSeoTitle(p.seoTitle);
           if (p.seoDesc) setSeoDesc(p.seoDesc);
           if (p.isPublished !== undefined) setIsPublished(p.isPublished);
+          if (p.searchIndexing !== undefined) setSearchIndexing(p.searchIndexing);
         }
       } catch {
         // Fallback to default state
@@ -186,6 +187,7 @@ export default function StudioSettingsPage() {
         seoTitle,
         seoDesc,
         isPublished,
+        searchIndexing,
       };
       const ok = await apiUpdateProfile(activeProfileId, payload);
       if (ok) {

@@ -17,6 +17,7 @@ interface ProfileData {
   seoTitle: string | null;
   seoDesc: string | null;
   ogImageUrl: string | null;
+  searchIndexing?: boolean;
   isUnpublished?: boolean;
   theme?: {
     name: string;
@@ -213,6 +214,7 @@ export async function generateMetadata({
       title: pageTitle,
       description: pageDesc,
     },
+    robots: profile.searchIndexing === false ? { index: false, follow: false } : undefined,
   };
 }
 

@@ -113,6 +113,7 @@ model Profile {
   seoTitle     String?   @map("seo_title") @db.VarChar(60)
   seoDesc      String?   @map("seo_description") @db.VarChar(160)
   ogImageUrl   String?   @map("og_image_url")
+  searchIndexing Boolean   @default(true) @map("search_indexing")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 

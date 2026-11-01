@@ -162,6 +162,7 @@ export class ProfileService {
       avatarUrl: profile.avatarUrl,
       seoTitle: profile.seoTitle,
       seoDesc: profile.seoDesc,
+      searchIndexing: profile.searchIndexing ?? true,
       ogImageUrl: profile.ogImageUrl,
       theme: profile.theme,
       customTheme: profile.customTheme,
@@ -320,6 +321,7 @@ export class ProfileService {
         isPublished: dto.isPublished !== undefined ? dto.isPublished : undefined,
         seoTitle: dto.seoTitle !== undefined ? dto.seoTitle : undefined,
         seoDesc: dto.seoDesc !== undefined ? dto.seoDesc : undefined,
+        searchIndexing: dto.searchIndexing !== undefined ? dto.searchIndexing : undefined,
       },
       include: {
         theme: true,
